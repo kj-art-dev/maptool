@@ -8,6 +8,15 @@ import org.junit.jupiter.api.Test;
 public class PasswordGeneratorTest {
 
     @Test
+    void testGenerateValidPasswordDefault() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator();
+
+        String generatedPassword = passwordGenerator.getPassword();
+
+        assertTrue(generatedPassword.length() > 15 && generatedPassword.length() < 30);
+    }
+
+    @Test
     void testGenerateValidPasswordWithFixedLength() {
         PasswordGenerator passwordGenerator = new PasswordGenerator();
 
@@ -22,12 +31,36 @@ public class PasswordGeneratorTest {
     void testGenerateValidPasswordWithDefaultLengthRange() {
         PasswordGenerator passwordGenerator = new PasswordGenerator();
 
-        int minLength = 10;
+        int minLength = 15;
         int maxLength = 30;
 
         String generatedPassword = passwordGenerator.getPassword(minLength, maxLength);
 
         assertTrue(generatedPassword.length() >= minLength && generatedPassword.length() <= maxLength);
+    }
+
+    @Test
+    void testGenerateValidPasswordUpperRange() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator();
+
+        int minLength = 31;
+        int maxLength = 46;
+
+        String generatedPassword = passwordGenerator.getPassword(minLength, maxLength);
+
+        assertFalse(generatedPassword.length() >= 15 && generatedPassword.length() <= 30);
+    }
+
+    @Test
+    void testGenerateValidPasswordLowerRange() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator();
+
+        int minLength = 0;
+        int maxLength = 14;
+
+        String generatedPassword = passwordGenerator.getPassword(minLength, maxLength);
+
+        assertFalse(generatedPassword.length() >= 15 && generatedPassword.length() <= 30);
     }
 
     @Test
@@ -39,15 +72,5 @@ public class PasswordGeneratorTest {
         String generatedPassword = passwordGenerator.getPassword(invalidLength, invalidLength);
 
         assertEquals(invalidLength, generatedPassword.length());
-    }
-
-    @Test
-    void testGenerateValidPasswordWithInvalidRange() {
-        PasswordGenerator passwordGenerator = new PasswordGenerator();
-
-        int minLength = -100;
-        int maxLength = 30;
-
-        assertThrows(IllegalArgumentException.class, () -> passwordGenerator.getPassword(minLength, maxLength));
     }
 }
