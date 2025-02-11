@@ -55,7 +55,6 @@ application {
     }
 }
 def appSemVer = ""
-def winUpgradeUUID = UUID.randomUUID().toString();
 
 configurations {
     forms.extendsFrom implementation
@@ -279,7 +278,9 @@ runtime {
         ]
 
         if (osdetector.os.is('windows')) {
+            def winUpgradeUUID = "74d934b9-5fb5-433e-aca4-c6f14bd9aa6b"
             println "Setting Windows installer options with upgrade uuid = " + winUpgradeUUID
+            targetPlatformName = "win"
             resourceDir = file('package/windows')
             imageOptions += ['--icon', 'package/windows/' + project.name + developerRelease + '.ico']
             installerOptions += [
@@ -296,6 +297,7 @@ runtime {
 
         if (osdetector.os.is('osx')) {
             println "Setting MacOS installer options"
+            targetPlatformName = "mac"
             imageOptions += ['--icon', 'package/macosx/' + project.name + developerRelease + '.icns']
             installerOptions += [
                     '--mac-package-name', project.name + developerRelease
@@ -308,6 +310,7 @@ runtime {
 
         if (osdetector.os.is('linux')) {
             println "Setting Linux installer options"
+            targetPlatformName = "linux"
             resourceDir = file('package/linux')
             imageOptions += ['--icon', 'package/linux/' + project.name + developerRelease + '.png']
             installerOptions += [
@@ -333,6 +336,22 @@ runtime {
     }
 }
 
+def zipJpackageImage = tasks.register('zipJpackageImage', Zip) {
+    // Really we depend on the app-image produce by the jpackageImage task, but for some reason it
+    // is defined as an output of the jpackage task. As a result, Gradle will get mad at us if we
+    // say we depend directly on jpackageImage.
+    dependsOn tasks.jpackage
+
+    def extension = ''
+    if (osdetector.os.is('osx')) {
+        extension = '.app'
+    }
+
+    from "${jpackageImage.jpackageData.imageOutputDirOrDefault}${File.separator}${jpackageImage.jpackageData.imageNameOrDefault}${extension}"
+    destinationDirectory = jpackageImage.jpackageData.installerOutputDir
+    archiveFileName = project.name + "-" + appSemVer + "-" + jpackageImage.jpackageData.targetPlatformName + "${extension}.zip"
+}
+
 // In this section you declare the dependencies for your production and test code
 dependencies {
     forms group: 'com.jetbrains.intellij.java', name: 'java-compiler-ant-tasks', version: '233.14475.56'
@@ -350,8 +369,8 @@ dependencies {
     implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version: '3.12.0'	// https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-core
     implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version: '3.10.1'	// https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-psd
     implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version: '3.12.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version: '3.10.1'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version: '3.10.1'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version: '3.12.0'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version: '3.12.0'
     implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version: '3.10.1'
     // For Twelvemonkey SVG
     implementation 'org.apache.xmlgraphics:batik-all:1.17'
@@ -435,7 +454,7 @@ dependencies {
     implementation 'com.github.gotson:webp-imageio:0.2.2' // webp support https://search.maven.org/artifact/com.github.gotson/webp-imageio/0.2.2/jar
 
     // For syntax highlighting in macro editor
-    implementation "com.fifesoft:rsyntaxtextarea:3.4.0"		// https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea
+    implementation "com.fifesoft:rsyntaxtextarea:3.5.3"		// https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea
     implementation "com.fifesoft:rstaui:3.3.1"				// https://mvnrepository.com/artifact/com.fifesoft/rstaui
     implementation "com.fifesoft:autocomplete:3.3.1"		// https://mvnrepository.com/artifact/com.fifesoft/autocomplete
     implementation "com.fifesoft:languagesupport:3.3.0"
@@ -459,11 +478,11 @@ dependencies {
     // 'test.useTestNG()' to your build script.
     //testCompile 'junit:junit:4.12'
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'		// https://mvnrepository.com/artifact/com.google.code.gson/gson
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.11.4'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
 
     // For mocking features during unit tests
@@ -498,7 +517,7 @@ dependencies {
     implementation 'com.miglayout:miglayout-swing:11.3'
 
     implementation 'com.github.jknack:handlebars:4.3.1'
-    implementation 'com.github.jknack:handlebars-helpers:4.3.1'
+    implementation 'com.github.jknack:handlebars-helpers:4.4.0'
 
     implementation 'org.jgrapht:jgrapht-core:1.5.2'
 
