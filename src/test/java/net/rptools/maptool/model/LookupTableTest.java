@@ -25,7 +25,7 @@ public class LookupTableTest {
     }
 
     @Test
-    public void testShouldGetValidTableImage() {
+    public void testShouldSetAndGetValidTableImage() {
         LookupTable lookupTableTest = new LookupTable();
         MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
 
