@@ -1,229 +1,244 @@
+/*
+ * This software Copyright by the RPTools.net development team, and
+ * licensed under the Affero GPL Version 3 or, at your option, any later
+ * version.
+ *
+ * MapTool Source Code is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License * along with this source Code.  If not, please visit
+ * <http://www.gnu.org/licenses/> and specifically the Affero license
+ * text at <http://www.gnu.org/licenses/agpl.html>.
+ */
 package net.rptools.maptool.model;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.random.*;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.server.proto.LookupEntryDto;
 import net.rptools.maptool.server.proto.LookupTableDto;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.random.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 public class LookupTableTest {
 
+  @Test
+  public void testShouldCreateValidLookupTable() {
+    LookupTable lookupTableTest = new LookupTable();
+    assertNotNull(lookupTableTest);
+  }
 
-    @Test
-    public void testShouldCreateValidLookupTable() {
-        LookupTable lookupTableTest = new LookupTable();
-        assertNotNull(lookupTableTest);
+  @Test
+  public void testShouldSetAndGetValidTableImage() {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+
+    lookupTableTest.setTableImage(imageKeyTest);
+    MD5Key actualImageKey = lookupTableTest.getTableImage();
+
+    assertEquals(imageKeyTest, actualImageKey);
+  }
+
+  @Test
+  public void testTablesShouldPickOnce() {
+    int tableAmountTest = 25;
+    LookupTable[] tablesTest = new LookupTable[tableAmountTest];
+
+    for (int i = 0; i < tableAmountTest; i++) {
+      LookupTable lookupTableTest = new LookupTable();
+      lookupTableTest.setPickOnce(Math.random() < 0.5);
+      tablesTest[i] = lookupTableTest;
     }
 
-    @Test
-    public void testShouldSetAndGetValidTableImage() {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
-
-        lookupTableTest.setTableImage(imageKeyTest);
-        MD5Key actualImageKey = lookupTableTest.getTableImage();
-
-        assertEquals(imageKeyTest, actualImageKey);
+    for (LookupTable lookupTableTest : tablesTest) {
+      if (lookupTableTest.getPickOnce()) {
+        assertTrue(lookupTableTest.getPickOnce());
+      } else {
+        assertFalse(lookupTableTest.getPickOnce());
+      }
     }
+  }
 
-    @Test
-    public void testTablesShouldPickOnce() {
-        int tableAmountTest = 25;
-        LookupTable[] tablesTest = new LookupTable[tableAmountTest];
+  @Test
+  public void testShouldAddValidTableEntry() {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
 
-        for (int i = 0; i < tableAmountTest; i++) {
-            LookupTable lookupTableTest = new LookupTable();
-            lookupTableTest.setPickOnce(Math.random() < 0.5);
-            tablesTest[i] = lookupTableTest;
-        }
+    lookupTableTest.addEntry(1, 20, "test", imageKeyTest);
 
-        for (LookupTable lookupTableTest : tablesTest) {
-            if (lookupTableTest.getPickOnce()) {
-                assertTrue(lookupTableTest.getPickOnce());
-            } else {
-                assertFalse(lookupTableTest.getPickOnce());
-            }
-        }
+    int expectedEntryCount = 1;
+    int actualEntryCount = lookupTableTest.getEntryList().size();
+
+    assertEquals(expectedEntryCount, actualEntryCount);
+  }
+
+  @Test
+  public void testShouldAddMultipleValidTableEntries() {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+
+    lookupTableTest.addEntry(1, 2, "entry1", imageKeyTest);
+    lookupTableTest.addEntry(3, 4, "entry2", imageKeyTest);
+    lookupTableTest.addEntry(5, 6, "entry3", imageKeyTest);
+    lookupTableTest.addEntry(7, 8, "entry4", imageKeyTest);
+    lookupTableTest.addEntry(9, 10, "entry5", imageKeyTest);
+    lookupTableTest.addEntry(11, 12, "entry6", imageKeyTest);
+    lookupTableTest.addEntry(13, 14, "entry7", imageKeyTest);
+    lookupTableTest.addEntry(15, 16, "entry8", imageKeyTest);
+    lookupTableTest.addEntry(17, 18, "entry9", imageKeyTest);
+    lookupTableTest.addEntry(19, 20, "entry10", imageKeyTest);
+
+    int expectedEntryCount = 10;
+    int actualEntryCount = lookupTableTest.getEntryList().size();
+
+    assertEquals(expectedEntryCount, actualEntryCount);
+  }
+
+  @Test
+  public void testShouldGetLookupFromRandomRollsWithinRange() throws ParserException {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+    int rollCount = 50;
+
+    lookupTableTest.addEntry(1, 5, "entry1", imageKeyTest);
+    lookupTableTest.addEntry(6, 10, "entry2", imageKeyTest);
+    lookupTableTest.addEntry(11, 20, "entry3", imageKeyTest);
+
+    String expectedEntry1 = "entry1";
+    String expectedEntry2 = "entry2";
+    String expectedEntry3 = "entry3";
+
+    for (int i = 0; i < rollCount; i++) {
+
+      int randomRoll = ThreadLocalRandom.current().nextInt(1, 20);
+      String actualEntry = lookupTableTest.getLookup(Integer.toString(randomRoll)).getValue();
+
+      if (randomRoll >= 1 && randomRoll < 6) {
+        assertEquals(expectedEntry1, actualEntry);
+      }
+
+      if (randomRoll >= 6 && randomRoll < 11) {
+        assertEquals(expectedEntry2, actualEntry);
+      }
+
+      if (randomRoll >= 11 && randomRoll < 21) {
+        assertEquals(expectedEntry3, actualEntry);
+      }
     }
+  }
 
-    @Test
-    public void testShouldAddValidTableEntry() {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+  @Test
+  public void testShouldGetLookupDirectFromRandomRollsWithinRange() throws ParserException {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+    int rollCount = 50;
 
-        lookupTableTest.addEntry(1, 20, "test", imageKeyTest);
+    lookupTableTest.addEntry(1, 5, "entry1", imageKeyTest);
+    lookupTableTest.addEntry(6, 10, "entry2", imageKeyTest);
+    lookupTableTest.addEntry(11, 20, "entry3", imageKeyTest);
 
-        int expectedEntryCount = 1;
-        int actualEntryCount = lookupTableTest.getEntryList().size();
+    String expectedEntry1 = "entry1";
+    String expectedEntry2 = "entry2";
+    String expectedEntry3 = "entry3";
 
-        assertEquals(expectedEntryCount, actualEntryCount);
+    for (int i = 0; i < rollCount; i++) {
+
+      int randomRoll = ThreadLocalRandom.current().nextInt(1, 20);
+      String actualEntry = lookupTableTest.getLookupDirect(Integer.toString(randomRoll)).getValue();
+
+      if (randomRoll >= 1 && randomRoll < 6) {
+        assertEquals(expectedEntry1, actualEntry);
+      }
+
+      if (randomRoll >= 6 && randomRoll < 11) {
+        assertEquals(expectedEntry2, actualEntry);
+      }
+
+      if (randomRoll >= 11 && randomRoll < 21) {
+        assertEquals(expectedEntry3, actualEntry);
+      }
     }
+  }
 
-    @Test
-    public void testShouldAddMultipleValidTableEntries() {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
+  @Test
+  public void testLookupTableNameLengthValidation() {
+    LookupTable lookupTableTest1 = new LookupTable();
+    lookupTableTest1.setName("");
 
-        lookupTableTest.addEntry(1, 2, "entry1", imageKeyTest);
-        lookupTableTest.addEntry(3, 4, "entry2", imageKeyTest);
-        lookupTableTest.addEntry(5, 6, "entry3", imageKeyTest);
-        lookupTableTest.addEntry(7, 8, "entry4", imageKeyTest);
-        lookupTableTest.addEntry(9, 10, "entry5", imageKeyTest);
-        lookupTableTest.addEntry(11, 12, "entry6", imageKeyTest);
-        lookupTableTest.addEntry(13, 14, "entry7", imageKeyTest);
-        lookupTableTest.addEntry(15, 16, "entry8", imageKeyTest);
-        lookupTableTest.addEntry(17, 18, "entry9", imageKeyTest);
-        lookupTableTest.addEntry(19, 20, "entry10", imageKeyTest);
+    LookupTable lookupTableTest2 = new LookupTable();
+    lookupTableTest2.setName(" ");
 
-        int expectedEntryCount = 10;
-        int actualEntryCount = lookupTableTest.getEntryList().size();
+    LookupTable lookupTableTest3 = new LookupTable();
+    lookupTableTest3.setName("test123");
 
-        assertEquals(expectedEntryCount, actualEntryCount);
-    }
+    LookupTable lookupTableTest4 = new LookupTable();
+    lookupTableTest4.setName("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWZY23456789+-@#!");
 
-    @Test
-    public void testShouldGetLookupFromRandomRollsWithinRange() throws ParserException {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
-        int rollCount = 50;
+    assertTrue(lookupTableTest1.getName().trim().isEmpty());
+    assertTrue(lookupTableTest2.getName().trim().isEmpty());
+    assertFalse(lookupTableTest3.getName().trim().isEmpty());
+    assertFalse(lookupTableTest4.getName().trim().isEmpty());
+  }
 
-        lookupTableTest.addEntry(1, 5, "entry1", imageKeyTest);
-        lookupTableTest.addEntry(6, 10, "entry2", imageKeyTest);
-        lookupTableTest.addEntry(11, 20, "entry3", imageKeyTest);
+  @Test
+  public void testLookupTableShouldClearAllEntries() {
+    LookupTable lookupTableTest = new LookupTable();
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
 
-        String expectedEntry1 = "entry1";
-        String expectedEntry2 = "entry2";
-        String expectedEntry3 = "entry3";
+    lookupTableTest.addEntry(1, 2, "entry1", imageKeyTest);
+    lookupTableTest.addEntry(3, 4, "entry2", imageKeyTest);
+    lookupTableTest.addEntry(5, 6, "entry3", imageKeyTest);
+    lookupTableTest.addEntry(7, 8, "entry4", imageKeyTest);
+    lookupTableTest.addEntry(9, 10, "entry5", imageKeyTest);
 
-        for (int i = 0; i < rollCount; i++) {
+    assertEquals(5, lookupTableTest.getEntryList().size());
 
-            int randomRoll = ThreadLocalRandom.current().nextInt(1, 20);
-            String actualEntry = lookupTableTest.getLookup(Integer.toString(randomRoll)).getValue();
+    lookupTableTest.clearEntries();
 
-            if (randomRoll >= 1 && randomRoll < 6) {
-                assertEquals(expectedEntry1, actualEntry);
-            }
+    assertEquals(0, lookupTableTest.getEntryList().size());
+  }
 
-            if (randomRoll >= 6 && randomRoll < 11) {
-                assertEquals(expectedEntry2, actualEntry);
-            }
+  @Test
+  public void testShouldConvertLookupTableToDtoAndBackAgain() {
+    LookupTable lookupTableTest = new LookupTable();
 
-            if (randomRoll >= 11 && randomRoll < 21) {
-                assertEquals(expectedEntry3, actualEntry);
-            }
-        }
-    }
+    LookupTableDto lookupTableDtoTest = lookupTableTest.toDto();
 
-    @Test
-    public void testShouldGetLookupDirectFromRandomRollsWithinRange() throws ParserException {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
-        int rollCount = 50;
+    assertNotNull(lookupTableDtoTest);
+    assertInstanceOf(LookupTableDto.class, lookupTableDtoTest);
 
-        lookupTableTest.addEntry(1, 5, "entry1", imageKeyTest);
-        lookupTableTest.addEntry(6, 10, "entry2", imageKeyTest);
-        lookupTableTest.addEntry(11, 20, "entry3", imageKeyTest);
+    LookupTable lookupTableFromDto = LookupTable.fromDto(lookupTableDtoTest);
+    assertNotNull(lookupTableFromDto);
+    assertInstanceOf(LookupTable.class, lookupTableFromDto);
+  }
 
-        String expectedEntry1 = "entry1";
-        String expectedEntry2 = "entry2";
-        String expectedEntry3 = "entry3";
+  @Test
+  public void testShouldConvertLookupEntryToDtoAndBackAgain() {
+    MD5Key imageKeyTest =
+        new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
 
-        for (int i = 0; i < rollCount; i++) {
+    LookupTable.LookupEntry lookupEntryTest =
+        new LookupTable.LookupEntry(1, 5, "testEntry", imageKeyTest);
 
-            int randomRoll = ThreadLocalRandom.current().nextInt(1, 20);
-            String actualEntry = lookupTableTest.getLookupDirect(Integer.toString(randomRoll)).getValue();
+    LookupEntryDto lookupEntryDtoTest = lookupEntryTest.toDto();
 
-            if (randomRoll >= 1 && randomRoll < 6) {
-                assertEquals(expectedEntry1, actualEntry);
-            }
+    assertNotNull(lookupEntryDtoTest);
+    assertInstanceOf(LookupEntryDto.class, lookupEntryDtoTest);
 
-            if (randomRoll >= 6 && randomRoll < 11) {
-                assertEquals(expectedEntry2, actualEntry);
-            }
+    LookupTable.LookupEntry actualLookupEntry = LookupTable.LookupEntry.fromDto(lookupEntryDtoTest);
 
-            if (randomRoll >= 11 && randomRoll < 21) {
-                assertEquals(expectedEntry3, actualEntry);
-            }
-        }
-    }
-
-    @Test
-    public void testLookupTableNameLengthValidation() {
-        LookupTable lookupTableTest1 = new LookupTable();
-        lookupTableTest1.setName("");
-
-        LookupTable lookupTableTest2 = new LookupTable();
-        lookupTableTest2.setName(" ");
-
-        LookupTable lookupTableTest3 = new LookupTable();
-        lookupTableTest3.setName("test123");
-
-        LookupTable lookupTableTest4 = new LookupTable();
-        lookupTableTest4.setName("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWZY23456789+-@#!");
-
-        assertTrue(lookupTableTest1.getName().trim().isEmpty());
-        assertTrue(lookupTableTest2.getName().trim().isEmpty());
-        assertFalse(lookupTableTest3.getName().trim().isEmpty());
-        assertFalse(lookupTableTest4.getName().trim().isEmpty());
-    }
-
-    @Test
-    public void testLookupTableShouldClearAllEntries() {
-        LookupTable lookupTableTest = new LookupTable();
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
-
-        lookupTableTest.addEntry(1, 2, "entry1", imageKeyTest);
-        lookupTableTest.addEntry(3, 4, "entry2", imageKeyTest);
-        lookupTableTest.addEntry(5, 6, "entry3", imageKeyTest);
-        lookupTableTest.addEntry(7, 8, "entry4", imageKeyTest);
-        lookupTableTest.addEntry(9, 10, "entry5", imageKeyTest);
-
-        assertEquals(5, lookupTableTest.getEntryList().size());
-
-        lookupTableTest.clearEntries();
-
-        assertEquals(0, lookupTableTest.getEntryList().size());
-    }
-
-    @Test
-    public void testShouldConvertLookupTableToDtoAndBackAgain()
-    {
-        LookupTable lookupTableTest = new LookupTable();
-
-        LookupTableDto lookupTableDtoTest = lookupTableTest.toDto();
-
-        assertNotNull(lookupTableDtoTest);
-        assertInstanceOf(LookupTableDto.class, lookupTableDtoTest);
-
-        LookupTable lookupTableFromDto = LookupTable.fromDto(lookupTableDtoTest);
-        assertNotNull(lookupTableFromDto);
-        assertInstanceOf(LookupTable.class, lookupTableFromDto);
-    }
-
-    @Test
-    public void testShouldConvertLookupEntryToDtoAndBackAgain()
-    {
-        MD5Key imageKeyTest = new MD5Key(new File("src/test/resources/circleToken.png").getAbsolutePath().getBytes());
-
-        LookupTable.LookupEntry lookupEntryTest = new LookupTable.LookupEntry(1, 5, "testEntry", imageKeyTest);
-
-        LookupEntryDto lookupEntryDtoTest = lookupEntryTest.toDto();
-
-        assertNotNull(lookupEntryDtoTest);
-        assertInstanceOf(LookupEntryDto.class, lookupEntryDtoTest);
-
-        LookupTable.LookupEntry actualLookupEntry = LookupTable.LookupEntry.fromDto(lookupEntryDtoTest);
-
-        assertNotNull(actualLookupEntry);
-        assertInstanceOf(LookupTable.LookupEntry.class, actualLookupEntry);
-    }
+    assertNotNull(actualLookupEntry);
+    assertInstanceOf(LookupTable.LookupEntry.class, actualLookupEntry);
+  }
 }
