@@ -1,0 +1,31 @@
+name: Testing
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature*
+      - release*
+  pull_request:
+    branches:
+      - main
+      - develop
+      - feature*
+      - release*
+  merge_group:
+    branches:
+      - develop
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: "21"
+      - name: test
+        run: ./gradlew test
