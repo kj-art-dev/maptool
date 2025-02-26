@@ -17,7 +17,7 @@ on:
     branches:
       - develop
 jobs:
-  formatting:
+  testing:
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
@@ -27,8 +27,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: "21"
-      - name: test
-        run: ./gradlew test
+      - name: Run tests
+        run: ./gradlew test --continue
   build:
     name: ${{ matrix.os }} w/JDK ${{ matrix.java }}
     runs-on:  ${{ matrix.os }}
@@ -58,4 +58,4 @@ jobs:
       - name: Build with Gradle
         uses: GabrielBB/xvfb-action@v1.0
         with:
-          run: ./gradlew build test --no-daemon
+          run: ./gradlew build --no-daemon
