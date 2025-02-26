@@ -60,4 +60,6 @@ jobs:
         with:
           run: ./gradlew build --no-daemon
       - name: Test with Gradle
-        run: ./gradlew test --tests *
+        uses: GabrielBB/xvfb-action@v1.0
+        with:
+          run: ./gradlew test
