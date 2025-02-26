@@ -60,4 +60,4 @@ jobs:
         with:
           run: ./gradlew build --no-daemon
       - name: Test with Gradle
-        run: ./gradlew test --tests
+        run: ./gradlew test --tests *
