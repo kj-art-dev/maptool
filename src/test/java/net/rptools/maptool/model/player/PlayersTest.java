@@ -16,7 +16,6 @@ package net.rptools.maptool.model.player;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
 
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -31,7 +30,6 @@ import javax.crypto.NoSuchPaddingException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.util.cipher.CipherUtil;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.mockito.Mockito.*;
 
 class PlayersTest {
@@ -293,32 +291,22 @@ class PlayersTest {
     assertNotNull(testPlayers);
   }
 
-  //    @Test
-  //    void testShouldGetPlayerInfo()
-  //    {
-  //        PlayerDatabase mockPlayerDatabase = Mockito.mock(PlayerDatabase.class);
-  //        Players testPlayers = new Players(mockPlayerDatabase);
+  //  @Test
+  //  void testShouldGetPlayer() {
+  //    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
+  //    Players testPlayers = new Players(playerDatabase);
   //
-  //        when(testPlayers.getPlayersInfo())
-  //        assertNotNull(testPlayers.getPlayersInfo("player1"));
-  //    }
-
-  @Test
-  void testShouldGetPlayer() {
-    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
-    Players testPlayers = new Players(playerDatabase);
-
-    PlayerDatabase mockPlayerDatabase = Mockito.mock(PlayerDatabase.class);
-    Players mockPlayers = Mockito.mock(Players.class);
-
-    CompletableFuture<PlayerInfo> mockPlayerInfoFuture = Mockito.mock(CompletableFuture.class);
-
-    when(mockPlayers.getPlayer("John Doe").thenAccept(mockPlayerInfoFuture::complete));
-
-    assertEquals(mockPlayers, testPlayers);
-    //        assertEquals(mockPlayers, testPlayers.getPlayer("John Doe"));
-
-  }
+  //    PlayerDatabase mockPlayerDatabase = Mockito.mock(PlayerDatabase.class);
+  //    Players mockPlayers = Mockito.mock(Players.class);
+  //
+  //    CompletableFuture<PlayerInfo> mockPlayerInfoFuture = Mockito.mock(CompletableFuture.class);
+  //
+  //    when(mockPlayers.getPlayer("John Doe").thenAccept(mockPlayerInfoFuture::complete));
+  //
+  //    assertEquals(mockPlayers, testPlayers);
+  //    //        assertEquals(mockPlayers, testPlayers.getPlayer("John Doe"));
+  //
+  //  }
 
   @Test
   void testGetPlayerEmpty() {
