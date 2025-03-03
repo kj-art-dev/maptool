@@ -22,114 +22,118 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class DummyAStarSquareEuclideanWalker extends AbstractAStarWalker {
-    private static final Logger log = LogManager.getLogger(DummyAStarSquareEuclideanWalker.class);
+  private static final Logger log = LogManager.getLogger(DummyAStarSquareEuclideanWalker.class);
 
-    private static final int[] NORTH = {0, -1};
-    private static final int[] WEST = {-1, 0};
-    private static final int[] SOUTH = {0, 1};
-    private static final int[] EAST = {1, 0};
-    private static final int[] NORTH_EAST = {1, -1};
-    private static final int[] SOUTH_EAST = {1, 1};
-    private static final int[] NORTH_WEST = {-1, -1};
-    private static final int[] SOUTH_WEST = {-1, 1};
+  private static final int[] NORTH = {0, -1};
+  private static final int[] WEST = {-1, 0};
+  private static final int[] SOUTH = {0, 1};
+  private static final int[] EAST = {1, 0};
+  private static final int[] NORTH_EAST = {1, -1};
+  private static final int[] SOUTH_EAST = {1, 1};
+  private static final int[] NORTH_WEST = {-1, -1};
+  private static final int[] SOUTH_WEST = {-1, 1};
 
-    private final WalkerMetric metric;
+  private final WalkerMetric metric;
 
-    private final int[][] neighborMap;
+  private final int[][] neighborMap;
 
-    private double diagonalMultiplier = 1;
+  private double diagonalMultiplier = 1;
 
-    // If we exposed this list of coordinates to the user, they could define their own movement
-    // criteria, including whether to favor the diagonals or the non-diagonals.
-    public int[][] switchWalkerMetric(WalkerMetric metric) {
-        switch (metric) {
-            case NO_DIAGONALS:
-                return new int[][] {NORTH, EAST, SOUTH, WEST};
-            case ONE_TWO_ONE:
-                diagonalMultiplier = 1.5;
-                return new int[][] {NORTH, EAST, SOUTH, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
-            case MANHATTAN:
-                diagonalMultiplier = 2;
-            case ONE_ONE_ONE:
-                return new int[][] {NORTH, EAST, SOUTH, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
-            default:
-                // promote diagonals over straight directions by putting them at the front of the array
-                return new int[][] {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST, NORTH, EAST, SOUTH, WEST};
-        }
+  // If we exposed this list of coordinates to the user, they could define their own movement
+  // criteria, including whether to favor the diagonals or the non-diagonals.
+  public int[][] switchWalkerMetric(WalkerMetric metric) {
+    switch (metric) {
+      case NO_DIAGONALS:
+        return new int[][] {NORTH, EAST, SOUTH, WEST};
+      case ONE_TWO_ONE:
+        diagonalMultiplier = 1.5;
+        return new int[][] {
+          NORTH, EAST, SOUTH, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
+        };
+      case MANHATTAN:
+        diagonalMultiplier = 2;
+      case ONE_ONE_ONE:
+        return new int[][] {
+          NORTH, EAST, SOUTH, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
+        };
+      default:
+        // promote diagonals over straight directions by putting them at the front of the array
+        return new int[][] {
+          NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST, NORTH, EAST, SOUTH, WEST
+        };
     }
-    public DummyAStarSquareEuclideanWalker(Zone zone, WalkerMetric metric) {
-        super(zone);
+  }
 
-        this.metric = metric;
-        this.neighborMap = switchWalkerMetric(metric);
+  public DummyAStarSquareEuclideanWalker(Zone zone, WalkerMetric metric) {
+    super(zone);
 
-    }
+    this.metric = metric;
+    this.neighborMap = switchWalkerMetric(metric);
+  }
 
+  @Override
+  protected double getDiagonalMultiplier(int[] neighborArray) {
+    if (Arrays.equals(neighborArray, NORTH_EAST)
+        || Arrays.equals(neighborArray, SOUTH_EAST)
+        || Arrays.equals(neighborArray, SOUTH_WEST)
+        || Arrays.equals(neighborArray, NORTH_WEST)) return diagonalMultiplier;
+    else return 1;
+  }
 
+  private double metricDistance(AStarCellPoint current, CellPoint goal) {
+    int xDist = current.position.x - goal.x;
+    int yDist = current.position.y - goal.y;
 
-    @Override
-    protected double getDiagonalMultiplier(int[] neighborArray) {
-        if (Arrays.equals(neighborArray, NORTH_EAST)
-                || Arrays.equals(neighborArray, SOUTH_EAST)
-                || Arrays.equals(neighborArray, SOUTH_WEST)
-                || Arrays.equals(neighborArray, NORTH_WEST)) return diagonalMultiplier;
-        else return 1;
-    }
+    double distance;
+    int crossProductTieBreaker;
 
-    private double metricDistance(AStarCellPoint current, CellPoint goal) {
-        int xDist = current.position.x - goal.x;
-        int yDist = current.position.y - goal.y;
+    switch (metric) {
+      case MANHATTAN:
+      case NO_DIAGONALS:
+        distance = Math.abs(xDist) + Math.abs(yDist);
+        break;
+      default:
+      case ONE_ONE_ONE:
+      case ONE_TWO_ONE:
+        xDist = Math.abs(current.position.x - goal.x);
+        yDist = Math.abs(current.position.y - goal.y);
 
-        double distance;
-        int crossProductTieBreaker;
+        final int remainingDiagonals = Math.min(xDist, yDist);
+        final int remainingStraights = Math.abs(xDist - yDist);
+        // The floor operation does 1-2-1 for the remaining path; we need to adjust that according
+        // to the prior path.
+        final int evenOddDiagonalAdjustment =
+            (current.isOddStepOfOneTwoOneMovement() && remainingDiagonals % 2 != 0 ? 1 : 0);
+        distance =
+            evenOddDiagonalAdjustment
+                + Math.floor(diagonalMultiplier * remainingDiagonals)
+                + remainingStraights;
 
-        switch (metric) {
-            case MANHATTAN:
-            case NO_DIAGONALS:
-                distance = Math.abs(xDist) + Math.abs(yDist);
-                break;
-            default:
-            case ONE_ONE_ONE:
-            case ONE_TWO_ONE:
-                xDist = Math.abs(current.position.x - goal.x);
-                yDist = Math.abs(current.position.y - goal.y);
-
-                final int remainingDiagonals = Math.min(xDist, yDist);
-                final int remainingStraights = Math.abs(xDist - yDist);
-                // The floor operation does 1-2-1 for the remaining path; we need to adjust that according
-                // to the prior path.
-                final int evenOddDiagonalAdjustment =
-                        (current.isOddStepOfOneTwoOneMovement() && remainingDiagonals % 2 != 0 ? 1 : 0);
-                distance =
-                        evenOddDiagonalAdjustment
-                                + Math.floor(diagonalMultiplier * remainingDiagonals)
-                                + remainingStraights;
-
-                break;
-        }
-
-        // break ties to prefer better looking paths that are along the straight line from the
-        // starting point to the goal
-        if ((goal.x > current.position.x && goal.y > current.position.y)
-                || (goal.x < current.position.x && goal.y < current.position.y)) {
-            crossProductTieBreaker = Math.abs(xDist * crossY - crossX * yDist);
-        } else {
-            crossProductTieBreaker = Math.abs(xDist * crossY + crossX * yDist);
-        }
-        // Important: this reduction is >0 and <<1, meaning it can only distinguish between otherwise
-        // equally scored cells.
-        distance -= 0.1 / (1.0 + crossProductTieBreaker);
-
-        return distance;
+        break;
     }
 
-    @Override
-    public int[][] getNeighborMap(int x, int y) {
-        return neighborMap;
+    // break ties to prefer better looking paths that are along the straight line from the
+    // starting point to the goal
+    if ((goal.x > current.position.x && goal.y > current.position.y)
+        || (goal.x < current.position.x && goal.y < current.position.y)) {
+      crossProductTieBreaker = Math.abs(xDist * crossY - crossX * yDist);
+    } else {
+      crossProductTieBreaker = Math.abs(xDist * crossY + crossX * yDist);
     }
+    // Important: this reduction is >0 and <<1, meaning it can only distinguish between otherwise
+    // equally scored cells.
+    distance -= 0.1 / (1.0 + crossProductTieBreaker);
 
-    @Override
-    protected double hScore(AStarCellPoint p1, CellPoint p2) {
-        return metricDistance(p1, p2);
-    }
+    return distance;
+  }
+
+  @Override
+  public int[][] getNeighborMap(int x, int y) {
+    return neighborMap;
+  }
+
+  @Override
+  protected double hScore(AStarCellPoint p1, CellPoint p2) {
+    return metricDistance(p1, p2);
+  }
 }
