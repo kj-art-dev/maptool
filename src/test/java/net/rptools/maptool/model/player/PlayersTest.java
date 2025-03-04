@@ -17,362 +17,146 @@ package net.rptools.maptool.model.player;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.beans.PropertyChangeListener;
-import java.lang.reflect.InvocationTargetException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import javax.crypto.NoSuchPaddingException;
-import net.rptools.lib.MD5Key;
-import net.rptools.maptool.util.cipher.CipherUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 class PlayersTest {
 
-  class PlayerDatabaseStub implements PlayerDatabase {
+  @Mock private PlayerDatabase mockPlayerDatabase;
 
-    @Override
-    public boolean playerExists(String playerName) {
-      return false;
-    }
+  @InjectMocks private Players players;
 
-    @Override
-    public Player getPlayer(String playerName)
-        throws NoSuchAlgorithmException, InvalidKeySpecException {
-      return mock(Player.class);
-    }
-
-    @Override
-    public boolean supportsDisabling() {
-      return false;
-    }
-
-    @Override
-    public boolean supportsAsymmetricalKeys() {
-      return false;
-    }
-
-    @Override
-    public boolean supportsRolePasswords() {
-      return false;
-    }
-
-    @Override
-    public boolean isBlocked(Player player) {
-      return false;
-    }
-
-    @Override
-    public String getBlockedReason(Player player) {
-      return "Just been blocked";
-    }
-
-    @Override
-    public Set<Player> getOnlinePlayers() {
-      return Set.of();
-    }
-
-    @Override
-    public AuthMethod getAuthMethod(Player player) {
-      return null;
-    }
-
-    @Override
-    public CompletableFuture<CipherUtil.Key> getPublicKey(Player player, MD5Key md5key)
-        throws ExecutionException, InterruptedException {
-      return null;
-    }
-
-    @Override
-    public Set<String> getEncodedPublicKeys(String name) {
-      return Set.of();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasPublicKey(Player player, MD5Key md5key) {
-      return null;
-    }
-
-    @Override
-    public boolean isPlayerRegistered(String name)
-        throws InterruptedException, InvocationTargetException {
-      return false;
-    }
-
-    @Override
-    public void playerSignedIn(Player player) {}
-
-    @Override
-    public void playerSignedOut(Player player) {}
-
-    @Override
-    public boolean isPlayerConnected(String name) {
-      return false;
-    }
-  }
-
-  class PersistedPlayerDatabaseStub implements PersistedPlayerDatabase {
-
-    @Override
-    public void disablePlayer(String player, String reason) throws PasswordDatabaseException {}
-
-    @Override
-    public void addPlayerSharedPassword(String name, Player.Role role, String password)
-        throws NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            NoSuchPaddingException,
-            InvalidKeyException {}
-
-    @Override
-    public void addPlayerAsymmetricKey(String name, Player.Role role, Set<String> publicKeyStrings)
-        throws NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            NoSuchPaddingException,
-            InvalidKeyException,
-            InvalidAlgorithmParameterException {}
-
-    @Override
-    public void setSharedPassword(String name, String password)
-        throws NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            InvalidKeyException {}
-
-    @Override
-    public void setAsymmetricKeys(String name, Set<String> keys)
-        throws NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            InvalidKeyException,
-            InvalidAlgorithmParameterException {}
-
-    @Override
-    public void addAsymmetricKeys(String name, Set<String> keys)
-        throws NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            InvalidKeyException,
-            InvalidAlgorithmParameterException {}
-
-    @Override
-    public boolean isPersisted(String name) {
-      return false;
-    }
-
-    @Override
-    public void deletePlayer(String name) {}
-
-    @Override
-    public void blockPlayer(String name, String reason) {}
-
-    @Override
-    public void unblockPlayer(String name) {}
-
-    @Override
-    public void setRole(String name, Player.Role role) {}
-
-    @Override
-    public void commitChanges()
-        throws NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            InvalidKeyException {}
-
-    @Override
-    public void rollbackChanges()
-        throws NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidKeySpecException,
-            PasswordDatabaseException,
-            InvalidKeyException {}
-
-    @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener) {}
-
-    @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener) {}
-
-    @Override
-    public boolean playerExists(String playerName) {
-      return false;
-    }
-
-    @Override
-    public Player getPlayer(String playerName)
-        throws NoSuchAlgorithmException, InvalidKeySpecException {
-      return null;
-    }
-
-    @Override
-    public boolean supportsDisabling() {
-      return false;
-    }
-
-    @Override
-    public boolean supportsAsymmetricalKeys() {
-      return false;
-    }
-
-    @Override
-    public boolean supportsRolePasswords() {
-      return false;
-    }
-
-    @Override
-    public boolean isBlocked(Player player) {
-      return false;
-    }
-
-    @Override
-    public String getBlockedReason(Player player) {
-      return "";
-    }
-
-    @Override
-    public Set<Player> getOnlinePlayers() {
-      return Set.of();
-    }
-
-    @Override
-    public AuthMethod getAuthMethod(Player player) {
-      return null;
-    }
-
-    @Override
-    public CompletableFuture<CipherUtil.Key> getPublicKey(Player player, MD5Key md5key)
-        throws ExecutionException, InterruptedException {
-      return null;
-    }
-
-    @Override
-    public Set<String> getEncodedPublicKeys(String name) {
-      return Set.of();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasPublicKey(Player player, MD5Key md5key) {
-      return null;
-    }
-
-    @Override
-    public boolean isPlayerRegistered(String name)
-        throws InterruptedException, InvocationTargetException {
-      return false;
-    }
-
-    @Override
-    public void playerSignedIn(Player player) {}
-
-    @Override
-    public void playerSignedOut(Player player) {}
-
-    @Override
-    public boolean isPlayerConnected(String name) {
-      return false;
-    }
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
   }
 
   @Test
-  void testShouldCreateValidPlayersObject() {
-    PlayerDatabaseStub mockPlayerDatabase = new PlayerDatabaseStub();
-    Players testPlayers = new Players(mockPlayerDatabase);
+  void testShouldGetPlayerInfo() throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-    assertNotNull(testPlayers);
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+
+    when(mockPlayerDatabase.playerExists("John Doe")).thenReturn(true);
+
+    assertTrue(mockPlayerDatabase.playerExists("John Doe"));
+
+    verify(mockPlayerDatabase, times(1)).playerExists("John Doe");
   }
-
-  //  @Test
-  //  void testShouldGetPlayer() {
-  //    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
-  //    Players testPlayers = new Players(playerDatabase);
-  //
-  //    PlayerDatabase mockPlayerDatabase = Mockito.mock(PlayerDatabase.class);
-  //    Players mockPlayers = Mockito.mock(Players.class);
-  //
-  //    CompletableFuture<PlayerInfo> mockPlayerInfoFuture = Mockito.mock(CompletableFuture.class);
-  //
-  //    when(mockPlayers.getPlayer("John Doe").thenAccept(mockPlayerInfoFuture::complete));
-  //
-  //    assertEquals(mockPlayers, testPlayers);
-  //    //        assertEquals(mockPlayers, testPlayers.getPlayer("John Doe"));
-  //
-  //  }
 
   @Test
   void testGetPlayerEmpty() {
-    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
-    Players testPlayers = new Players(playerDatabase);
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+    players = new Players(mockPlayerDatabase);
 
-    assertNotNull(testPlayers.getPlayer());
+    assertNotNull(players.getPlayer());
   }
 
   @Test
   void getConnectedPlayers() {
-    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
-    Players testPlayers = new Players(playerDatabase);
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+    players = new Players(mockPlayerDatabase);
 
-    assertNotNull(testPlayers.getConnectedPlayers());
+    assertNotNull(players.getConnectedPlayers());
   }
 
   @Test
   void getDatabasePlayers() {
-    PlayerDatabaseStub playerDatabase = new PlayerDatabaseStub();
-    Players testPlayers = new Players(playerDatabase);
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+    players = new Players(mockPlayerDatabase);
 
-    assertNotNull(testPlayers.getDatabasePlayers());
+    assertNotNull(players.getDatabasePlayers());
+
+    verify(mockPlayerDatabase, times(1)).getAllPlayers();
   }
 
   @Test
-  void addPlayerWithPassword() {}
+  void addPlayerWithPassword() {
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+    players = new Players(mockPlayerDatabase);
+
+    players.addPlayerWithPassword("John Doe", Player.Role.PLAYER, "password");
+
+    assertNotNull(players.getPlayer("John Doe"));
+
+    verify(mockPlayerDatabase, times(1)).playerExists("John Doe");
+  }
 
   @Test
-  void addPlayerWithPublicKey() {}
+  void addPlayerWithPublicKey() {
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+    players = new Players(mockPlayerDatabase);
+
+    players.addPlayerWithPublicKey("John Doe", Player.Role.PLAYER, "publicKey");
+
+    assertNotNull(players.getPlayer("John Doe"));
+
+    verify(mockPlayerDatabase, times(1)).playerExists("John Doe");
+  }
 
   @Test
-  void setPublicKeys() {}
+  void setPublicKeys() {
+    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
 
-  @Test
-  void setPassword() {
-    PersistedPlayerDatabaseStub persistedPlayerDatabaseStub = new PersistedPlayerDatabaseStub();
-    Players testPlayers = new Players(persistedPlayerDatabaseStub);
+    players = new Players(mockPlayerDatabase);
 
     assertEquals(
-        Players.ChangePlayerStatus.OK, testPlayers.setPassword("John Doe", "test_password"));
+        Players.ChangePlayerStatus.NOT_SUPPORTED, players.setPublicKeys("John Doe", "publicKey"));
+  }
+
+  @Test
+  void setPassword()
+      throws NoSuchPaddingException,
+          NoSuchAlgorithmException,
+          InvalidKeySpecException,
+          PasswordDatabaseException,
+          InvalidKeyException {
+    PersistedPlayerDatabase persistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
+
+    players = new Players(persistedPlayerDatabase);
+
+    Players.ChangePlayerStatus result = players.setPassword("testUser", "testPassword");
+
+    assertEquals(Players.ChangePlayerStatus.OK, result);
+
+    verify(persistedPlayerDatabase, times(1)).setSharedPassword("testUser", "testPassword");
   }
 
   @Test
   void setRole() {
-    PersistedPlayerDatabaseStub persistedPlayerDatabaseStub = new PersistedPlayerDatabaseStub();
-    Players testPlayers = new Players(persistedPlayerDatabaseStub);
+    PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
 
-    assertEquals(
-        Players.ChangePlayerStatus.OK, testPlayers.setRole("John Doe", Player.Role.PLAYER));
+    players = new Players(mockPersistedPlayerDatabase);
+
+    assertEquals(Players.ChangePlayerStatus.OK, players.setRole("John Doe", Player.Role.PLAYER));
+
+    verify(mockPersistedPlayerDatabase, times(1)).setRole("John Doe", Player.Role.PLAYER);
   }
 
   @Test
   void blockPlayer() {
-    PersistedPlayerDatabaseStub persistedPlayerDatabaseStub = new PersistedPlayerDatabaseStub();
-    Players testPlayers = new Players(persistedPlayerDatabaseStub);
+    PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
+    players = new Players(mockPersistedPlayerDatabase);
 
     assertEquals(
-        Players.ChangePlayerStatus.OK, testPlayers.blockPlayer("John Doe", "Just been blocked"));
+        Players.ChangePlayerStatus.OK, players.blockPlayer("John Doe", "Just been blocked"));
+
+    verify(mockPersistedPlayerDatabase, times(1)).blockPlayer(anyString(), anyString());
   }
 
   @Test
   void unblockPlayer() {
-    PersistedPlayerDatabaseStub persistedPlayerDatabaseStub = new PersistedPlayerDatabaseStub();
-    Players testPlayers = new Players(persistedPlayerDatabaseStub);
+    PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
+    players = new Players(mockPersistedPlayerDatabase);
 
-    assertEquals(Players.ChangePlayerStatus.OK, testPlayers.unblockPlayer("John Doe"));
+    assertEquals(Players.ChangePlayerStatus.OK, players.unblockPlayer("John Doe"));
+
+    verify(mockPersistedPlayerDatabase, times(1)).unblockPlayer(anyString());
   }
 }
