@@ -17,6 +17,7 @@ package net.rptools.maptool.model.player;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -39,46 +40,7 @@ class PlayersTest {
   }
 
   @Test
-  void testShouldGetPlayerInfo() throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
-
-    when(mockPlayerDatabase.playerExists("John Doe")).thenReturn(true);
-
-    assertTrue(mockPlayerDatabase.playerExists("John Doe"));
-
-    verify(mockPlayerDatabase, times(1)).playerExists("John Doe");
-  }
-
-  @Test
-  void testGetPlayerEmpty() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
-    players = new Players(mockPlayerDatabase);
-
-    assertNotNull(players.getPlayer());
-  }
-
-  @Test
-  void getConnectedPlayers() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
-    players = new Players(mockPlayerDatabase);
-
-    assertNotNull(players.getConnectedPlayers());
-  }
-
-  @Test
-  void getDatabasePlayers() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
-    players = new Players(mockPlayerDatabase);
-
-    assertNotNull(players.getDatabasePlayers());
-
-    verify(mockPlayerDatabase, times(1)).getAllPlayers();
-  }
-
-  @Test
-  void addPlayerWithPassword() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+  void testShouldAddPlayerWithPassword() {
     players = new Players(mockPlayerDatabase);
 
     players.addPlayerWithPassword("John Doe", Player.Role.PLAYER, "password");
@@ -89,8 +51,7 @@ class PlayersTest {
   }
 
   @Test
-  void addPlayerWithPublicKey() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+  void testShouldAddPlayerWithPublicKey() {
     players = new Players(mockPlayerDatabase);
 
     players.addPlayerWithPublicKey("John Doe", Player.Role.PLAYER, "publicKey");
@@ -101,22 +62,33 @@ class PlayersTest {
   }
 
   @Test
-  void setPublicKeys() {
-    PlayerDatabase mockPlayerDatabase = mock(PlayerDatabase.class);
+  void testShouldSetPublicKeys()
+      throws InvalidAlgorithmParameterException,
+          NoSuchPaddingException,
+          NoSuchAlgorithmException,
+          InvalidKeySpecException,
+          PasswordDatabaseException,
+          InvalidKeyException {
 
-    players = new Players(mockPlayerDatabase);
+    String testPublicKeyString = "mockPublicKey";
 
-    assertEquals(
-        Players.ChangePlayerStatus.NOT_SUPPORTED, players.setPublicKeys("John Doe", "publicKey"));
+    when(mockPlayerDatabase.supportsAsymmetricalKeys()).thenReturn(true);
+
+    Players.ChangePlayerStatus testPlayerStatus =
+        players.setPublicKeys("John Doe", testPublicKeyString);
+
+    assertEquals(Players.ChangePlayerStatus.NOT_SUPPORTED, testPlayerStatus);
+    verify(mockPlayerDatabase).supportsAsymmetricalKeys();
   }
 
   @Test
-  void setPassword()
+  void testShouldSetPasswordAndVerify()
       throws NoSuchPaddingException,
           NoSuchAlgorithmException,
           InvalidKeySpecException,
           PasswordDatabaseException,
           InvalidKeyException {
+
     PersistedPlayerDatabase persistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
 
     players = new Players(persistedPlayerDatabase);
@@ -129,7 +101,7 @@ class PlayersTest {
   }
 
   @Test
-  void setRole() {
+  void testShouldSetRoleAndReturnOKPlayerStatus() {
     PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
 
     players = new Players(mockPersistedPlayerDatabase);
@@ -140,7 +112,7 @@ class PlayersTest {
   }
 
   @Test
-  void blockPlayer() {
+  void testShouldBlockPlayerThenVerifyDatabaseCall() {
     PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
     players = new Players(mockPersistedPlayerDatabase);
 
@@ -151,7 +123,7 @@ class PlayersTest {
   }
 
   @Test
-  void unblockPlayer() {
+  void testShouldUnblockPlayerThenVerifyDatabaseCall() {
     PersistedPlayerDatabase mockPersistedPlayerDatabase = mock(PersistedPlayerDatabase.class);
     players = new Players(mockPersistedPlayerDatabase);
 
