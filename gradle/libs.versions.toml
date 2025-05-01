@@ -8,7 +8,7 @@ flatlaf = "3.5.4"
 handlebars = "4.4.0"
 jai-imageio = "1.4.0"
 graalvm-js = "21.2.0"
-pdfbox = "3.0.0"
+pdfbox = "3.0.4"
 protoc = "4.29.1"
 
 [libraries]
