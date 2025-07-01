@@ -80,7 +80,6 @@ public class PointerTool extends DefaultTool {
 
   // Hovers
   private boolean isShowingHover;
-  private Area hoverTokenBounds;
   private String hoverTokenNotes;
 
   // Track token interactions to hide statsheets when doing other stuff
@@ -398,7 +397,6 @@ public class PointerTool extends DefaultTool {
 
     if (isShowingHover) {
       isShowingHover = false;
-      hoverTokenBounds = null;
       hoverTokenNotes = null;
       markerUnderMouse = renderer.getMarkerAt(e.getX(), e.getY());
       repaint();
@@ -480,6 +478,8 @@ public class PointerTool extends DefaultTool {
 
   @Override
   public void mouseReleased(MouseEvent e) {
+    super.mouseReleased(e);
+
     mouseButtonDown = false;
 
     if (isShowingTokenStackPopup) {
@@ -512,12 +512,7 @@ public class PointerTool extends DefaultTool {
             && !isShowingHover
             && tokenDragOp == null) {
           isShowingHover = true;
-          hoverTokenBounds = renderer.getMarkerBounds(markerUnderMouse);
           hoverTokenNotes = createHoverNote(markerUnderMouse);
-          if (hoverTokenBounds == null) {
-            // Uhhhh, where's the token ?
-            isShowingHover = false;
-          }
           repaint();
         }
         // SELECTION BOUND BOX
@@ -860,25 +855,7 @@ public class PointerTool extends DefaultTool {
     actionMap.put(AppActions.CUT_TOKENS.getKeyStroke(), AppActions.CUT_TOKENS);
     actionMap.put(AppActions.COPY_TOKENS.getKeyStroke(), AppActions.COPY_TOKENS);
     actionMap.put(AppActions.PASTE_TOKENS.getKeyStroke(), AppActions.PASTE_TOKENS);
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_R, AppActions.menuShortcut),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (renderer.getSelectedTokenSet().isEmpty()) {
-              return;
-            }
-            Toolbox toolbox = MapTool.getFrame().getToolbox();
-
-            FacingTool tool = toolbox.getTool(FacingTool.class);
-            tool.init(
-                renderer.getZone().getToken(renderer.getSelectedTokenSet().iterator().next()),
-                renderer.getSelectedTokenSet());
-
-            toolbox.setSelectedTool(FacingTool.class);
-          }
-        });
+    actionMap.put(AppActions.SET_FACING_ACTION.getKeyStroke(), AppActions.SET_FACING_ACTION);
 
     actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.getDeleteTokenAction());
     actionMap.put(
@@ -1011,55 +988,15 @@ public class PointerTool extends DefaultTool {
         });
 
     actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_I, AppActions.menuShortcut),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (MapTool.getPlayer().isGM()
-                || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
-              FogUtil.exposeVisibleArea(
-                  renderer, renderer.getOwnedTokens(renderer.getSelectedTokenSet()));
-            }
-          }
-        });
+        AppActions.EXPOSE_VISIBLE_AREA_ACTION.getKeyStroke(),
+        AppActions.EXPOSE_VISIBLE_AREA_ACTION);
     actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_O, AppActions.menuShortcut | InputEvent.SHIFT_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            // Only let the GM's do this
-            if (MapTool.getPlayer().isGM()) {
-              FogUtil.exposePCArea(renderer);
-            }
-          }
-        });
+        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION.getKeyStroke(),
+        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION);
     actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_F, AppActions.menuShortcut | InputEvent.SHIFT_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            // Only let the GM's do this
-            if (MapTool.getPlayer().isGM()) {
-              FogUtil.exposeAllOwnedArea(renderer);
-            }
-          }
-        });
+        AppActions.EXPOSE_ALL_OWNED_ACTION.getKeyStroke(), AppActions.EXPOSE_ALL_OWNED_ACTION);
     actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_P, AppActions.menuShortcut),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (MapTool.getPlayer().isGM()
-                || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
-              FogUtil.exposeLastPath(
-                  renderer, renderer.getOwnedTokens(renderer.getSelectedTokenSet()));
-            }
-          }
-        });
+        AppActions.EXPOSE_LAST_PATH_ACTION.getKeyStroke(), AppActions.EXPOSE_LAST_PATH_ACTION);
   }
 
   /**
@@ -1679,16 +1616,8 @@ public class PointerTool extends DefaultTool {
               hoverTokenNotes,
               (int) (renderer.getWidth() * .75),
               (int) (renderer.getHeight() * .75));
-      Point location =
-          new Point(
-              hoverTokenBounds.getBounds().x
-                  + hoverTokenBounds.getBounds().width / 2
-                  - size.width / 2,
-              hoverTokenBounds.getBounds().y);
-
       // Anchor in the bottom left corner
-      location.x = 4 + PADDING;
-      location.y = viewSize.height - size.height - 4 - PADDING;
+      Point location = new Point(4 + PADDING, viewSize.height - size.height - 4 - PADDING);
 
       // Keep it on screen
       if (location.x + size.width > viewSize.width) {
@@ -1829,7 +1758,7 @@ public class PointerTool extends DefaultTool {
         return;
       }
 
-      final boolean debugEnabled = DeveloperOptions.Toggle.DebugTokenDragging.isEnabled();
+      final boolean debugEnabled = DeveloperOptions.Toggle.DebugTokenDragging.get();
 
       if (debugEnabled) {
         renderer.setShape3(

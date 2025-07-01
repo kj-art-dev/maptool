@@ -377,6 +377,8 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
   @Override
   public void mouseReleased(MouseEvent e) {
+    super.mouseReleased(e);
+
     if (isShowingTokenStackPopup) {
       if (tokenStackPanel.contains(e.getX(), e.getY())) {
         tokenStackPanel.handleMouseEvent(e);
@@ -636,22 +638,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
     actionMap.put(AppActions.CUT_TOKENS.getKeyStroke(), AppActions.CUT_TOKENS);
     actionMap.put(AppActions.COPY_TOKENS.getKeyStroke(), AppActions.COPY_TOKENS);
     actionMap.put(AppActions.PASTE_TOKENS.getKeyStroke(), AppActions.PASTE_TOKENS);
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_R, AppActions.menuShortcut),
-        new AbstractAction() {
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            if (renderer.getSelectedTokenSet().isEmpty()) {
-              return;
-            }
-            Toolbox toolbox = MapTool.getFrame().getToolbox();
-            FacingTool tool = toolbox.getTool(FacingTool.class);
-            tool.init(
-                renderer.getZone().getToken(renderer.getSelectedTokenSet().iterator().next()),
-                renderer.getSelectedTokenSet());
-            toolbox.setSelectedTool(FacingTool.class);
-          }
-        });
+    actionMap.put(AppActions.SET_FACING_ACTION.getKeyStroke(), AppActions.SET_FACING_ACTION);
     actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.getDeleteTokenAction());
     actionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
@@ -1005,13 +992,8 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
           return;
         }
         // Show sizing controls
-        // getTokenBounds() pulls the data from the tokenLocationCache in ZoneRenderer. That cache
-        // is populated inside renderer.renderTokens(). As long as the cache is created first, we
-        // should
-        // be good, right? This code relies on the order of operations in another class! Ugh!
-        // Double-ugh! :)
-        Area bounds = renderer.getTokenBounds(token);
-        if (bounds == null || renderer.isTokenMoving(token)) {
+        if (!renderer.getViewModel().getOnScreenTokens().contains(token.getId())
+            || renderer.isTokenMoving(token)) {
           continue;
         }
         // Resize
@@ -1179,7 +1161,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
         return;
       }
 
-      final boolean debugEnabled = DeveloperOptions.Toggle.DebugTokenDragging.isEnabled();
+      final boolean debugEnabled = DeveloperOptions.Toggle.DebugTokenDragging.get();
 
       if (debugEnabled) {
         renderer.setShape3(
@@ -1334,8 +1316,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
       // For snap-to-grid tokens (except background stamps) we anchor at the center of the token.
       final var isSnapToGridAndAnchoredAtCenter =
-          tokenBeingResized.isSnapToGrid()
-              && tokenBeingResized.getLayer().anchorSnapToGridAtCenter();
+          tokenBeingResized.isSnapToGrid() && tokenBeingResized.getLayer().isSnapToGridAtCenter();
       final var snapToGridMultiplier = isSnapToGridAndAnchoredAtCenter ? 2 : 1;
       var widthIncrease = adjustment.x * snapToGridMultiplier;
       var heightIncrease = adjustment.y * snapToGridMultiplier;

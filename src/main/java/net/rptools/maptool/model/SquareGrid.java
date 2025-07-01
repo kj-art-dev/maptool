@@ -22,23 +22,23 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Area;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
+import net.rptools.maptool.client.ui.zone.renderer.GridRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -50,8 +50,6 @@ public class SquareGrid extends Grid {
   private static final String alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // $NON-NLS-1$
   private static final Dimension CELL_OFFSET = new Dimension(0, 0);
   private static BufferedImage pathHighlight = RessourceManager.getImage(Images.GRID_BORDER_SQUARE);
-
-  private static List<TokenFootprint> footprintList;
 
   // @formatter:off
   private static final GridCapabilities CAPABILITIES =
@@ -179,9 +177,12 @@ public class SquareGrid extends Grid {
 
       if (x > startX && strX > nextAvailableSpace) {
         g.setColor(Color.black);
-        g.drawString(coord, strX, fm.getHeight());
-        g.setColor(Color.orange);
         g.drawString(coord, strX - 1, fm.getHeight() - 1);
+        g.drawString(coord, strX + 1, fm.getHeight() - 1);
+        g.drawString(coord, strX - 1, fm.getHeight() + 1);
+        g.drawString(coord, strX + 1, fm.getHeight() + 1);
+        g.setColor(Color.orange);
+        g.drawString(coord, strX, fm.getHeight());
 
         nextAvailableSpace = strX + strWidth + 10;
       }
@@ -197,9 +198,12 @@ public class SquareGrid extends Grid {
 
       if (y > fm.getHeight() && strY > nextAvailableSpace) {
         g.setColor(Color.black);
-        g.drawString(coord, 10, strY);
-        g.setColor(Color.yellow);
         g.drawString(coord, 10 - 1, strY - 1);
+        g.drawString(coord, 10 + 1, strY - 1);
+        g.drawString(coord, 10 - 1, strY + 1);
+        g.drawString(coord, 10 + 1, strY + 1);
+        g.setColor(Color.yellow);
+        g.drawString(coord, 10, strY);
 
         nextAvailableSpace = strY + fm.getAscent() / 2 + 10;
       }
@@ -208,18 +212,6 @@ public class SquareGrid extends Grid {
     }
     g.setFont(oldFont);
     SwingUtil.restoreAntiAliasing(g, oldAA);
-  }
-
-  @Override
-  public List<TokenFootprint> getFootprints() {
-    if (footprintList == null) {
-      try {
-        footprintList = loadFootprints("net/rptools/maptool/model/squareGridFootprints.xml");
-      } catch (IOException ioe) {
-        MapTool.showError("SquareGrid.error.squareGridNotLoaded", ioe);
-      }
-    }
-    return footprintList;
   }
 
   @Override
@@ -327,35 +319,26 @@ public class SquareGrid extends Grid {
 
     int startCol = (int) ((int) (bounds.x / gridSize) * gridSize);
     int startRow = (int) ((int) (bounds.y / gridSize) * gridSize);
-
+    Path2D path = new Path2D.Double();
     for (double row = startRow; row < bounds.y + bounds.height + gridSize; row += gridSize) {
-      if (AppState.getGridSize() == 1) {
-        g.drawLine(bounds.x, (int) (row + offY), bounds.x + bounds.width, (int) (row + offY));
-      } else {
-        g.fillRect(
-            bounds.x,
-            (int) (row + offY - (AppState.getGridSize() / 2)),
-            bounds.width,
-            AppState.getGridSize());
-      }
+      path.append(
+          new Line2D.Double(
+              bounds.x, (int) (row + offY), bounds.x + bounds.width, (int) (row + offY)),
+          false);
     }
     for (double col = startCol; col < bounds.x + bounds.width + gridSize; col += gridSize) {
-      if (AppState.getGridSize() == 1) {
-        g.drawLine((int) (col + offX), bounds.y, (int) (col + offX), bounds.y + bounds.height);
-      } else {
-        g.fillRect(
-            (int) (col + offX - (AppState.getGridSize() / 2)),
-            bounds.y,
-            AppState.getGridSize(),
-            bounds.height);
-      }
+      path.append(
+          new Line2D.Double(
+              (int) (col + offX), bounds.y, (int) (col + offX), bounds.y + bounds.height),
+          false);
     }
+    GridRenderer.drawGridShape(g, path);
   }
 
   public ZonePoint getCenterPoint(CellPoint cellPoint) {
     ZonePoint zp = convert(cellPoint);
-    zp.x += getCellWidth() / 2;
-    zp.y += getCellHeight() / 2;
+    zp.x += (int) (getCellWidth() / 2d);
+    zp.y += (int) (getCellHeight() / 2d);
     return zp;
   }
 

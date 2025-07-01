@@ -17,11 +17,11 @@ package net.rptools.maptool.client;
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
+import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.SentryClientFactory;
-import io.sentry.event.BreadcrumbBuilder;
-import io.sentry.event.UserBuilder;
+import io.sentry.SentryEvent;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -207,13 +207,33 @@ public class MapTool {
    * @return the <code>String</code> result
    */
   public static String generateMessage(String msgKey, Throwable t) {
-    String msg;
-    if (t == null) {
-      msg = I18N.getText(msgKey);
-    } else if (msgKey == null) {
-      msg = t.toString();
-    } else {
-      msg = I18N.getText(msgKey) + "<br/>" + t.toString();
+    return generateMessage(msgKey, t, null);
+  }
+
+  /**
+   * Same as {@Link #generateMessage(String, Throwable)} but allows for additional arguments for
+   * formatting the string.
+   *
+   * @param msgKey the string to use when calling {@link I18N#getText(String)}
+   * @param t the exception to be processed
+   * @param params arguments to pass when fetching string.
+   * @return the <code>String</code> result
+   */
+  private static String generateMessage(String msgKey, Throwable t, Object[] params) {
+    String msg = "";
+    if (msgKey != null) {
+      if (params != null) {
+        msg = I18N.getText(msgKey, params);
+      } else {
+        msg = I18N.getText(msgKey);
+      }
+    }
+    if (t != null) {
+      if (msgKey != null) {
+        msg = msg + "<br/>" + t.toString();
+      } else {
+        msg = t.toString();
+      }
     }
     msg = msg.replace("\n", "<br/>");
     return msg;
@@ -297,6 +317,12 @@ public class MapTool {
   public static void showError(String msgKey, Throwable t) {
     String msg = generateMessage(msgKey, t);
     log.error(I18N.getText(msgKey), t);
+    showMessage(msg, "msg.title.messageDialogError", JOptionPane.ERROR_MESSAGE);
+  }
+
+  public static void showError(String msgKey, Throwable t, Object... params) {
+    String msg = generateMessage(msgKey, t, params);
+    log.error(I18N.getText(msgKey, params), t);
     showMessage(msg, "msg.title.messageDialogError", JOptionPane.ERROR_MESSAGE);
   }
 
@@ -1309,6 +1335,7 @@ public class MapTool {
             AppActions.loadCampaign(campaignFile);
           }
         } catch (NoSuchElementException nse) {
+          AppPreferences.loadMruCampaignAtStart.set(false);
           log.info("MRU Campaign not loaded. List is empty.");
         }
       }
@@ -1325,8 +1352,8 @@ public class MapTool {
     new MapToolEventBus().getMainEventBus().register(new StatSheetListener());
     new MapToolEventBus().getMainEventBus().register(new TokenHoverListener());
 
-    final var enabledDeveloperOptions = DeveloperOptions.getEnabledOptions();
-    if (!enabledDeveloperOptions.isEmpty()) {
+    final var enabledDeveloperOptions = DeveloperOptions.Toggle.getEnabledOptions();
+    if (!enabledDeveloperOptions.isEmpty() && !MapTool.isDevelopment()) {
       final var message = new StringBuilder();
       message
           .append("<p>")
@@ -1444,43 +1471,6 @@ public class MapTool {
     return StringUtil.parseInteger(cmd.getOptionValue(searchValue), defaultValue);
   }
 
-  /** An example method that throws an exception. */
-  static void unsafeMethod() {
-    throw new UnsupportedOperationException("You shouldn't call this either!");
-  }
-
-  /** Examples using the (recommended) static API. */
-  static void testSentryAPI() {
-    // Note that all fields set on the context are optional. Context data is copied onto
-    // all future events in the current context (until the context is cleared).
-
-    // Record a breadcrumb in the current context. By default the last 100 breadcrumbs are kept.
-    Sentry.getContext()
-        .recordBreadcrumb(new BreadcrumbBuilder().setMessage("User made an action").build());
-
-    // Set the user in the current context.
-    Sentry.getContext().setUser(new UserBuilder().setEmail("hello@sentry.io").build());
-
-    // Add extra data to future events in this context.
-    Sentry.getContext().addExtra("extra", "thing");
-
-    // Add an additional tag to future events in this context.
-    Sentry.getContext().addTag("tagName", "tagValue");
-
-    /*
-     * This sends a simple event to Sentry using the statically stored instance that was created in the ``main`` method.
-     */
-    Sentry.capture("This is another logWithStaticAPI test");
-
-    try {
-      unsafeMethod();
-    } catch (Exception e) {
-      // This sends an exception event to Sentry using the statically stored instance
-      // that was created in the ``main`` method.
-      Sentry.capture(e);
-    }
-  }
-
   public static String getLoggerFileName() {
     org.apache.logging.log4j.core.Logger loggerImpl = (org.apache.logging.log4j.core.Logger) log;
     Appender appender = loggerImpl.getAppenders().get("LogFile");
@@ -1557,9 +1547,18 @@ public class MapTool {
     }
 
     // Initialize Sentry.io logging
-    Sentry.init();
-    sentry = SentryClientFactory.sentryClient();
-    // testSentryAPI(); // purely for testing...
+    Sentry.init(
+        options -> {
+          options.setEnableExternalConfiguration(true);
+          options.addEventProcessor(
+              new EventProcessor() {
+                @Override
+                public SentryEvent process(@Nonnull SentryEvent event, @Nullable Hint hint) {
+                  event.setRelease(getVersion());
+                  return event;
+                }
+              });
+        });
 
     // Jamz: Overwrite version for testing if passed as command line argument using -v or
     // -version
@@ -1640,11 +1639,10 @@ public class MapTool {
     }
 
     // Set MapTool version
-    sentry.setRelease(getVersion());
-    sentry.addTag("os", System.getProperty("os.name"));
-    sentry.addTag("version", MapTool.getVersion());
-    sentry.addTag("versionImplementation", versionImplementation);
-    sentry.addTag("versionOverride", versionOverride);
+    Sentry.setTag("os", System.getProperty("os.name"));
+    Sentry.setTag("version", MapTool.getVersion());
+    Sentry.setTag("versionImplementation", versionImplementation);
+    Sentry.setTag("versionOverride", versionOverride);
 
     if (listMacros) {
       StringBuilder logOutput = new StringBuilder();

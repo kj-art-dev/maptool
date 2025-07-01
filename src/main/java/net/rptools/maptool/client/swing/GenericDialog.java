@@ -14,35 +14,55 @@
  */
 package net.rptools.maptool.client.swing;
 
-import static com.formdev.flatlaf.FlatClientProperties.*;
-
-import com.formdev.flatlaf.ui.FlatUIUtils;
-import com.formdev.flatlaf.util.UIScale;
+import com.jidesoft.dialog.*;
+import com.jidesoft.swing.*;
+import com.jidesoft.utils.PortingUtils;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Arrays;
-import javax.accessibility.AccessibleContext;
 import javax.swing.*;
+import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.language.I18N;
 
 public class GenericDialog extends JDialog {
-  private static final long serialVersionUID = 6739665491287916519L;
-  private final JPanel panel;
+  public static final String AFFIRM = ButtonPanel.AFFIRMATIVE_BUTTON;
+  public static final String DENY = ButtonPanel.CANCEL_BUTTON;
+  private Dimension _preferredSize = null;
   private boolean hasPositionedItself;
+  private String _dialogResult = ButtonPanel.CANCEL_BUTTON;
+  protected final Resizable _resizable;
+  private final JComponent _contentPane = new JPanel();
+  private JComponent _content = new JPanel();
+  private final JScrollPane _scrollPane = new JScrollPane();
+  private ButtonPanel _buttonPanel;
+  private boolean _usingAbeillePanel = false;
+  private ActionListener _onCloseAction;
+  private ActionListener _onShowAction;
 
-  public GenericDialog(String title, Frame parent, JPanel panel) {
-    this(title, parent, panel, true);
+  public static GenericDialogFactory getFactory() {
+    return new GenericDialogFactory();
   }
 
-  public GenericDialog(String title, Frame parent, JPanel panel, boolean modal) {
-    super(parent, title, modal);
-    setResizable(true);
+  /** Whilst this works. You should use the factory method instead. */
+  public GenericDialog() {
+    super(MapTool.getFrame());
+    super.setContentPane(_contentPane);
+    initComponents();
+
+    _resizable =
+        new Resizable(getRootPane()) {
+          public void resizing(int resizeDir, int newX, int newY, int newW, int newH) {
+            Container container = GenericDialog.this.getContentPane();
+            PortingUtils.setPreferredSize(container, new Dimension(newW, newH));
+            if (GenericDialog.this.isUndecorated()) {
+              GenericDialog.this.setBounds(newX, newY, newW, newH);
+            }
+          }
+        };
+    _resizable.setResizeCornerSize(18);
+    _resizable.setResizableCorners(Resizable.LOWER_LEFT | Resizable.LOWER_RIGHT);
+    super.setResizable(true);
 
     setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-
-    this.panel = panel;
-    setLayout(new GridLayout());
-    JScrollPane scrollPane = new JScrollPane(this.panel);
-    add(scrollPane);
 
     addWindowListener(
         new WindowAdapter() {
@@ -51,37 +71,135 @@ public class GenericDialog extends JDialog {
             closeDialog();
           }
         });
-    addComponentListener(
-        new ComponentAdapter() {
-          private void placeButtons() {
-            if (getSize().width == 0) {
-              return;
-            }
-            if (maximiseBtn == null || restoreBtn == null) {
-              addResizeButtons();
-            }
-            positionResizeButtons();
-          }
+  }
 
-          @Override
-          public void componentResized(ComponentEvent e) {
-            super.componentResized(e);
-            placeButtons();
-          }
+  public GenericDialog(String title, JPanel panel) {
+    this(title, panel, false);
+  }
 
-          @Override
-          public void componentShown(ComponentEvent e) {
-            super.componentShown(e);
-            dBounds = getBounds();
-            placeButtons();
-          }
-        });
+  public GenericDialog(String title, JComponent panel, boolean modal) {
+    this();
+    setDialogTitle(title);
+    setModal(modal);
+    setContent(panel);
+  }
+
+  protected void initComponents() {
+    JideBoxLayout layout = new JideBoxLayout(this.getContentPane(), JideBoxLayout.PAGE_AXIS);
+    this.getContentPane().setLayout(layout);
+    this._scrollPane.setViewportView(getContentPanel());
+    this.getContentPane().add(this._scrollPane, JideBoxLayout.VARY);
+    this.getContentPane().add(this.getButtonPanel(), JideBoxLayout.FIX);
+  }
+
+  @Override
+  public JComponent getContentPane() {
+    return _contentPane;
+  }
+
+  public JComponent getContentPanel() {
+    return _content;
+  }
+
+  @SuppressWarnings("UnusedReturnValue")
+  public ButtonPanel getButtonPanel() {
+    if (_buttonPanel == null) {
+      _buttonPanel = new ScrollableButtonPanel();
+      _buttonPanel.setSizeConstraint(ButtonPanel.NO_LESS_THAN);
+      _buttonPanel.setBorder(UIManager.getDefaults().getBorder("DesktopIcon.border"));
+    }
+    return _buttonPanel;
+  }
+
+  @SuppressWarnings("UnusedReturnValue")
+  public void setDefaultButton(ButtonKind buttonKind) {
+    JButton button = (JButton) _buttonPanel.getButtonByName(buttonKind.name);
+    if (button == null) {
+      addButton(buttonKind);
+      button = (JButton) _buttonPanel.getButtonByName(buttonKind.name);
+    }
+    getRootPane().setDefaultButton(button);
+  }
+
+  public void addButton(ButtonKind buttonKind) {
+    addButton(buttonKind, null, null);
+  }
+
+  public void addButton(ButtonKind buttonKind, Action action) {
+    addButton(buttonKind, action, null);
+  }
+
+  public void addButton(ButtonKind buttonKind, ActionListener listener) {
+    addButton(buttonKind, null, listener);
+  }
+
+  public void addButton(ButtonKind buttonKind, Action action, ActionListener listener) {
+    // check button exists
+    AbstractButton b = (AbstractButton) _buttonPanel.getButtonByName(buttonKind.name);
+    boolean needNewButton = b == null;
+    if (needNewButton) {
+      b = new JButton(buttonKind.i18nText);
+      b.setName(buttonKind.name);
+      b.setMnemonic(buttonKind.i18nMnemonicKeyCode);
+    }
+    if (action != null) {
+      b.setAction(action);
+    } else {
+      if (buttonKind.buttonPanelButtonType.equals(ButtonPanel.AFFIRMATIVE_BUTTON)) {
+        b.setAction(
+            new AbstractAction(I18N.getText(buttonKind.i18nKey)) {
+              @Override
+              public void actionPerformed(ActionEvent e) {
+                setDialogResult(AFFIRM);
+                closeDialog();
+              }
+            });
+      } else if (buttonKind.buttonPanelButtonType.equals(ButtonPanel.CANCEL_BUTTON)) {
+        b.setAction(
+            new AbstractAction(I18N.getText(buttonKind.i18nKey)) {
+              @Override
+              public void actionPerformed(ActionEvent e) {
+                setDialogResult(DENY);
+                closeDialog();
+              }
+            });
+      }
+    }
+    if (listener != null) {
+      b.addActionListener(listener);
+    }
+    if (needNewButton) {
+      this._buttonPanel.addButton(b, buttonKind.buttonPanelButtonType);
+    }
+  }
+
+  public void createOkCancelButtons() {
+    addButton(ButtonKind.OK);
+    addButton(ButtonKind.CANCEL);
+  }
+
+  public void onBeforeShow(ActionListener listener) {
+    _onShowAction = listener;
+  }
+
+  public void onBeforeClose(ActionListener listener) {
+    _onCloseAction = listener;
+  }
+
+  public void setDialogTitle(String title) {
+    super.setTitle(title);
+  }
+
+  public void setContent(JComponent content) {
+    this._content = content;
+    _usingAbeillePanel = content instanceof AbeillePanel;
+    this._scrollPane.setViewportView(content);
 
     // ESCAPE cancels the window without committing
-    this.panel
+    content
         .getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
         .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
-    this.panel
+    content
         .getActionMap()
         .put(
             "cancel",
@@ -92,93 +210,117 @@ public class GenericDialog extends JDialog {
             });
   }
 
+  public AbstractButton getOKButton() {
+    return getButton(ButtonKind.OK);
+  }
+
+  public AbstractButton getCancelButton() {
+    return getButton(ButtonKind.CANCEL);
+  }
+
   public void closeDialog() {
-    dispose();
+    if (_usingAbeillePanel && ((AbeillePanel<?>) _content).getModel() != null) {
+      if (getDialogResult().equals(AFFIRM)) {
+        ((AbeillePanel<?>) _content).commit();
+      }
+      ((AbeillePanel<?>) _content).unbind();
+    }
+    if (_onCloseAction != null) {
+      _onCloseAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "close"));
+    }
+    if (getDefaultCloseOperation() == DISPOSE_ON_CLOSE) {
+      dispose();
+    }
+  }
+
+  public AbstractButton getButton(ButtonKind buttonKind) {
+    return (AbstractButton) _buttonPanel.getButtonByName(buttonKind.name);
+  }
+
+  protected void setDialogResult(String result) {
+    _dialogResult = result;
+  }
+
+  public String getDialogResult() {
+    return _dialogResult;
+  }
+
+  private Dimension getMaxScreenSize() {
+    GraphicsConfiguration gc = getOwner().getGraphicsConfiguration();
+    Insets insets = getOwner().getToolkit().getScreenInsets(gc);
+    Rectangle bounds = gc.getDevice().getDefaultConfiguration().getBounds();
+    return new Dimension(
+        bounds.width - insets.left - insets.right, bounds.height - insets.top - insets.bottom);
+  }
+
+  @Override
+  public Dimension getPreferredSize() {
+    if (_preferredSize == null) {
+      int scrollBarSize = UIManager.getDefaults().getInt("ScrollBar.width");
+      Dimension superPref = super.getPreferredSize();
+      superPref =
+          new Dimension(superPref.width + 2 * scrollBarSize, superPref.height + scrollBarSize);
+      Dimension screenMax = getMaxScreenSize();
+      _preferredSize =
+          new Dimension(
+              Math.min(superPref.width, screenMax.width),
+              Math.min(superPref.height, screenMax.height));
+    }
+    return _preferredSize;
+  }
+
+  @Override
+  public Dimension getMaximumSize() {
+    Dimension superMax = super.getMaximumSize();
+    Dimension screenMax = getMaxScreenSize();
+    return new Dimension(
+        Math.min(superMax.width, screenMax.width), Math.min(superMax.height, screenMax.height));
+  }
+
+  @Override
+  public void setMaximumSize(Dimension maximumSize) {
+    Dimension screenMax = getMaxScreenSize();
+    super.setMaximumSize(
+        new Dimension(
+            Math.min(maximumSize.width, screenMax.width),
+            Math.min(maximumSize.height, screenMax.height)));
+  }
+
+  public String showDialogWithReturnValue() {
+    if (!isModal()) {
+      setModal(true);
+    }
+    setVisible(true);
+    return this.getDialogResult();
   }
 
   public void showDialog() {
-    // We want to center over our parent, but only the first time.
-    // If this dialog is reused, we want it to show up where it was last.
-    if (!hasPositionedItself) {
-      pack();
-      positionInitialView();
-      hasPositionedItself = true;
-    }
     setVisible(true);
+  }
+
+  @Override
+  public void setVisible(boolean visible) {
+    if (visible) {
+      // We want to center over our parent, but only the first time.
+      // If this dialog is reused, we want it to show up where it was last.
+      pack();
+      if (!hasPositionedItself) {
+        positionInitialView();
+        hasPositionedItself = true;
+      }
+      if (_onShowAction != null) {
+        _onShowAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "show"));
+      }
+      if (getRootPane().getDefaultButton() == null && _buttonPanel.getComponents().length == 1) {
+        getRootPane().setDefaultButton((JButton) _buttonPanel.getComponents()[0]);
+      }
+      super.setVisible(true);
+    } else {
+      super.setVisible(visible);
+    }
   }
 
   protected void positionInitialView() {
     SwingUtil.centerOver(this, getOwner());
-  }
-
-  // Resize Button code
-  JButton maximiseBtn, restoreBtn;
-  JLayeredPane layeredPane = getLayeredPane();
-  Dimension buttonSize = FlatUIUtils.getSubUIDimension("TitlePane.buttonSize", null);
-  Window w = SwingUtilities.getWindowAncestor(SwingUtilities.getRoot(layeredPane));
-  String defaultWindowStyle =
-      (w != null && w.getType() == Window.Type.UTILITY) ? WINDOW_STYLE_SMALL : null;
-  String windowStyle =
-      clientProperty(layeredPane.getRootPane(), WINDOW_STYLE, defaultWindowStyle, String.class);
-  int buttonMinimumWidth = FlatUIUtils.getSubUIInt("TitlePane.buttonMinimumWidth", windowStyle, 30);
-  Rectangle dBounds = new Rectangle();
-  Rectangle screenBounds =
-      GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-  ActionListener resizeListener =
-      e -> {
-        if (e.getActionCommand().equals("maximise")) {
-          setBounds(screenBounds);
-          swapResizeButtons();
-        } else if (e.getActionCommand().equals("restore")) {
-          setBounds(dBounds);
-          swapResizeButtons();
-        }
-      };
-
-  private void addResizeButtons() {
-    maximiseBtn = createButtons("TitlePane.maximizeIcon", "maximise");
-    restoreBtn = createButtons("TitlePane.restoreIcon", "restore");
-    layeredPane.add(maximiseBtn, Integer.valueOf(900), 1);
-  }
-
-  protected JButton createButtons(String iconKey, String accessibleName) {
-    JButton button =
-        new JButton(FlatUIUtils.getSubUIIcon(iconKey, windowStyle)) {
-          @Override
-          public Dimension getMinimumSize() {
-            // allow the button to shrink if space is rare
-            return new Dimension(UIScale.scale(buttonMinimumWidth), super.getMinimumSize().height);
-          }
-        };
-    button.setSize(UIScale.scale(buttonSize.width), UIScale.scale(buttonSize.height));
-    button.setFocusable(false);
-    button.setContentAreaFilled(false);
-    button.setBorder(BorderFactory.createEmptyBorder());
-    button.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, accessibleName);
-    button.setActionCommand(accessibleName);
-    button.addActionListener(resizeListener);
-    return button;
-  }
-
-  private void swapResizeButtons() {
-    if (Arrays.stream(layeredPane.getComponents()).toList().contains(maximiseBtn)) {
-      layeredPane.remove(maximiseBtn);
-      layeredPane.add(restoreBtn, Integer.valueOf(900), 1);
-    } else {
-      layeredPane.remove(restoreBtn);
-      layeredPane.add(maximiseBtn, Integer.valueOf(900), 1);
-    }
-    positionResizeButtons();
-    Rectangle currentBounds = layeredPane.getBounds();
-    RepaintManager.currentManager(layeredPane.getRootPane())
-        .addDirtyRegion(
-            this, currentBounds.x, currentBounds.y, currentBounds.width, buttonSize.height + 2);
-  }
-
-  private void positionResizeButtons() {
-    int x = layeredPane.getBounds().width - maximiseBtn.getWidth() * 2;
-    int y = 0;
-    maximiseBtn.setLocation(x, y);
-    restoreBtn.setLocation(x, y);
   }
 }

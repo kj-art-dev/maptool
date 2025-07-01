@@ -28,7 +28,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import javax.swing.*;
 import net.rptools.maptool.client.AppConstants;
+import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.themes.*;
 import net.rptools.maptool.events.MapToolEventBus;
 import org.apache.logging.log4j.LogManager;
@@ -106,7 +108,7 @@ public class ThemeSupport {
   private static final String IMAGE_PATH = "/net/rptools/maptool/client/ui/themes/image/";
 
   /**
-   * Should the the chat window use the themes colors.
+   * Should the chat window use the themes colors.
    *
    * @return true if the chat window should use the themes colors.
    */
@@ -115,7 +117,7 @@ public class ThemeSupport {
   }
 
   /**
-   * Should the the chat window use the themes colors.
+   * Should the chat window use the themes colors.
    *
    * @param useThemeColorsForChat true if the chat window should use the themes colors.
    */
@@ -506,6 +508,9 @@ public class ThemeSupport {
             .filter(t -> t.name.equals(themeName))
             .findFirst()
             .orElse(currentThemeDetails);
+    if (AppPreferences.useCustomThemeFontProperties.get()) {
+      ThemeFontTools.flatusInterruptus();
+    }
     if (themeDetails != null) {
       var laf = themeDetails.themeClass.getDeclaredConstructor().newInstance();
       UIManager.setLookAndFeel(themeDetails.themeClass.getDeclaredConstructor().newInstance());
@@ -635,24 +640,29 @@ public class ThemeSupport {
       var imageURL = ThemeSupport.class.getResource(imageLocation);
       if (imageURL == null) {
         log.warn(
-            "Failed to retrieve resource for theme name={} from url={}, using empty ImageIcon");
+            "Failed to retrieve resource for theme name={} from url={}, using empty ImageIcon",
+            themeName,
+            imageURL);
         return new ImageIcon();
       }
       var imageIcon = new ImageIcon(imageURL, themeDetails.name);
       if (dimension != null && dimension.width > 0 && dimension.height > 0) {
+        var imageSize = new Dimension(imageIcon.getIconWidth(), imageIcon.getIconHeight());
+        SwingUtil.constrainTo(imageSize, dimension.width, dimension.height);
+
         imageIcon.setImage(
             imageIcon
                 .getImage()
-                .getScaledInstance(dimension.width, dimension.height, Image.SCALE_AREA_AVERAGING));
+                .getScaledInstance(imageSize.width, imageSize.height, Image.SCALE_AREA_AVERAGING));
       }
       return imageIcon;
     }
   }
 
   /**
-   * Returns if there is a a new theme that will be applied after the restart.
+   * Returns if there is a new theme that will be applied after the restart.
    *
-   * @return if there is a a new theme that will be applied after the restart.
+   * @return if there is a new theme that will be applied after the restart.
    */
   public static boolean needsRestartForNewTheme() {
     return useThemeColorsForChat != startupUseThemeColorsForChat
