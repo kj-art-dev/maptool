@@ -385,6 +385,8 @@ public class ZoneViewModel {
   }
 
   private void updateMarkerPositions() {
+    markerList.clear();
+
     for (var list : tokenPositionsByLayer.values()) {
       for (var tokenPosition : list) {
         var token = tokenPosition.token();
