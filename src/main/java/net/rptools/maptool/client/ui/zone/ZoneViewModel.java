@@ -261,15 +261,16 @@ public class ZoneViewModel {
     updateLightPosition();
   }
 
+  // What follows are "systems".
+
+  /** Updates {@link #isUsingGdxRenderer}. */
   private void updateIsUsingGdxRenderer() {
     isUsingGdxRenderer = MapTool.getFrame().getGdxPanel().isVisible();
   }
 
-  // What follows are "systems".
-
   /**
-   * If the zone is not already loaded, updates the loading status and emits {@link ZoneLoaded} if
-   * it becomes loaded.
+   * If the zone is not already loaded, updates the {@link #loadingProgress} and emits {@link
+   * ZoneLoaded} if it becomes loaded.
    */
   private void updateIsLoading() {
     if (loadingProgress == null) {
@@ -324,6 +325,7 @@ public class ZoneViewModel {
     }
   }
 
+  /** Updates {@link #zoneScale} and {@link #viewport}. */
   private void updateViewport() {
     var renderer = MapTool.getFrame().getZoneRenderer(this.zone);
     if (renderer == null) {
@@ -338,10 +340,12 @@ public class ZoneViewModel {
     viewport.setFrame(zoneScale.toWorldSpace(screenBounds));
   }
 
+  /** Updates {@link #visibleArea} based on {@link #playerView}. */
   private void updateVisibleArea() {
     visibleArea = zoneView.getVisibleArea(playerView);
   }
 
+  /** Updates {@link #selectedTokenList}. */
   private void updateSelectedTokensList() {
     selectedTokenList.clear();
 
@@ -353,6 +357,7 @@ public class ZoneViewModel {
     }
   }
 
+  /** Updates {@link #playerView}. */
   private void updatePlayerView() {
     playerView = makePlayerView(MapTool.getPlayer().getEffectiveRole(), true);
   }
@@ -384,6 +389,7 @@ public class ZoneViewModel {
     }
   }
 
+  /** Updates {@link #markerList} based on {@link #tokenPositionsByLayer}. */
   private void updateMarkerPositions() {
     markerList.clear();
 
@@ -399,6 +405,7 @@ public class ZoneViewModel {
     }
   }
 
+  /** Updates {@link #tokenStackMap} based on {@link #tokenPositionsByLayer}. */
   private void updateTokenStacks() {
     tokenStackMap.clear();
     var tokenPositions = tokenPositionsByLayer.get(Zone.Layer.TOKEN);
@@ -434,6 +441,10 @@ public class ZoneViewModel {
     }
   }
 
+  /**
+   * Updates {@link #onScreenTokens} and {@link #visibleTokensByLayer} based on {@link
+   * #tokenPositionsByLayer}, {@link #viewport}, {@link #playerView}, and {@link #visibleArea}.
+   */
   private void updateVisibleTokens() {
     double scale = 1;
     var renderer = MapTool.getFrame().getZoneRenderer(this.zone);
@@ -474,6 +485,7 @@ public class ZoneViewModel {
     }
   }
 
+  /** Updates {@link #movingTokens}. */
   private void updateMovingTokens() {
     movingTokens.clear();
 
@@ -487,6 +499,10 @@ public class ZoneViewModel {
     }
   }
 
+  /**
+   * Updates {@link #lightPositions} based on {@link #playerView}, {@link #tokenPositions}, and
+   * {@link #onScreenTokens}.
+   */
   private void updateLightPosition() {
     lightPositions.clear();
 
