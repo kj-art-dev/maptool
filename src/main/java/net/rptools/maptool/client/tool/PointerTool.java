@@ -478,6 +478,8 @@ public class PointerTool extends DefaultTool {
 
   @Override
   public void mouseReleased(MouseEvent e) {
+    final boolean isDraggingMap = isDraggingMap();
+
     super.mouseReleased(e);
 
     mouseButtonDown = false;
@@ -563,7 +565,7 @@ public class PointerTool extends DefaultTool {
     }
 
     // POPUP MENU
-    if (SwingUtilities.isRightMouseButton(e) && tokenDragOp == null && !isDraggingMap()) {
+    if (SwingUtilities.isRightMouseButton(e) && tokenDragOp == null && !isDraggingMap) {
       final var selectionModel = renderer.getSelectionModel();
       if (tokenUnderMouse != null && !selectionModel.isSelected(tokenUnderMouse.getId())) {
         if (!SwingUtil.isShiftDown(e)) {
@@ -585,7 +587,6 @@ public class PointerTool extends DefaultTool {
         return;
       }
     }
-    super.mouseReleased(e);
   }
 
   // //
