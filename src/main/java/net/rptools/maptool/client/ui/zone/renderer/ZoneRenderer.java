@@ -1815,11 +1815,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Render Halo
       haloRenderer.renderHalo(tokenG, token, position);
 
-      // Calculate alpha Transparency from token and use opacity to indicate that token is moving
-      float opacity = token.getTokenOpacity();
-      if (viewModel.isTokenMoving(token.getId())) {
-        opacity = opacity / 2.0f;
-      }
+      // Use opacity to indicate that token is moving
+      float opacity = viewModel.isTokenMoving(token.getId()) ? 0.5f : 1f;
+
       // Finally render the token image
       timer.start("token-list-7");
       // Clipping is handled in the isTokenInNeedOfClipping() call far above.
