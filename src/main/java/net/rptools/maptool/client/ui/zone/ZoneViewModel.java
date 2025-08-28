@@ -108,7 +108,6 @@ public class ZoneViewModel {
   private final Rectangle2D viewport = new Rectangle2D.Double();
   private Area visibleArea = new Area();
 
-  private final List<Token> selectedTokenList = new ArrayList<>();
   private final Set<GUID> movingTokens = new HashSet<>();
 
   private final Map<GUID, TokenPosition> tokenPositions = new HashMap<>();
@@ -222,7 +221,14 @@ public class ZoneViewModel {
   }
 
   public List<Token> getSelectedTokenList() {
-    return Collections.unmodifiableList(selectedTokenList);
+    var tokens = new ArrayList<Token>();
+    for (GUID g : selectionModel.getSelectedTokenIds()) {
+      final var token = zone.getToken(g);
+      if (token != null) {
+        tokens.add(token);
+      }
+    }
+    return tokens;
   }
 
   public Set<GUID> getVisibleTokens(Zone.Layer layer) {
@@ -252,7 +258,6 @@ public class ZoneViewModel {
     updateViewport();
     updatePlayerView();
     updateVisibleArea();
-    updateSelectedTokensList();
     updateMovingTokens();
     updateTokenPositions();
     updateMarkerPositions();
@@ -343,18 +348,6 @@ public class ZoneViewModel {
   /** Updates {@link #visibleArea} based on {@link #playerView}. */
   private void updateVisibleArea() {
     visibleArea = zoneView.getVisibleArea(playerView);
-  }
-
-  /** Updates {@link #selectedTokenList}. */
-  private void updateSelectedTokensList() {
-    selectedTokenList.clear();
-
-    for (GUID g : selectionModel.getSelectedTokenIds()) {
-      final var token = zone.getToken(g);
-      if (token != null) {
-        selectedTokenList.add(token);
-      }
-    }
   }
 
   /** Updates {@link #playerView}. */
