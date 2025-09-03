@@ -142,7 +142,7 @@ public class HTMLContent {
     }
 
     public HtmlDocumentContent(String str) {
-      this(Jsoup.parse(str), false, false);
+      this(Jsoup.parse(HTMLPanelInterface.fixHTML(str)), false, false);
     }
 
     public String str() {
