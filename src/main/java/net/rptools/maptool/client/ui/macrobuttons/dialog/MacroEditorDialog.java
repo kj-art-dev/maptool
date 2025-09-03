@@ -78,17 +78,17 @@ public class MacroEditorDialog extends JDialog implements SearchListener {
   private static final long serialVersionUID = 8228617911117087993L;
   private static final Logger log = LogManager.getLogger(MacroEditorDialog.class);
   private final AbeillePanel panel;
-  MacroButton button;
-  MacroButtonProperties properties;
-  boolean isTokenMacro = false;
-  int oldHashCode = 0;
-  Boolean startingCompareGroup;
-  Boolean startingCompareSortPrefix;
-  Boolean startingCompareCommand;
-  Boolean startingCompareIncludeLabel;
-  Boolean startingCompareAutoExecute;
-  Boolean startingCompareApplyToSelectedTokens;
-  Boolean startingAllowPlayerEdits;
+  private MacroButton button;
+  private MacroButtonProperties properties;
+  private boolean isTokenMacro = false;
+  private int oldHashCode = 0;
+  private Boolean startingCompareGroup;
+  private Boolean startingCompareSortPrefix;
+  private Boolean startingCompareCommand;
+  private Boolean startingCompareIncludeLabel;
+  private Boolean startingCompareAutoExecute;
+  private Boolean startingCompareApplyToSelectedTokens;
+  private Boolean startingAllowPlayerEdits;
 
   private final RSyntaxTextArea macroEditorRSyntaxTextArea = new RSyntaxTextArea(2, 2);
   private CollapsibleSectionPanel csp;
@@ -725,20 +725,6 @@ public class MacroEditorDialog extends JDialog implements SearchListener {
       }
     }
   }
-
-  // Jamz: maybe later...
-  // public void rememberLastWindowLocation() {
-  // Dimension windowSize = this.getSize();
-  //
-  // int x = outerWindow.getLocation().x + (outerSize.width - innerSize.width)
-  // / 2;
-  // int y = outerWindow.getLocation().y + (outerSize.height -
-  // innerSize.height) / 2;
-  //
-  // Jamz: For multiple monitor's, x & y can be negative values...
-  // innerWindow.setLocation(x < 0 ? 0 : x, y < 0 ? 0 : y);
-  // innerWindow.setLocation(x, y);
-  // }
 
   private void save(boolean closeDialog) {
     callback.accept(getCommandTextArea().getText());
