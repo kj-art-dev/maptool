@@ -1782,10 +1782,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (isTokenInNeedOfClipping(token, position.transformedBounds(), isGMView)) {
         tokenG = (Graphics2D) clippedG.create();
         if (token.getShape() == Token.TokenShape.FIGURE || token.isAlwaysVisible()) {
+          Area cellVisibleArea = new Area(visibleScreenArea);
           Area cb =
               zone.getGrid()
                   .getTokenCellArea(zoneScale.toScreenSpace(position.transformedBounds()));
-          tokenG.clip(cb);
+          cellVisibleArea.intersect(cb);
+          tokenG.clip(cellVisibleArea);
         }
       } else {
         tokenG = (Graphics2D) g.create();
