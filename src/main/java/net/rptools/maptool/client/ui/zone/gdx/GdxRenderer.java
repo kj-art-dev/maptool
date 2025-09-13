@@ -855,24 +855,9 @@ public class GdxRenderer extends ApplicationAdapter {
 
     var zoneView = zoneCache.getZoneView();
 
-    timer.start("renderFog-visibleArea");
-    Area visibleArea = zoneView.getVisibleArea(view);
-    timer.stop("renderFog-visibleArea");
-
-    timer.start("renderFog-combined(%d)", view.isUsingTokenView() ? view.getTokens().size() : 0);
-    Area exposedArea = zoneView.getExposedArea(view);
-    timer.stop("renderFog-combined(%d)", view.isUsingTokenView() ? view.getTokens().size() : 0);
-
-    Area softFogArea;
-    Area clearArea;
-    if (zoneView.isUsingVision()) {
-      softFogArea = exposedArea;
-      clearArea = new Area(visibleArea);
-      clearArea.intersect(softFogArea);
-    } else {
-      softFogArea = new Area();
-      clearArea = exposedArea;
-    }
+    var visibility = zoneView.getVisibility(view);
+    Area softFogArea = visibility.softFogArea();
+    Area clearArea = visibility.clearArea();
 
     timer.start("renderFog");
     ScreenUtils.clear(Color.CLEAR);
