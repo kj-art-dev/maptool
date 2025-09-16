@@ -20,7 +20,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.util.function.Consumer;
@@ -128,7 +127,7 @@ public class RenderHelper {
 
     Graphics2D buffG = buffer.createGraphics();
     try {
-      buffG.setClip(new Area(new Rectangle(0, 0, buffer.getWidth(), buffer.getHeight())));
+      buffG.setClip(new Rectangle(0, 0, buffer.getWidth(), buffer.getHeight()));
       doRender(buffG, render);
     } finally {
       buffG.dispose();
