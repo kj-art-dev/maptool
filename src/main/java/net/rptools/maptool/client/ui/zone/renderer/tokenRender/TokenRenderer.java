@@ -47,7 +47,7 @@ public class TokenRenderer {
     this.zone = zone;
   }
 
-  public void renderToken(Token token, TokenPosition position, Graphics2D g2d, float opacity) {
+  public void renderToken(Token token, TokenPosition position, Graphics2D g2d, float extraOpacity) {
     var timer = CodeTimer.get();
     timer.increment("TokenRenderer-renderToken");
     timer.start("TokenRenderer-renderToken");
@@ -60,7 +60,7 @@ public class TokenRenderer {
 
     timer.start("TokenRenderer-paintTokenImage");
     renderHelper.render(
-        g2d, worldG -> paintTokenImage(worldG, position, opacity * token.getTokenOpacity()));
+        g2d, worldG -> paintTokenImage(worldG, position, extraOpacity * token.getTokenOpacity()));
     timer.stop("TokenRenderer-paintTokenImage");
     timer.stop("TokenRenderer-renderToken");
   }

@@ -715,7 +715,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer -> {
           timer.setThreshold(10);
 
-          if (!MapTool.getFrame().getGdxPanel().isVisible()) {
+          if (!viewModel.isUsingGdxRenderer()) {
             timer.start("paintComponent");
             Graphics2D g2d = (Graphics2D) g;
 
@@ -1781,10 +1781,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (isTokenInNeedOfClipping(token, position.transformedBounds(), isGMView)) {
         tokenG = (Graphics2D) clippedG.create();
         if (token.getShape() == Token.TokenShape.FIGURE || token.isAlwaysVisible()) {
+          Area cellVisibleArea = new Area(visibleScreenArea);
           Area cb =
               zone.getGrid()
                   .getTokenCellArea(zoneScale.toScreenSpace(position.transformedBounds()));
-          tokenG.clip(cb);
+          cellVisibleArea.intersect(cb);
+          tokenG.clip(cellVisibleArea);
         }
       } else {
         tokenG = (Graphics2D) g.create();
@@ -1814,11 +1816,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Render Halo
       haloRenderer.renderHalo(tokenG, token, position);
 
-      // Calculate alpha Transparency from token and use opacity to indicate that token is moving
-      float opacity = token.getTokenOpacity();
-      if (viewModel.isTokenMoving(token.getId())) {
-        opacity = opacity / 2.0f;
-      }
+      // Use opacity to indicate that token is moving
+      float opacity = viewModel.isTokenMoving(token.getId()) ? 0.5f : 1f;
+
       // Finally render the token image
       timer.start("token-list-7");
       // Clipping is handled in the isTokenInNeedOfClipping() call far above.
