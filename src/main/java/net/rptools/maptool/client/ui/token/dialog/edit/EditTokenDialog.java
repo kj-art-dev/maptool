@@ -156,12 +156,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
         l -> {
           var sheet = (StatSheet) sheetCombo.getSelectedItem();
           var ssManager = new StatSheetManager();
-          boolean usingDefault =
-              sheet != null && (sheet.name() == null && sheet.namespace() == null);
-          if (sheet == null || ssManager.isLegacyStatSheet(sheet) || usingDefault) {
-            locationCombo.setEnabled(false);
-            locationCombo.setSelectedItem(null);
-          } else {
+          if (ssManager.isLocationUserSettable(sheet)) {
             locationCombo.setEnabled(true);
             var tokenSheet = getModel().getStatSheet();
             if (tokenSheet != null) {
@@ -171,6 +166,9 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                   MapTool.getCampaign().getTokenTypeDefaultSheetId(getModel().getPropertyType());
               locationCombo.setSelectedItem(sheetProp.location());
             }
+          } else {
+            locationCombo.setEnabled(false);
+            locationCombo.setSelectedItem(null);
           }
         });
   }

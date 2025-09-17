@@ -34,6 +34,12 @@ public class StatSheetManager {
   /** The namespace of the legacy stat sheet. */
   private static final String LEGACY_STATSHEET_NAMESPACE = "net.rptools.maptool";
 
+  /** The namespace used for no stat sheet. */
+  private static final String NO_STATSHEET_NAMESPACE = "net.rptools.maptool";
+
+  /** The name used for no stat sheet. */
+  private static final String NO_STATSHEET_NAME = "no-statsheet";
+
   /** The id of the legacy stat sheet. */
   public static final String LEGACY_STATSHEET_ID =
       LEGACY_STATSHEET_NAMESPACE + "." + LEGACY_STATSHEET_NAME;
@@ -47,12 +53,21 @@ public class StatSheetManager {
           Set.of(),
           LEGACY_STATSHEET_NAMESPACE);
 
+  public static final StatSheet NO_STATSHEET =
+      new StatSheet(
+          NO_STATSHEET_NAME,
+          I18N.getText("token.statSheet.noStatSheetDescription"),
+          null,
+          Set.of(),
+          NO_STATSHEET_NAMESPACE);
+
   /** The stat sheets that are available to the system. */
   private static final Map<StatSheet, String> statSheets = new ConcurrentHashMap<>();
 
-  /** adds the legacy stat sheet to the list of stat sheets. */
+  /** Adds the legacy and "no" stat sheet to the list of stat sheets. */
   static {
     statSheets.put(LEGACY_STATSHEET, "");
+    statSheets.put(NO_STATSHEET, "");
   }
 
   /**
@@ -71,6 +86,24 @@ public class StatSheetManager {
    */
   public String getDefaultStatSheetId() {
     return getId(LEGACY_STATSHEET);
+  }
+
+  /**
+   * Returns the "no" stat sheet.
+   *
+   * @return the "no" stat sheet.
+   */
+  public StatSheet getNoStatSheet() {
+    return NO_STATSHEET;
+  }
+
+  /**
+   * Returns the id of the "no" stat sheet.
+   *
+   * @return the id of the "no" stat sheet.
+   */
+  public String getNoStatSheetId() {
+    return getId(NO_STATSHEET);
   }
 
   /**
@@ -103,6 +136,49 @@ public class StatSheetManager {
    */
   public boolean isLegacyStatSheet(StatSheet statSheet) {
     return statSheet == null || LEGACY_STATSHEET.equals(statSheet);
+  }
+
+  /**
+   * Returns true if the stat sheet is the "no" stat sheet.
+   *
+   * @param sheet the stat sheet to check.
+   * @return true if the stat sheet is the "no" stat sheet.
+   */
+  public boolean isNoStatSheet(StatSheetProperties sheet) {
+    return isNoStatSheet(getStatSheet(sheet.id()));
+  }
+
+  /**
+   * Returns true if the stat sheet is the "no" stat sheet.
+   *
+   * @param statSheet the stat sheet to check.
+   * @return true if the stat sheet is the "no" stat sheet.
+   */
+  public boolean isNoStatSheet(StatSheet statSheet) {
+    return NO_STATSHEET.equals(statSheet);
+  }
+
+  /**
+   * Returns true if the location of the stat sheet can be set by the user.
+   *
+   * @param sheet the stat sheet to check.
+   * @return true if the location of the stat sheet can be set by the user.
+   */
+  public boolean isLocationUserSettable(StatSheet sheet) {
+    return sheet != null
+        && !isLegacyStatSheet(sheet)
+        && !isNoStatSheet(sheet)
+        && sheet.namespace() != null;
+  }
+
+  /**
+   * Returns true if the location of the stat sheet can be set by the user.
+   *
+   * @param sheet the stat sheet to check.
+   * @return true if the location of the stat sheet can be set by the user.
+   */
+  public boolean isLocationUserSettable(StatSheetProperties sheet) {
+    return isLocationUserSettable(getStatSheet(sheet.id()));
   }
 
   /**
