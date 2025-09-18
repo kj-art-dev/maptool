@@ -15,8 +15,11 @@
 package net.rptools.maptool.model.sheet.stats;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.rptools.maptool.language.I18N;
@@ -60,6 +63,9 @@ public class StatSheetManager {
           null,
           Set.of(),
           NO_STATSHEET_NAMESPACE);
+
+  /** The internal stat sheets that are always available. */
+  private static final Set<StatSheet> internalStatSheets = Set.of(LEGACY_STATSHEET, NO_STATSHEET);
 
   /** The stat sheets that are available to the system. */
   private static final Map<StatSheet, String> statSheets = new ConcurrentHashMap<>();
@@ -219,6 +225,20 @@ public class StatSheetManager {
   }
 
   /**
+   * Returns the stat sheets ordered by internal vs non-internal and then alphabetically by
+   * description.
+   *
+   * @param propertyType the property type of the stat sheet.
+   * @return the id of the stat sheet.
+   */
+  public SortedSet<StatSheet> getOrderedStatSheets(String propertyType) {
+    TreeSet<StatSheet> sheets =
+        new TreeSet<StatSheet>((s1, s2) -> StatSheetManager.compareStatSheets(s1, s2));
+    sheets.addAll(getStatSheets(propertyType));
+    return sheets;
+  }
+
+  /**
    * Returns the id of the stat sheet.
    *
    * @param statSheet the stat sheet.
@@ -290,5 +310,31 @@ public class StatSheetManager {
    */
   public String getId(StatSheet ss) {
     return getId(ss.namespace(), ss.name());
+  }
+
+  /**
+   * Compares two stat sheets. Internal stat sheets (null, legacy, and no stat sheet) come before
+   * non-internal stat sheets. Among internal stat sheets, null (default) comes first, then legacy,
+   * then no stat sheet. Non-internal stat sheets are sorted alphabetically by description.
+   *
+   * @param ss1 the first stat sheet.
+   * @param ss2 the second stat sheet.
+   * @return a negative integer, zero, or a positive integer as the first argument is less than,
+   *     equal to, or greater than the second.
+   */
+  private static int compareStatSheets(StatSheet ss1, StatSheet ss2) {
+    if (internalStatSheets.contains(ss1)) {
+      if (internalStatSheets.contains(ss2)) {
+        return Comparator.comparing((StatSheet ss) -> ss == null)
+            .thenComparing(ss -> ss.description())
+            .compare(ss1, ss2);
+      } else {
+        return -1; // Internal stat sheets come before non-internal stat sheets
+      }
+    } else if (internalStatSheets.contains(ss2)) {
+      return 1; // Non-internal stat sheets come after internal stat sheets
+    } else {
+      return Comparator.comparing((StatSheet ss) -> ss.description()).compare(ss1, ss2);
+    }
   }
 }

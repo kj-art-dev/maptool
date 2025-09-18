@@ -262,9 +262,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
         new StatSheet(null, I18N.getText("token.statSheet.useDefault"), null, Set.of(), null);
     combo.addItem(defaultSS);
     var ssManager = new StatSheetManager();
-    ssManager.getStatSheets(token.getPropertyType()).stream()
-        .sorted(Comparator.comparing(StatSheet::description))
-        .forEach(ss -> combo.addItem(ss));
+    ssManager.getOrderedStatSheets(token.getPropertyType()).forEach(ss -> combo.addItem(ss));
     if (token.usingDefaultStatSheet()) {
       combo.setSelectedItem(defaultSS);
     } else {

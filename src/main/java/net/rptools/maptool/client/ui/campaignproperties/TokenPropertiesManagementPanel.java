@@ -475,9 +475,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
     var combo = getStatSheetComboBox();
     combo.removeAllItems();
     var ssManager = new StatSheetManager();
-    ssManager.getStatSheets(propertyType).stream()
-        .sorted(Comparator.comparing(StatSheet::description))
-        .forEach(ss -> combo.addItem(ss));
+    ssManager.getOrderedStatSheets(propertyType).forEach(ss -> combo.addItem(ss));
     var statSheetProperty = tokenTypeStatSheetMap.get(propertyType);
     String id;
     if (statSheetProperty == null) {
