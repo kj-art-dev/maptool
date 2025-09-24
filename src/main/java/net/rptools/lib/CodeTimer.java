@@ -90,6 +90,9 @@ public class CodeTimer {
   }
 
   public void increment(String id, int amount) {
+    if (!enabled) {
+      return;
+    }
     counterMap.merge(id, amount, Integer::sum);
   }
 
