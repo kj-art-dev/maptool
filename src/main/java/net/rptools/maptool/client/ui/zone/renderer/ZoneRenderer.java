@@ -55,7 +55,6 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
-import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -535,7 +534,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   protected void setViewOffset(int x, int y) {
     zoneScale.setOffset(x, y);
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void centerOn(ZonePoint point) {
@@ -568,7 +566,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     visibleScreenArea = null;
 
     zoneView.flush(token);
-    GdxRenderer.getInstance().flushFog();
   }
 
   /**
@@ -609,7 +606,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   public void flushFog() {
     visibleScreenArea = null;
     repaintDebouncer.dispatch();
-    GdxRenderer.getInstance().flushFog();
   }
 
   /**
@@ -648,19 +644,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   public void zoomReset(int x, int y) {
     zoneScale.zoomReset(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void zoomIn(int x, int y) {
     zoneScale.zoomIn(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void zoomOut(int x, int y) {
     zoneScale.zoomOut(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void enforceView(int x, int y, double scale, int gmWidth, int gmHeight) {
@@ -680,7 +673,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     setScale(scale);
     centerOn(new ZonePoint(x, y));
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void restoreView() {
@@ -689,7 +681,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     centerOn(previousZonePoint);
     setScale(previousScale);
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void forcePlayersView() {
