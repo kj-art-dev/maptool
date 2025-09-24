@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.Deflater;
 import javax.swing.*;
 import net.rptools.lib.AwtUtil;
@@ -371,6 +372,8 @@ public class GdxRenderer extends ApplicationAdapter {
           "GdxRenderer.renderZone",
           timer -> {
             timer.setThreshold(10);
+            timer.setThreshold(1, TimeUnit.MICROSECONDS);
+            timer.setReportingUnit(TimeUnit.MICROSECONDS);
             doRendering();
           });
     } catch (Exception ex) {
