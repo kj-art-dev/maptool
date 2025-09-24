@@ -294,31 +294,6 @@ public class ZoneView {
   }
 
   /**
-   * Gets the exposed area (area without hard FoW0 for the given view.
-   *
-   * <p>The results of this method are only meaningful if the zone has fog enabled.
-   *
-   * @param view The player view
-   * @return The exposed area for {@code view}.
-   */
-  public @Nonnull Area getExposedArea(PlayerView view) {
-    return getVisibility(view).exposedArea();
-  }
-
-  /**
-   * Gets the visible area of the view, cache it in visibleAreaMap, and return it
-   *
-   * <p>The visible area is calculated for each token in the view. The token's visible area is its
-   * vision obstructed by topology and restricted to the illuminated portions of the map.
-   *
-   * @param view the PlayerView
-   * @return the visible area
-   */
-  public @Nonnull Area getVisibleArea(PlayerView view) {
-    return getVisibility(view).visibleArea();
-  }
-
-  /**
    * Get the vision status of the zone.
    *
    * @return true if the vision of the zone is not of type VisionType.OFF

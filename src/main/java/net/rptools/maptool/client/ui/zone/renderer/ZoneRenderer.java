@@ -860,7 +860,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.start("calcs-1");
     if (visibleScreenArea == null) {
       timer.start("ZoneRenderer-getVisibleArea");
-      Area a = zoneView.getVisibleArea(view);
+      Area a = zoneView.getVisibility(view).visibleArea();
       timer.stop("ZoneRenderer-getVisibleArea");
 
       timer.start("createTransformedArea");
@@ -1184,7 +1184,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (zone.hasFog()) {
         clearArea = zoneView.getVisibility(view).clearArea();
       } else if (zoneView.isUsingVision()) {
-        clearArea = zoneView.getVisibleArea(view);
+        clearArea = zoneView.getVisibility(view).visibleArea();
       }
 
       if (clearArea != null) {

@@ -688,7 +688,8 @@ public class GdxRenderer extends ApplicationAdapter {
     timer.start("calcs-1");
     timer.start("ZoneRenderer-getVisibleArea");
     if (visibleScreenArea == null) {
-      visibleScreenArea = zoneCache.getZoneView().getVisibleArea(viewModel.getPlayerView());
+      visibleScreenArea =
+          zoneCache.getZoneView().getVisibility(viewModel.getPlayerView()).visibleArea();
     }
     timer.stop("ZoneRenderer-getVisibleArea");
 
@@ -1090,7 +1091,8 @@ public class GdxRenderer extends ApplicationAdapter {
                       || zoneCache
                           .getZoneRenderer()
                           .getZoneView()
-                          .getVisibleArea(view)
+                          .getVisibility(view)
+                          .visibleArea()
                           .intersects(tokenRectangle);
             }
           } else {

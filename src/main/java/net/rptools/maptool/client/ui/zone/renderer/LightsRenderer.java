@@ -111,7 +111,7 @@ public class LightsRenderer {
       Color backgroundFill) {
     var timer = CodeTimer.get();
 
-    var visibleArea = zoneView.getVisibleArea(view);
+    var visibleArea = zoneView.getVisibility(view).visibleArea();
 
     var originalClip = worldG.getClip();
     var bounds = originalClip.getBounds();
