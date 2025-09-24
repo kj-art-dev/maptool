@@ -127,7 +127,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private BitmapFont normalFont;
   private BitmapFont boldFont;
   private float boldFontScale = 0;
-  private final CodeTimer timer = new CodeTimer("GdxRenderer.renderZone");
 
   /** Used by render layers to compose the layer prior to blending. */
   private FrameBuffer backBuffer;
@@ -368,7 +367,12 @@ public class GdxRenderer extends ApplicationAdapter {
     ensureTtfFont();
     ScreenUtils.clear(Color.BLACK);
     try {
-      doRendering();
+      CodeTimer.using(
+          "GdxRenderer.renderZone",
+          timer -> {
+            timer.setThreshold(10);
+            doRendering();
+          });
     } catch (Exception ex) {
       log.warn("Error while rendering", ex);
     }
@@ -407,6 +411,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void doRendering() {
+    CodeTimer timer = CodeTimer.get();
+
     batch.enableBlending();
     // Framebuffer is premultiplied. Assume source textures are as well (can be changed for
     // operations that require something else).
@@ -418,7 +424,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
     if (zoneCache == null || !renderZone) return;
 
-    initializeTimer();
     if (zoneCache.getZoneRenderer() == null) return;
 
     setScale(viewModel.getZoneScale());
@@ -455,24 +460,6 @@ public class GdxRenderer extends ApplicationAdapter {
     hudTextRenderer.drawString("Draws: " + batch.renderCalls, width - 30, 16);
 
     batch.end();
-    collectTimerResults();
-  }
-
-  private void collectTimerResults() {
-    if (timer.isEnabled()) {
-      String results = timer.toString();
-      MapTool.getProfilingNoteFrame().addText(results);
-      if (log.isDebugEnabled()) {
-        log.debug(results);
-      }
-      timer.clear();
-    }
-  }
-
-  private void initializeTimer() {
-    timer.setEnabled(AppState.isCollectProfilingData() || log.isDebugEnabled());
-    timer.clear();
-    timer.setThreshold(10);
   }
 
   public void invalidateCurrentViewCache() {
@@ -481,6 +468,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderZone(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
+
     if (!prerender(view)) {
       return;
     }
@@ -680,6 +669,8 @@ public class GdxRenderer extends ApplicationAdapter {
    * @return {@code true} if rendering should proceed.
    */
   private boolean prerender(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
+
     if (viewModel.getLoadingStatus().isPresent() || MapTool.getCampaign().isBeingSerialized()) {
       return false;
     }
@@ -857,19 +848,17 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderFog(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
+
     var zoneView = zoneCache.getZoneView();
 
     timer.start("renderFog-visibleArea");
     Area visibleArea = zoneView.getVisibleArea(view);
     timer.stop("renderFog-visibleArea");
 
-    String msg = null;
-    if (timer.isEnabled()) {
-      msg = "renderFog-combined(" + (view.isUsingTokenView() ? view.getTokens().size() : 0) + ")";
-    }
-    timer.start(msg);
+    timer.start("renderFog-combined(%d)", view.isUsingTokenView() ? view.getTokens().size() : 0);
     Area exposedArea = zoneView.getExposedArea(view);
-    timer.stop(msg);
+    timer.stop("renderFog-combined(%d)", view.isUsingTokenView() ? view.getTokens().size() : 0);
 
     Area softFogArea;
     Area clearArea;
@@ -935,6 +924,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderLabels(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
+
     timer.start("labels-1");
 
     for (Label label : zoneCache.getZone().getLabels()) {
@@ -1187,6 +1178,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderLumensOverlay(PlayerView view, float overlayAlpha) {
+    CodeTimer timer = CodeTimer.get();
     final var disjointLumensLevels = zoneCache.getZoneView().getDisjointObscuredLumensLevels(view);
 
     BlendFunction.SRC_ONLY.applyToBatch(batch);
@@ -1251,6 +1243,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderLights(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
     if (AppState.isShowLights()) {
       timer.start("renderLights:getLights");
       final var drawableLights = zoneCache.getZoneView().getDrawableLights(view);
@@ -1290,6 +1283,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderAuras(PlayerView view) {
+    CodeTimer timer = CodeTimer.get();
     timer.start("renderAuras:getAuras");
     final var drawableAuras = zoneCache.getZoneView().getDrawableAuras(view);
     timer.stop("renderAuras:getAuras");
@@ -1311,6 +1305,7 @@ public class GdxRenderer extends ApplicationAdapter {
       float alpha,
       BlendFunction lightBlending,
       boolean premultipy) {
+    CodeTimer timer = CodeTimer.get();
     // Set up a buffer image for lights to be drawn onto before the map
     timer.start("renderLightOverlay:allocateBuffer");
     ScreenUtils.clear(Color.CLEAR);
@@ -1365,6 +1360,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderDrawables(List<DrawnElement> drawables) {
+    CodeTimer timer = CodeTimer.get();
     timer.start("drawableBackground");
     drawnElementRenderer.render(batch, zoneCache.getZone(), drawables);
     timer.stop("drawableBackground");
@@ -1389,6 +1385,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderTokens(List<Token> tokenList, PlayerView view, boolean figuresOnly) {
+    CodeTimer timer = CodeTimer.get();
+
     if (tokenList.isEmpty() || visibleScreenArea == null) {
       return;
     }
@@ -1798,6 +1796,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void prepareTokenSprite(Sprite image, Token token, java.awt.Rectangle footprintBounds) {
+    CodeTimer timer = CodeTimer.get();
+
     image.setRotation(0);
 
     // Tokens are centered on the image center point
@@ -2049,6 +2049,8 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderPath(Path path, TokenFootprint footprint) {
+    CodeTimer timer = CodeTimer.get();
+
     if (path == null) {
       return;
     }

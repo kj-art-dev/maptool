@@ -68,7 +68,7 @@ public class CodeTimer {
   private long threshold = 1;
   private boolean enabled;
 
-  public CodeTimer(String n) {
+  private CodeTimer(String n) {
     name = n;
     enabled = true;
   }
