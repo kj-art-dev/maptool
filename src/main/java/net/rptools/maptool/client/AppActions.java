@@ -2363,7 +2363,7 @@ public class AppActions {
           if (campaign.currentView != null) {
             current.setZoneScale(campaign.currentView);
           }
-          current.getZoneScale().reset();
+          current.setZoneScale(current.getZoneScale().withResetZoomLevel());
         }
         MapTool.getAutoSaveManager().tidy();
 

@@ -455,13 +455,15 @@ public class GridTool extends DefaultTool {
       delta = Math.abs(delta);
       ZonePoint centerPoint = renderer.getCenterPoint();
 
+      var scale = renderer.getZoneScale();
       for (int i = 0; i < delta; i++) {
-        if (direction) {
-          renderer.getZoneScale().zoomOut(centerPoint.x, centerPoint.y);
-        } else {
-          renderer.getZoneScale().zoomIn(centerPoint.x, centerPoint.y);
-        }
+        scale =
+            direction
+                ? scale.zoomedOut(centerPoint.x, centerPoint.y)
+                : scale.zoomedIn(centerPoint.x, centerPoint.y);
       }
+      renderer.setZoneScale(scale);
+
       lastZoomIndex = zoomSlider.getValue();
     }
 

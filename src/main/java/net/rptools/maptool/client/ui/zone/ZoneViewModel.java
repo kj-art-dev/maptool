@@ -345,7 +345,7 @@ public class ZoneViewModel {
       return;
     }
 
-    zoneScale = new Scale(renderer.getZoneScale());
+    zoneScale = renderer.getZoneScale();
     var screenBounds = new Rectangle2D.Double(0, 0, renderer.getWidth(), renderer.getHeight());
     viewport.setFrame(zoneScale.toWorldSpace(screenBounds));
   }

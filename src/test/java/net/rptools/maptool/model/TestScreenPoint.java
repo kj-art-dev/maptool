@@ -25,8 +25,7 @@ class TestScreenPoint {
   @Test
   @DisplayName("Test Conversion of Screen Points")
   void testConversion() {
-    var scale = new Scale();
-    scale.setOffset(-100, -100);
+    var scale = new Scale(0, -100, -100);
 
     for (int i = -10; i < 10; i++) {
       for (int j = -10; j < 10; j++) {

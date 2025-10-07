@@ -115,12 +115,12 @@ public class ZoneImageGenerator extends BufferedImage {
     }
 
     // preserve settings
-    Scale origScale = new Scale(renderer.getZoneScale());
+    Scale origScale = renderer.getZoneScale();
     Rectangle origBounds = new Rectangle(renderer.getBounds());
 
     // set new temp vars
-    Scale s = new Scale(origScale);
-    s.setOffset(origScale.getOffsetX() - rect.x, origScale.getOffsetY() - rect.y);
+    Scale s =
+        origScale.withOffset(origScale.getOffsetX() - rect.x, origScale.getOffsetY() - rect.y);
     renderer.setZoneScale(s);
     renderer.setBounds(rect);
 

@@ -159,10 +159,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       throw new IllegalArgumentException("Zone cannot be null");
     }
     this.zone = zone;
-    selectionModel = new SelectionModel(zone);
-    zoneView = new ZoneView(zone);
+    this.zoneScale = new Scale();
+    this.selectionModel = new SelectionModel(zone);
+    this.zoneView = new ZoneView(zone);
     this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel);
-    setZoneScale(new Scale());
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
@@ -275,17 +275,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void setZoneScale(Scale scale) {
-    zoneScale = scale;
-    invalidateCurrentViewCache();
-
-    scale.addPropertyChangeListener(
-        evt -> {
-          if (Scale.PROPERTY_SCALE.equals(evt.getPropertyName())) {
-            clearZoomDependantCaches();
-          }
-          visibleScreenArea = null;
-          repaintDebouncer.dispatch();
-        });
+    if (!zoneScale.equals(scale)) {
+      zoneScale = scale;
+      invalidateCurrentViewCache();
+      MapTool.getFrame().getZoomStatusBar().update();
+      repaintDebouncer.dispatch();
+    }
   }
 
   public void flushDrawableRenderer() {
@@ -535,7 +530,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   protected void setViewOffset(int x, int y) {
-    zoneScale.setOffset(x, y);
+    setZoneScale(zoneScale.withOffset(x, y));
   }
 
   public void centerOn(ZonePoint point) {
@@ -644,18 +639,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void zoomReset(int x, int y) {
-    zoneScale.zoomReset(x, y);
-    MapTool.getFrame().getZoomStatusBar().update();
+    setZoneScale(zoneScale.withZoomReset(x, y));
   }
 
   public void zoomIn(int x, int y) {
-    zoneScale.zoomIn(x, y);
-    MapTool.getFrame().getZoomStatusBar().update();
+    setZoneScale(zoneScale.zoomedIn(x, y));
   }
 
   public void zoomOut(int x, int y) {
-    zoneScale.zoomOut(x, y);
-    MapTool.getFrame().getZoomStatusBar().update();
+    setZoneScale(zoneScale.zoomedOut(x, y));
   }
 
   public void enforceView(int x, int y, double scale, int gmWidth, int gmHeight) {
@@ -2276,18 +2268,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void setScale(double scale) {
-    if (zoneScale.getScale() != scale) {
-      /*
-       * MCL: I think it is correct to clear these caches (if not more).
-       */
-      clearZoomDependantCaches();
-      zoneScale.zoomScale(getWidth() / 2, getHeight() / 2, scale);
-      MapTool.getFrame().getZoomStatusBar().update();
-    }
-  }
-
-  private void clearZoomDependantCaches() {
-    invalidateCurrentViewCache();
+    setZoneScale(zoneScale.withScale(scale, getWidth() / 2, getHeight() / 2));
   }
 
   public double getScale() {
