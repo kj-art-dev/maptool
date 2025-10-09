@@ -77,7 +77,7 @@ public class VisionOverlayRenderer {
     }
     if (zone.hasFog()) {
       currentTokenVisionArea = new Area(currentTokenVisionArea);
-      currentTokenVisionArea.intersect(zoneView.getExposedArea(tokenView));
+      currentTokenVisionArea.intersect(zoneView.getVisibility(tokenView).exposedArea());
     }
 
     // Keep the line a consistent thickness

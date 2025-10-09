@@ -61,7 +61,7 @@ public class LumensRenderer {
     var timer = CodeTimer.get();
     var overlayOpacity = AppPreferences.lumensOverlayOpacity.get() / 255.0f;
 
-    var visibleArea = zoneView.getVisibleArea(view);
+    var visibleArea = zoneView.getVisibility(view).visibleArea();
     final var disjointLumensLevels = zoneView.getDisjointObscuredLumensLevels(view);
 
     var originalClip = worldG.getClip();

@@ -1952,9 +1952,11 @@ public class PointerTool extends DefaultTool {
             ExposedAreaMetaData meta = zone.getExposedAreaMetaData(token.getExposedAreaGUID());
             tokenFog.add(meta.getExposedAreaHistory());
 
-            // Jamz: Allow a token without site to move within the current PlayerView
+            // Jamz: Allow a token without sight to move within the current PlayerView
             if (!token.getHasSight()) {
-              tokenFog.add(renderer.getZoneView().getVisibleArea(new PlayerView(Role.PLAYER)));
+              var view = new PlayerView(Role.PLAYER);
+              var visibleArea = renderer.getZoneView().getVisibility(view).visibleArea();
+              tokenFog.add(visibleArea);
             }
           }
 

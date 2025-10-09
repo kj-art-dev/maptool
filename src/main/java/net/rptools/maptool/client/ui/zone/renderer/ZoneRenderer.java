@@ -860,7 +860,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.start("calcs-1");
     if (visibleScreenArea == null) {
       timer.start("ZoneRenderer-getVisibleArea");
-      Area a = zoneView.getVisibleArea(view);
+      Area a = zoneView.getVisibility(view).visibleArea();
       timer.stop("ZoneRenderer-getVisibleArea");
 
       timer.start("createTransformedArea");
@@ -1181,13 +1181,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // Regardless of vision settings, no need to render beyond the fog.
     Area clearArea = null;
     if (!view.isGMView()) {
-      if (zone.hasFog() && zoneView.isUsingVision()) {
-        clearArea = new Area(zoneView.getExposedArea(view));
-        clearArea.intersect(zoneView.getVisibleArea(view));
-      } else if (zone.hasFog()) {
-        clearArea = zoneView.getExposedArea(view);
+      if (zone.hasFog()) {
+        clearArea = zoneView.getVisibility(view).clearArea();
       } else if (zoneView.isUsingVision()) {
-        clearArea = zoneView.getVisibleArea(view);
+        clearArea = zoneView.getVisibility(view).visibleArea();
       }
 
       if (clearArea != null) {
