@@ -31,14 +31,14 @@ public class FogRenderer {
   private final ZoneView zoneView;
 
   public FogRenderer(RenderHelper renderHelper, Zone zone, ZoneView zoneView) {
-    this.renderHelper = renderHelper;
+    this.renderHelper = renderHelper.withTimerPrefix("FogRenderer");
     this.zone = zone;
     this.zoneView = zoneView;
   }
 
   public void render(Graphics2D g, PlayerView view) {
     var timer = CodeTimer.get();
-    timer.start("renderFog");
+    timer.start("FogRenderer-renderFog");
     try {
       if (!zone.hasFog()) {
         return;
@@ -47,7 +47,7 @@ public class FogRenderer {
       this.renderHelper.bufferedRender(
           g, AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
     } finally {
-      timer.stop("renderFog");
+      timer.stop("FogRenderer-renderFog");
     }
   }
 
@@ -61,16 +61,10 @@ public class FogRenderer {
     Area visibleArea = zoneView.getVisibleArea(view);
     timer.stop("renderFog-getVisibleArea");
 
-    String msg = null;
-    if (timer.isEnabled()) {
-      msg =
-          "renderFog-getExposedArea("
-              + (view.isUsingTokenView() ? view.getTokens().size() : 0)
-              + ")";
-    }
-    timer.start(msg);
+    var tokenCount = view.isUsingTokenView() ? view.getTokens().size() : 0;
+    timer.start("renderFog-getExposedArea(%d)", tokenCount);
     Area exposedArea = zoneView.getExposedArea(view);
-    timer.stop(msg);
+    timer.stop("renderFog-getExposedArea(%d)", tokenCount);
 
     // Hard FOW is cleared by exposed areas. The exposed area itself has two regions: the visible
     // area (rendered clear) and the soft FOW area (rendered translucent). But if vision is off,
@@ -88,32 +82,32 @@ public class FogRenderer {
 
     var originalClip = worldG.getClip();
 
-    timer.start("renderFog-hardFow");
+    timer.start("FogRenderer-renderFog:hardFow");
     // Fill. This will be cleared out later to produce soft fog and clear visible area.
     worldG.setPaint(zone.getFogPaint().getPaint());
     // JFJ this fixes the GM exposed area view.
     worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC, view.isGMView() ? .6f : 1f));
     var bounds = originalClip.getBounds();
     worldG.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    timer.stop("renderFog-hardFow");
+    timer.stop("FogRenderer-renderFog:hardFow");
 
-    timer.start("renderFog-softFow");
+    timer.start("FogRenderer-renderFog:softFow");
     if (!softFogArea.isEmpty()) {
       worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
       worldG.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
       worldG.fill(softFogArea);
     }
-    timer.stop("renderFog-softFow");
+    timer.stop("FogRenderer-renderFog:softFow");
 
-    timer.start("renderFog-exposedArea");
+    timer.start("FogRenderer-renderFog:exposedArea");
     if (!clearArea.isEmpty()) {
       // Now fill in the visible area.
       worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
       worldG.fill(clearArea);
     }
-    timer.stop("renderFog-exposedArea");
+    timer.stop("FogRenderer-renderFog:exposedArea");
 
-    timer.start("renderFog-outline");
+    timer.start("FogRenderer-renderFog:outline");
     // If there is no boundary between soft fog and visible area, there is no need for an outline.
     if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
       worldG.setComposite(AlphaComposite.Src);
@@ -122,6 +116,6 @@ public class FogRenderer {
       worldG.setColor(Color.BLACK);
       worldG.draw(clearArea);
     }
-    timer.stop("renderFog-outline");
+    timer.stop("FogRenderer-renderFog:outline");
   }
 }
