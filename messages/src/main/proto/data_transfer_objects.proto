@@ -100,6 +100,56 @@ message LightDto {
   int32 lumens = 9;
 }
 
+message HaloSourceDto {
+  enum HaloTypeDto {
+    NORMAL = 0;
+    CUSTOM = 1;
+  }
+  google.protobuf.StringValue name = 1;
+  google.protobuf.StringValue id = 2;
+  HaloTypeDto halo_type = 3;
+  bool scale_with_token = 4;
+  repeated HaloDto halos = 5;
+}
+
+message HaloDto {
+  enum HaloShapeTypeDto {
+    CIRCLE = 0;
+    ARC = 1;
+    CHORD = 2;
+    PIE = 3;
+    TRIANGLE = 4;
+    SQUARE = 5;
+    POLYGON = 6;
+    STAR = 7;
+    GRID = 8;
+    FOOTPRINT = 9;
+    TOKEN = 10;
+    TOPOLOGY = 11;
+    MBL = 12;
+  }
+  DrawablePaintDto paint = 1;
+  HaloShapeTypeDto halo_shape_type = 2;
+  int32 width = 3;
+  repeated float dashed_pattern = 4;
+  bool is_gm = 5;
+  bool owner_only = 6;
+  bool fill = 7;
+  bool flip_horizontal = 8;
+  bool flip_vertical = 9;
+  double angle = 10;
+  double offset = 11;
+  double rotate = 12;
+  double scale_x = 13;
+  double scale_y = 14;
+  int32 vertices = 15;
+  int32 mini = 16;
+  int32 mini_start = 17;
+  int32 mini_stop = 18;
+  double mini_rotate = 19;
+  double mini_spin = 20;
+}
+
 message LocationDto {
   oneof LocationTyp {
     LocalLocationDto local_location = 1;
@@ -134,6 +184,7 @@ message CampaignPropertiesDto {
   repeated SightTypeDto sight_types = 13;
   map<string, StatSheetPropertiesDto> token_type_stat_sheet = 14;
   google.protobuf.StringValue default_token_property_type = 15;
+  map<string, HaloSourceListDto> halo_sources = 16;
 }
 
 message SightTypeDto {
@@ -251,6 +302,9 @@ message LightSourceListDto {
   repeated LightSourceDto light_sources = 1;
 }
 
+message HaloSourceListDto {
+  repeated HaloSourceDto halo_sources = 1;
+}
 
 enum WalkerMetricDto {
   NO_DIAGONALS = 0;
@@ -366,6 +420,7 @@ message TokenDto {
   string notes_type = 68;
   string gm_notes_type = 69;
   StatSheetPropertiesDto stat_sheet_properties = 70;
+  repeated AttachedHaloSourceDto halo_sources = 73;
 }
 
 message PathDto {
@@ -392,6 +447,10 @@ message TerrainModifierOperationListDto {
 
 message AttachedLightSourceDto {
   string light_source_id = 1;
+}
+
+message AttachedHaloSourceDto {
+  string halo_source_id = 1;
 }
 
 message MacroButtonPropertiesDto {
@@ -658,6 +717,9 @@ enum TokenUpdateDto {
     flipIso = 55;
     setSpeechName = 56;
     removeFacing = 57;
+    clearHaloSources = 58;
+    removeHaloSource = 59;
+    addHaloSource = 60;
 }
 
 message AssetTransferHeaderDto {
@@ -685,6 +747,8 @@ message TokenPropertyValueDto {
     GridDto grid = 10;
     TokenFootPrintDto token_foot_print = 11;
     string topology_type = 12;
+    string halo_source_id = 13;
+    HaloSourceDto halo_source = 14;
   }
 }
 

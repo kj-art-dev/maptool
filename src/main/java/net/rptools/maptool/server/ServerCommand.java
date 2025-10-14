@@ -201,6 +201,16 @@ public interface ServerCommand {
    */
   void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource);
 
+  /**
+   * Adds or removes a halo source on {@code token}.
+   *
+   * @param token The token to modify
+   * @param toggleOn If {@code true}, the halo source is turned on for the token. Otherwise, it is
+   *     turned off.
+   * @param haloSource The halo source to add.
+   */
+  void toggleHaloSourceOnToken(Token token, boolean toggleOn, HaloSource haloSource);
+
   void setTokenMaskTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
 
   void updateTokenProperty(Token token, Token.Update update, int value);

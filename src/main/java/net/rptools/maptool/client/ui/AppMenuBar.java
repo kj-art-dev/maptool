@@ -228,9 +228,16 @@ public class AppMenuBar extends JMenuBar {
     menu.addSeparator();
 
     menu.add(createZoomMenu());
-    menu.add(new JMenuItem(AppActions.TOGGLE_SHOW_TOKEN_NAMES));
 
-    JCheckBoxMenuItem item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TEXT_LABELS, menu);
+    JCheckBoxMenuItem item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TOKEN_HALOS, menu);
+    item.setSelected(AppState.isShowTokenHalos());
+    menu.add(item);
+
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TOKEN_NAMES, menu);
+    item.setSelected(AppState.isShowTokenNames());
+    menu.add(item);
+
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TEXT_LABELS, menu);
     item.setSelected(AppState.getShowTextLabels());
     menu.add(item);
 

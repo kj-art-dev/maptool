@@ -135,6 +135,7 @@ public class RessourceManager {
           put(Icons.MENU_NETWORK_SETUP, IMAGE_DIR + "download.png");
           put(Icons.MENU_SCRIPTING, IMAGE_DIR + "pencil.png");
           put(Icons.MENU_SHOW_GRIDS, IMAGE_DIR + "grid.gif");
+          put(Icons.MENU_SHOW_TOKEN_HALOS, IMAGE_DIR + "halos.png");
           put(Icons.MENU_SHOW_TOKEN_NAMES, IMAGE_DIR + "names.png");
           put(Icons.MENU_TUTORIALS, IMAGE_DIR + "tutorial.jpg");
           put(Icons.STATUSBAR_ASSET_CACHE, IMAGE_DIR + "asset-status.png");
@@ -368,6 +369,7 @@ public class RessourceManager {
           put(Icons.MENU_NETWORK_SETUP, ROD_ICONS + "menu/Network Setup.svg");
           put(Icons.MENU_SCRIPTING, ROD_ICONS + "menu/Macro Scripting.svg");
           put(Icons.MENU_SHOW_GRIDS, ROD_ICONS + "menu/Show Grids.svg");
+          put(Icons.MENU_SHOW_TOKEN_HALOS, ROD_ICONS + "menu/Show Token Halos.svg");
           put(Icons.MENU_SHOW_TOKEN_NAMES, ROD_ICONS + "menu/Show Token Names.svg");
           put(Icons.MENU_TUTORIALS, ROD_ICONS + "menu/Tutorials.svg");
           put(Icons.PROPERTIES_TABLE_ALPHABETIC, ROD_ICONS + "misc/Alphabetic.svg");

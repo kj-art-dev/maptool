@@ -327,6 +327,19 @@ public class Campaign implements Serializable {
   }
 
   /**
+   * Stub that calls <code>campaignProperties.getHaloSourcesMap()</code>.
+   *
+   * @return the {@link Map} of between haloSourceIds and {@link HaloSource}s
+   */
+  public CategorizedHalos getHaloSources() {
+    return campaignProperties.getHaloSources();
+  }
+
+  public void setHaloSources(CategorizedHalos map) {
+    campaignProperties.setHaloSources(map);
+  }
+
+  /**
    * Stub that calls <code>campaignProperties.getTokenStatesMap()</code>.
    *
    * @return the {@link Map} for token states

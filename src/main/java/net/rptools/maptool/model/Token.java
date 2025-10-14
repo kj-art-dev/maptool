@@ -220,7 +220,10 @@ public class Token implements Cloneable {
     flipY,
     flipIso,
     setSpeechName,
-    removeFacing
+    removeFacing,
+    clearHaloSources,
+    removeHaloSource,
+    addHaloSource,
   }
 
   public static final Comparator<Token> NAME_COMPARATOR =
@@ -333,6 +336,13 @@ public class Token implements Cloneable {
    * <p>The elements should be unique, i.e., no two should reference the same light source.
    */
   private List<AttachedLightSource> lightSourceList = new ArrayList<>();
+
+  /**
+   * All halos sources attached to the token.
+   *
+   * <p>The elements should be unique, i.e., no two should reference the same halo source.
+   */
+  private List<AttachedHaloSource> haloSourceList = new ArrayList<>();
 
   private String sightType;
   private boolean hasSight;
@@ -468,6 +478,10 @@ public class Token implements Cloneable {
 
     uniqueLightSources.putAll(token.uniqueLightSources);
     lightSourceList.addAll(token.lightSourceList);
+
+    if (token.haloSourceList != null) {
+      haloSourceList.addAll(token.haloSourceList);
+    }
 
     state.putAll(token.state);
     getPropertyMap().clear();
@@ -987,6 +1001,133 @@ public class Token implements Cloneable {
 
   public List<AttachedLightSource> getLightSources() {
     return Collections.unmodifiableList(lightSourceList);
+  }
+
+  public void addHaloSource(GUID haloSourceId) {
+    if (haloSourceList.stream().anyMatch(source -> source.matches(haloSourceId))) {
+      // Avoid duplicates.
+      return;
+    }
+    haloSourceList.add(new AttachedHaloSource(haloSourceId));
+  }
+
+  public void removeHalos() {
+    for (ListIterator<AttachedHaloSource> i = haloSourceList.listIterator(); i.hasNext(); ) {
+      AttachedHaloSource ahs = i.next();
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        List<Halo> halos = haloSource.getHaloList();
+        for (Halo halo : halos) {
+          i.remove();
+          break;
+        }
+      }
+    }
+  }
+
+  public void removeGMHalos() {
+    for (ListIterator<AttachedHaloSource> i = haloSourceList.listIterator(); i.hasNext(); ) {
+      AttachedHaloSource ahs = i.next();
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        List<Halo> halos = haloSource.getHaloList();
+        for (Halo halo : halos) {
+          if (halo != null && halo.isGM()) {
+            i.remove();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  public void removeOwnerOnlyHalos() {
+    for (ListIterator<AttachedHaloSource> i = haloSourceList.listIterator(); i.hasNext(); ) {
+      AttachedHaloSource ahs = i.next();
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        List<Halo> halos = haloSource.getHaloList();
+        for (Halo halo : halos) {
+          if (halo.isOwnerOnly()) {
+            i.remove();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  public boolean hasHalos() {
+    for (AttachedHaloSource ahs : haloSourceList) {
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean hasGMHalos() {
+    for (AttachedHaloSource ahs : haloSourceList) {
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        List<Halo> halos = haloSource.getHaloList();
+        for (Halo halo : halos) {
+          if (halo.isGM()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean hasOwnerOnlyHalos() {
+    for (AttachedHaloSource ahs : haloSourceList) {
+      HaloSource haloSource = ahs.resolve(this, MapTool.getCampaign());
+      if (haloSource != null) {
+        List<Halo> halos = haloSource.getHaloList();
+        for (Halo halo : halos) {
+          if (halo.isOwnerOnly()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public void removeHaloSource(GUID haloSourceId) {
+    haloSourceList.removeIf(ahs -> ahs.matches(haloSourceId));
+  }
+
+  /** Clear the haloSourceList */
+  public void clearHaloSources() {
+    haloSourceList.clear();
+  }
+
+  public boolean hasHaloSource(HaloSource source) {
+    if (source.getId() == null) {
+      return false;
+    }
+
+    for (AttachedHaloSource ahs : haloSourceList) {
+      if (ahs.matches(source.getId())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @return false if haloSourceList is null or empty, and true otherwise
+   */
+  public boolean hasHaloSources() {
+    return !haloSourceList.isEmpty();
+  }
+
+  public List<AttachedHaloSource> getHaloSources() {
+    return Collections.unmodifiableList(haloSourceList);
   }
 
   public synchronized void addOwner(String playerId) {
@@ -2893,6 +3034,15 @@ public class Token implements Cloneable {
         lightChanged = true;
         addLightSource(GUID.valueOf(parameters.get(0).getLightSourceId()));
         break;
+      case clearHaloSources:
+        clearHaloSources();
+        break;
+      case removeHaloSource:
+        removeHaloSource(GUID.valueOf(parameters.get(0).getHaloSourceId()));
+        break;
+      case addHaloSource:
+        addHaloSource(GUID.valueOf(parameters.get(0).getHaloSourceId()));
+        break;
       case setHasSight:
         if (hasLightSources()) {
           lightChanged = true;
@@ -3024,6 +3174,10 @@ public class Token implements Cloneable {
         dto.getLightSourcesList().stream()
             .map(AttachedLightSource::fromDto)
             .collect(Collectors.toList()));
+    token.haloSourceList.addAll(
+        dto.getHaloSourcesList().stream()
+            .map(AttachedHaloSource::fromDto)
+            .collect(Collectors.toList()));
     token.sightType = dto.hasSightType() ? dto.getSightType().getValue() : null;
     token.hasSight = dto.getHasSight();
     token.hasImageTable = dto.getHasImageTable();
@@ -3153,6 +3307,8 @@ public class Token implements Cloneable {
         uniqueLightSources.values().stream().map(LightSource::toDto).collect(Collectors.toList()));
     dto.addAllLightSources(
         lightSourceList.stream().map(AttachedLightSource::toDto).collect(Collectors.toList()));
+    dto.addAllHaloSources(
+        haloSourceList.stream().map(AttachedHaloSource::toDto).collect(Collectors.toList()));
     if (sightType != null) {
       dto.setSightType(StringValue.of(sightType));
     }

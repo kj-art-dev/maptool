@@ -36,18 +36,7 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLOverlayManager;
 import net.rptools.maptool.client.ui.token.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.Campaign;
-import net.rptools.maptool.model.CampaignProperties;
-import net.rptools.maptool.model.CategorizedLights;
-import net.rptools.maptool.model.Grid;
-import net.rptools.maptool.model.GridFactory;
-import net.rptools.maptool.model.Light;
-import net.rptools.maptool.model.LightSource;
-import net.rptools.maptool.model.LookupTable;
-import net.rptools.maptool.model.ShapeType;
-import net.rptools.maptool.model.SightType;
-import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.server.ServerPolicy;
@@ -472,6 +461,24 @@ public class getInfoFunction extends AbstractFunction {
       sightInfo.add(sightType.getName(), si);
     }
     cinfo.add("sight", sightInfo);
+
+    JsonObject haloInfo = new JsonObject();
+    for (CategorizedHalos.Category category : c.getHaloSources().getCategories()) {
+      JsonArray hcinfo = new JsonArray();
+      for (HaloSource hs : category.halos()) {
+        JsonObject hsinfo = new JsonObject();
+        hsinfo.addProperty("name", hs.getName());
+        hsinfo.addProperty("scale", hs.isScaleWithToken());
+        JsonArray haloList = new JsonArray();
+        for (Halo halo : hs.getHaloList()) {
+          haloList.add(gson.toJsonTree(halo));
+        }
+        hsinfo.add("halo", haloList);
+        hcinfo.add(hsinfo);
+      }
+      haloInfo.add(category.name(), hcinfo);
+    }
+    cinfo.add("halos", haloInfo);
 
     JsonObject barinfo = new JsonObject();
     for (BarTokenOverlay tbo : c.getTokenBarsMap().values()) {

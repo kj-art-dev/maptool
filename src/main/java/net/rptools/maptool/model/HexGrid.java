@@ -137,11 +137,14 @@ public abstract class HexGrid extends Grid {
   @Override
   protected Area createCellShape() {
     var hex = new GeneralPath();
+    double edgeLengthAreaFudge =
+        0.4d; // min 0.4d so adjacent footprint cell areas touch and can composite without creating
+    // subpaths
     hex.moveTo(0, minorRadius);
     hex.lineTo(edgeProjection, 0);
-    hex.lineTo(edgeProjection + edgeLength, 0);
-    hex.lineTo(edgeProjection + edgeLength + edgeProjection, minorRadius);
-    hex.lineTo(edgeProjection + edgeLength, getSize());
+    hex.lineTo(edgeProjection + edgeLength + edgeLengthAreaFudge, 0);
+    hex.lineTo(edgeProjection + edgeLength + edgeProjection + edgeLengthAreaFudge, minorRadius);
+    hex.lineTo(edgeProjection + edgeLength + edgeLengthAreaFudge, getSize());
     hex.lineTo(edgeProjection, getSize());
     orientHex(hex);
 

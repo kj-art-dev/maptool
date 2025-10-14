@@ -1813,8 +1813,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
       timer.stop("token-list-5a");
 
-      // Render Halo
-      haloRenderer.renderHalo(tokenG, token, position);
+      timer.start("renderTokens:ShowHalos");
+      if (AppState.isShowTokenHalos()) {
+        haloRenderer.renderHalos(tokenG, token, position, view);
+      }
+      timer.stop("renderTokens:ShowHalos");
 
       // Use opacity to indicate that token is moving
       float opacity = viewModel.isTokenMoving(token.getId()) ? 0.5f : 1f;
