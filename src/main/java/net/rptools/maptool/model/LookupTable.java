@@ -16,13 +16,13 @@ package net.rptools.maptool.model;
 
 import com.google.protobuf.StringValue;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.dicelib.expression.ExpressionParser;
 import net.rptools.dicelib.expression.Result;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.server.proto.LookupEntryDto;
 import net.rptools.maptool.server.proto.LookupTableDto;
 import net.rptools.maptool.util.ExpressionParserFactory;
@@ -69,7 +69,15 @@ public class LookupTable {
   }
 
   public String getRoll() {
-    return getDefaultRoll();
+    if (getPickOnce()) {
+      var entryIndex = getRandomPickOnce();
+      if (entryIndex < 0) {
+        return NO_PICKS_LEFT;
+      }
+      return Integer.toString(entryIndex);
+    } else {
+      return getStandardDefaultRoll();
+    }
   }
 
   public void setName(String name) {
@@ -126,28 +134,15 @@ public class LookupTable {
    * @return A LookupEntry matching the roll.
    * @throws ParserException if roll can't be parsed as integer or die expression
    */
-  public LookupEntry getLookup(String roll) throws ParserException {
-    LookupEntry entry;
-
-    if (roll == null) {
-      roll = getDefaultRoll();
-    }
-
-    if (roll.equals(NO_PICKS_LEFT)) {
-      entry = new LookupEntry(0, 0, NO_PICKS_LEFT, null);
-      return entry;
-    }
-
-    if (getPickOnce()) {
-      entry = getPickOnceLookup(roll);
-    } else {
-      entry = getStandardLookup(roll);
-    }
-
-    return entry;
+  public @Nullable LookupEntry getLookup(String roll) throws ParserException {
+    return getPickOnce() ? getPickOnceLookup(roll) : getStandardLookup(roll);
   }
 
-  private @Nullable LookupEntry getStandardLookup(String roll) throws ParserException {
+  private @Nullable LookupEntry getStandardLookup(@Nullable String roll) throws ParserException {
+    if (roll == null) {
+      roll = getStandardDefaultRoll();
+    }
+
     int tableResult = 0;
     try {
       Result result = expressionParser.evaluate(roll);
@@ -161,18 +156,20 @@ public class LookupTable {
     }
   }
 
-  private LookupEntry getPickOnceLookup(String roll) throws ParserException {
+  private @Nonnull LookupEntry getPickOnceLookup(@Nullable String roll) throws ParserException {
+    int entryIndex;
     try {
-      int entryNum = Integer.parseInt(roll);
-      var entry = getEntryByIndex(entryNum);
-      if (entry == null) {
-        return new LookupEntry(0, 0, NO_PICKS_LEFT, null);
-      }
-
-      entry.setPicked(true);
-      return entry;
+      entryIndex = roll == null ? getRandomPickOnce() : Integer.parseInt(roll);
     } catch (NumberFormatException nfe) {
       throw new ParserException("Expected integer value for pick once table: " + roll);
+    }
+
+    var entry = getEntryByIndex(entryIndex);
+    if (entry == null) {
+      return new LookupEntry(0, 0, NO_PICKS_LEFT, null);
+    } else {
+      entry.setPicked(true);
+      return entry;
     }
   }
 
@@ -197,51 +194,49 @@ public class LookupTable {
     return val;
   }
 
-  private String getDefaultRoll() {
-    if (getPickOnce()) {
-      // For Pick Once tables this returns a random pick from those entries in the list that
-      // have not been picked.
-      List<LookupEntry> le = entryList;
-      LookupEntry entry;
-      int len = le.size();
-      List<Integer> unpicked = new ArrayList<Integer>();
-      for (int i = 0; i < len; i++) {
-        entry = le.get(i);
-        if (!entry.picked) {
-          unpicked.add(i);
-        }
+  /**
+   * Gets a random entry index, for use with pick once tables.
+   *
+   * @return A random entry index, or {@code -1} if there are no picks left.
+   */
+  private int getRandomPickOnce() {
+    // For Pick Once tables this returns a random pick from those entries in the list that
+    // have not been picked.
+    List<LookupEntry> le = entryList;
+    LookupEntry entry;
+    int len = le.size();
+    List<Integer> unpicked = new ArrayList<Integer>();
+    for (int i = 0; i < len; i++) {
+      entry = le.get(i);
+      if (!entry.picked) {
+        unpicked.add(i);
       }
-      if (unpicked.isEmpty()) {
-        return (NO_PICKS_LEFT);
-      }
-      try {
-        Result result = expressionParser.evaluate("d" + unpicked.size());
-        int index = Integer.parseInt(result.getValue().toString()) - 1;
-        return unpicked.get(index).toString();
-      } catch (ParserException e) {
-        MapTool.showError("Error getting default roll for Pick Once table ", e);
-        return (NO_PICKS_LEFT);
-      }
-    } else {
-      if (defaultRoll != null && defaultRoll.length() > 0) {
-        return defaultRoll;
-      }
-
-      // Find the min and max range
-      Integer min = null;
-      Integer max = null;
-
-      for (LookupEntry entry : entryList) {
-        if (min == null || entry.min < min) {
-          min = entry.min;
-        }
-        if (max == null || entry.max > max) {
-          max = entry.max;
-        }
-      }
-
-      return min != null ? "d" + (max - min + 1) + (min - 1 != 0 ? "+" + (min - 1) : "") : "";
     }
+    if (unpicked.isEmpty()) {
+      return -1;
+    }
+
+    var index = ThreadLocalRandom.current().nextInt(unpicked.size());
+    return unpicked.get(index);
+  }
+
+  private String getStandardDefaultRoll() {
+    if (defaultRoll != null && !defaultRoll.isEmpty()) {
+      return defaultRoll;
+    }
+
+    if (entryList.isEmpty()) {
+      return "";
+    }
+
+    var first = entryList.getFirst();
+    int min = first.min;
+    int max = first.max;
+    for (LookupEntry entry : entryList.subList(1, entryList.size())) {
+      min = Math.min(min, entry.min);
+      max = Math.max(max, entry.max);
+    }
+    return "d" + (max - min + 1) + (min - 1 != 0 ? "+" + (min - 1) : "");
   }
 
   /** Sets the picked flag on each table entry to false. */
