@@ -81,6 +81,23 @@ public class LookupTable {
   }
 
   /**
+   * Looks up an entry by its index in the list of entries.
+   *
+   * <p>This is useful for pick once tables where, unlike standard tables, the ranges are not used
+   * to lookup entries.
+   *
+   * @param index The index of the entry to look up.
+   * @return The entry at index {@code index}, or {@code null} if the index is out of bounds.
+   */
+  public @Nullable LookupEntry getEntryByIndex(int index) {
+    if (index < 0 || index >= entryList.size()) {
+      return null;
+    }
+
+    return entryList.get(index);
+  }
+
+  /**
    * Accepts a string containing a valid dice expression or integer which is evaluated and then the
    * matching entry in the table is returned.
    *
@@ -154,17 +171,13 @@ public class LookupTable {
   private LookupEntry getPickOnceLookup(String roll) throws ParserException {
     try {
       int entryNum = Integer.parseInt(roll);
-
-      if (entryNum < entryList.size()) {
-        LookupEntry entry = entryList.get(entryNum);
-        entry.setPicked(true);
-        entryList.set(entryNum, entry);
-
-        return entry;
-      } else {
+      var entry = getEntryByIndex(entryNum);
+      if (entry == null) {
         return new LookupEntry(0, 0, NO_PICKS_LEFT, null);
       }
 
+      entry.setPicked(true);
+      return entry;
     } catch (NumberFormatException nfe) {
       throw new ParserException("Expected integer value for pick once table: " + roll);
     }
@@ -239,36 +252,10 @@ public class LookupTable {
   }
 
   /** Sets the picked flag on each table entry to false. */
-  public void reset() {
+  public void resetPicks() {
     for (var entry : entryList) {
       entry.setPicked(false);
     }
-  }
-
-  /**
-   * Reset the picked status of specific entries, allowing them to be picked again in this PickOnce
-   * table. Note that this uses the same indexing scheme as {@link #getPickOnceLookup(String)} -
-   * these entries are identified by list index (starting at 0), and NOT by any configured range.
-   *
-   * @param entriesToReset a list of strings representing the integer indices of entries to reset
-   * @throws NumberFormatException if any of the string entries cannot be successfully parsed as an
-   *     integer.
-   */
-  public void reset(List<String> entriesToReset) {
-    Set<Integer> indicesToReset =
-        entriesToReset.stream()
-            .map(Integer::parseInt)
-            .collect(Collectors.toCollection(HashSet::new));
-    List<LookupEntry> curList = entryList;
-    List<LookupEntry> newList = new ArrayList<>();
-    for (int i = 0; i < curList.size(); i++) {
-      LookupEntry entry = curList.get(i);
-      if (indicesToReset.contains(i)) {
-        entry.setPicked(false);
-      }
-      newList.add(entry);
-    }
-    entryList = newList;
   }
 
   /**
@@ -315,7 +302,7 @@ public class LookupTable {
    */
   public void setPickOnce(boolean pickOnce) {
     this.pickOnce = pickOnce;
-    this.reset();
+    this.resetPicks();
   }
 
   /**

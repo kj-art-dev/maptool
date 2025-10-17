@@ -15,14 +15,15 @@
 package net.rptools.maptool.client.functions;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.LookupTable.LookupEntry;
@@ -323,14 +324,12 @@ public class LookupTableFunction extends AbstractFunction {
       String name = params.get(0).toString();
       int index = FunctionUtil.paramAsInteger(function, params, 1, false);
       LookupTable lookupTable = getMaptoolTable(name, function);
-      List<LookupEntry> entriesList = lookupTable.getEntryList();
-      if (index >= 0 && index < entriesList.size()) {
-        LookupEntry entry = entriesList.get(index);
-        return convertLookUpEntryToJson(entry);
-      } else {
+      LookupEntry entry = lookupTable.getEntryByIndex(index);
+      if (entry == null) {
         return "";
+      } else {
+        return convertLookUpEntryToJson(entry);
       }
-
     } else if ("getTableEntries".equalsIgnoreCase(function)) {
       /*
        * Parameters:
@@ -408,19 +407,22 @@ public class LookupTableFunction extends AbstractFunction {
       LookupTable lookupTable = getMaptoolTable(tblName, function);
       if (params.size() > 1) {
         String delim = (params.size() > 2) ? params.get(2).toString() : ",";
-        List<String> entriesToReset;
+
+        Stream<String> indicesAsStrings;
         if (delim.equalsIgnoreCase("json")) {
           JsonArray jsonArray = FunctionUtil.paramAsJsonArray(function, params, 1);
-          entriesToReset =
-              JSONMacroFunctions.getInstance()
-                  .getJsonArrayFunctions()
-                  .jsonArrayToListOfStrings(jsonArray);
+          indicesAsStrings = jsonArray.asList().stream().map(JsonElement::getAsString);
         } else {
-          entriesToReset = StrListFunctions.toList(params.get(1).toString(), delim);
+          indicesAsStrings = StrListFunctions.toList(params.get(1).toString(), delim).stream();
         }
-        lookupTable.reset(entriesToReset);
+
+        indicesAsStrings
+            .mapToInt(Integer::parseInt)
+            .mapToObj(lookupTable::getEntryByIndex)
+            .filter(Objects::nonNull)
+            .forEach(e -> e.setPicked(false));
       } else {
-        lookupTable.reset();
+        lookupTable.resetPicks();
       }
       MapTool.serverCommand().updateCampaign(MapTool.getCampaign().getCampaignProperties());
       return "";
