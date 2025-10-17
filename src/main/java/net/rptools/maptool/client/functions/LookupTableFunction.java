@@ -272,28 +272,25 @@ public class LookupTableFunction extends AbstractFunction {
       checkTrusted(function);
       FunctionUtil.checkNumberParam("setTableEntry", params, 3, 4);
       String name = params.get(0).toString();
-      String roll = params.get(1).toString();
+      int roll = FunctionUtil.paramAsInteger(function, params, 1, true);
       String result = params.get(2).toString();
       MD5Key imageId = null;
       if (params.size() == 4) {
         imageId = FunctionUtil.getAssetKeyFromString(params.get(3).toString());
       }
-      LookupTable lookupTable = getMaptoolTable(name, function);
-      LookupEntry entry = lookupTable.getLookup(roll);
-      if (entry == null) return 0; // no entry was found
-      int rollInt = Integer.parseInt(roll);
-      if (rollInt < entry.getMin() || rollInt > entry.getMax())
-        return 0; // entry was found but doesn't match
-      List<LookupEntry> oldlist = new ArrayList<>(lookupTable.getEntryList());
-      lookupTable.clearEntries();
-      for (LookupEntry e : oldlist)
-        if (e != entry) {
-          lookupTable.addEntry(e.getMin(), e.getMax(), e.getValue(), e.getImageId());
-        } else {
-          if (imageId == null) imageId = e.getImageId();
 
-          lookupTable.addEntry(e.getMin(), e.getMax(), result, imageId);
-        }
+      LookupTable lookupTable = getMaptoolTable(name, function);
+      LookupEntry entry = lookupTable.getEntryByRollResult(roll);
+      if (entry == null) {
+        return 0;
+      }
+
+      entry.setValue(result);
+      if (imageId != null) {
+        // So... how is one supposed to remove the image?
+        entry.setImageId(imageId);
+      }
+
       MapTool.serverCommand().updateCampaign(MapTool.getCampaign().getCampaignProperties());
       return 1;
 

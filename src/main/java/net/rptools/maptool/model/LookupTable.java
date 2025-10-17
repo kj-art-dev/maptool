@@ -366,6 +366,10 @@ public class LookupTable {
       return imageId;
     }
 
+    public void setImageId(@Nullable MD5Key imageId) {
+      this.imageId = imageId;
+    }
+
     public void setPicked(boolean b) {
       picked = b;
     }
@@ -384,6 +388,10 @@ public class LookupTable {
 
     public @Nullable String getValue() {
       return value;
+    }
+
+    public void setValue(@Nullable String value) {
+      this.value = value;
     }
 
     public static LookupEntry fromDto(LookupEntryDto dto) {
