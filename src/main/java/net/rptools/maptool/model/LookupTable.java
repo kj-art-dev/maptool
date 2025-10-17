@@ -68,10 +68,6 @@ public class LookupTable {
     entryList.add(new LookupEntry(min, max, result, imageId));
   }
 
-  public LookupEntry getLookup() throws ParserException {
-    return getLookup(null);
-  }
-
   public String getRoll() {
     return getDefaultRoll();
   }
@@ -202,7 +198,7 @@ public class LookupTable {
       List<LookupEntry> le = entryList;
       LookupEntry entry;
       int len = le.size();
-      List unpicked = new ArrayList<Integer>();
+      List<Integer> unpicked = new ArrayList<Integer>();
       for (int i = 0; i < len; i++) {
         entry = le.get(i);
         if (!entry.picked) {
@@ -244,13 +240,9 @@ public class LookupTable {
 
   /** Sets the picked flag on each table entry to false. */
   public void reset() {
-    List<LookupEntry> curList = entryList;
-    List<LookupEntry> newList = new ArrayList<>();
-    for (LookupEntry entry : curList) {
+    for (var entry : entryList) {
       entry.setPicked(false);
-      newList.add(entry);
     }
-    entryList = newList;
   }
 
   /**
@@ -293,7 +285,7 @@ public class LookupTable {
    *
    * @return MD5Key
    */
-  public MD5Key getTableImage() {
+  public @Nullable MD5Key getTableImage() {
     return tableImage;
   }
 
@@ -302,21 +294,16 @@ public class LookupTable {
    *
    * @param tableImage The MD5Key (Asset ID) for the image.
    */
-  public void setTableImage(MD5Key tableImage) {
+  public void setTableImage(@Nullable MD5Key tableImage) {
     this.tableImage = tableImage;
   }
 
   /**
    * Gets whether a table is flagged as Pick Once or not.
    *
-   * @return Boolean - true if table is Pick Once
+   * @return {@code true} if table is Pick Once
    */
   public boolean getPickOnce() {
-    // Older tables won't have it set.
-    if (pickOnce == null) {
-      pickOnce = false;
-    }
-
     return pickOnce;
   }
 
@@ -379,7 +366,7 @@ public class LookupTable {
      */
     @Deprecated private @Nullable String result;
 
-    public LookupEntry(int min, int max, String value, MD5Key imageId) {
+    public LookupEntry(int min, int max, @Nullable String value, @Nullable MD5Key imageId) {
       this.min = min;
       this.max = max;
       this.value = value;
@@ -400,7 +387,7 @@ public class LookupTable {
       return this;
     }
 
-    public MD5Key getImageId() {
+    public @Nullable MD5Key getImageId() {
       return imageId;
     }
 
@@ -420,7 +407,7 @@ public class LookupTable {
       return min;
     }
 
-    public String getValue() {
+    public @Nullable String getValue() {
       return value;
     }
 
@@ -456,7 +443,7 @@ public class LookupTable {
     if (getTableImage() != null) {
       assetSet.add(getTableImage());
     }
-    for (LookupEntry entry : getEntryList()) {
+    for (LookupEntry entry : entryList) {
       if (entry.getImageId() != null) {
         assetSet.add(entry.getImageId());
       }
