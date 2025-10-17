@@ -126,7 +126,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
     accepted = false;
 
     getTableNameTextField().setText(this.lookupTable.getName());
-    getTableRollTextField().setText(this.lookupTable.getRoll());
+    getTableRollTextField().setText(this.lookupTable.calculateRoll());
     tableImageAssetPanel.setImageId(this.lookupTable.getTableImage());
     getVisibleCheckbox().setSelected(this.lookupTable.getVisible());
     getAllowLookupCheckbox().setSelected(this.lookupTable.getAllowLookup());

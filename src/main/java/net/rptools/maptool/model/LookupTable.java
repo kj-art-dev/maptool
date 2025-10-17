@@ -56,6 +56,10 @@ public class LookupTable {
     entryList.addAll(table.entryList);
   }
 
+  public String getRoll() {
+    return defaultRoll;
+  }
+
   public void setRoll(String roll) {
     defaultRoll = roll;
   }
@@ -68,7 +72,7 @@ public class LookupTable {
     entryList.add(new LookupEntry(min, max, result, imageId));
   }
 
-  public String getRoll() {
+  public String calculateRoll() {
     if (getPickOnce()) {
       var entryIndex = getRandomPickOnce();
       if (entryIndex < 0) {

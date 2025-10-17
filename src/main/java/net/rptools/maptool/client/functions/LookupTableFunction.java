@@ -144,7 +144,7 @@ public class LookupTableFunction extends AbstractFunction {
       FunctionUtil.checkNumberParam("getTableRoll", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
-      return lookupTable.getRoll();
+      return lookupTable.calculateRoll();
 
     } else if ("setTableRoll".equalsIgnoreCase(function)) {
 
@@ -153,9 +153,10 @@ public class LookupTableFunction extends AbstractFunction {
       String name = params.get(0).toString();
       String roll = params.get(1).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
+
       lookupTable.setRoll(roll);
       MapTool.serverCommand().updateCampaign(MapTool.getCampaign().getCampaignProperties());
-      return lookupTable.getRoll();
+      return roll;
 
     } else if ("clearTable".equalsIgnoreCase(function)) {
 
