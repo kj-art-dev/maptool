@@ -181,15 +181,15 @@ public class LookupTableFunction extends AbstractFunction {
       checkTrusted(function);
       FunctionUtil.checkNumberParam("addTableEntry", params, 4, 5);
       String name = params.get(0).toString();
-      String min = params.get(1).toString();
-      String max = params.get(2).toString();
+      int min = FunctionUtil.paramAsInteger(function, params, 1, true);
+      int max = FunctionUtil.paramAsInteger(function, params, 2, true);
       String value = params.get(3).toString();
       MD5Key asset = null;
       if (params.size() > 4) {
         asset = FunctionUtil.getAssetKeyFromString(params.get(4).toString());
       }
       LookupTable lookupTable = getMaptoolTable(name, function);
-      lookupTable.addEntry(Integer.parseInt(min), Integer.parseInt(max), value, asset);
+      lookupTable.addEntry(min, max, value, asset);
       MapTool.serverCommand().putLookupTable(lookupTable);
       return "";
 
