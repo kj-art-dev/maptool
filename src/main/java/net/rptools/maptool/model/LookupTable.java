@@ -130,6 +130,10 @@ public class LookupTable {
     return entryList.get(index);
   }
 
+  public boolean deleteEntry(LookupEntry entry) {
+    return entryList.remove(entry);
+  }
+
   /**
    * Accepts a string containing a valid dice expression or integer which is evaluated and then the
    * matching entry in the table is returned.

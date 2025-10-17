@@ -195,6 +195,8 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("deleteTableEntry".equalsIgnoreCase(function)) {
 
+      // Note: unlike getTableEntry() and setTableEntry(), the roll in this case can actually be a
+      // roll expression. I don't like, but it's been that way forever, so..
       checkTrusted(function);
       FunctionUtil.checkNumberParam("deleteTableEntry", params, 2, 2);
       String name = params.get(0).toString();
@@ -202,14 +204,9 @@ public class LookupTableFunction extends AbstractFunction {
       LookupTable lookupTable = getMaptoolTable(name, function);
       LookupEntry entry = lookupTable.getLookup(roll);
       if (entry != null) {
-        List<LookupEntry> oldlist = new ArrayList<>(lookupTable.getEntryList());
-        lookupTable.clearEntries();
-        oldlist.stream()
-            .filter((e) -> (e != entry))
-            .forEachOrdered(
-                (e) -> lookupTable.addEntry(e.getMin(), e.getMax(), e.getValue(), e.getImageId()));
+        lookupTable.deleteEntry(entry);
+        MapTool.serverCommand().putLookupTable(lookupTable);
       }
-      MapTool.serverCommand().putLookupTable(lookupTable);
       return "";
 
     } else if ("createTable".equalsIgnoreCase(function)) {
