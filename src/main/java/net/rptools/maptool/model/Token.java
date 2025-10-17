@@ -1140,12 +1140,9 @@ public class Token implements Cloneable {
     LookupTable lookupTable = MapTool.getCampaign().getLookupTableMap().get(getImageTableName());
     if (lookupTable == null) return getImageAssetId();
 
-    try {
-      LookupTable.LookupEntry result = lookupTable.getLookup(String.valueOf(getFacing()));
-      if (result != null) return result.getImageId();
-
-    } catch (ParserException p) {
-      /* do nothing  */
+    LookupTable.LookupEntry result = lookupTable.getEntryByRollResult(getFacing());
+    if (result != null) {
+      return result.getImageId();
     }
 
     return getImageAssetId();

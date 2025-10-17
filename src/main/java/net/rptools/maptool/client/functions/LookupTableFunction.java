@@ -301,16 +301,11 @@ public class LookupTableFunction extends AbstractFunction {
 
       FunctionUtil.checkNumberParam(function, params, 2, 2);
       String name = params.get(0).toString();
+      int roll = FunctionUtil.paramAsInteger(function, params, 1, true);
       LookupTable lookupTable = getMaptoolTable(name, function);
-      String roll = params.get(1).toString();
-      LookupEntry entry = lookupTable.getLookupDirect(roll);
-
+      LookupEntry entry = lookupTable.getEntryByRollResult(roll);
       if (entry == null) {
         return ""; // no entry was found
-      }
-      int rollInt = Integer.parseInt(roll);
-      if (rollInt < entry.getMin() || rollInt > entry.getMax()) {
-        return ""; // entry was found but doesn't match
       }
       return convertLookUpEntryToJson(entry);
 

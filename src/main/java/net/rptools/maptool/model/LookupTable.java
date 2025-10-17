@@ -81,6 +81,27 @@ public class LookupTable {
   }
 
   /**
+   * Finds the first entry that matches a given roll result.
+   *
+   * <p>This is useful for standard tables where each entry's range must be respected.
+   *
+   * @param rollResult The value to look up.
+   * @return The first entry whose range includes {@code rollResult}, or {@code null} if there is
+   *     none.
+   */
+  public @Nullable LookupEntry getEntryByRollResult(int rollResult) {
+    // For now this is a linear scan. In the future hopefully we can use some kind of accelerated
+    // search.
+    for (var entry : entryList) {
+      if (entry.min <= rollResult && rollResult <= entry.max) {
+        return entry;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Looks up an entry by its index in the list of entries.
    *
    * <p>This is useful for pick once tables where, unlike standard tables, the ranges are not used
@@ -126,46 +147,18 @@ public class LookupTable {
     return entry;
   }
 
-  /**
-   * Accepts a string containing a valid dice expression or integer which is evaluated and then the
-   * matching entry in the table is returned without filtering for picked entries.
-   *
-   * @param roll A string containing a dice expression or integer.
-   * @return A LookupEntry matching the roll.
-   */
-  public LookupEntry getLookupDirect(String roll) throws ParserException {
-    LookupEntry entry;
-
-    if (roll == null) {
-      return (null);
-    }
-
-    entry = getStandardLookup(roll);
-
-    return entry;
-  }
-
-  private LookupEntry getStandardLookup(String roll) throws ParserException {
+  private @Nullable LookupEntry getStandardLookup(String roll) throws ParserException {
     int tableResult = 0;
-    LookupEntry retEntry = null;
-
     try {
       Result result = expressionParser.evaluate(roll);
       tableResult = Integer.parseInt(result.getValue().toString());
 
       tableResult = constrainRoll(tableResult);
 
-      for (LookupEntry entry : entryList) {
-        if (tableResult >= entry.min && tableResult <= entry.max) {
-          retEntry = entry;
-        }
-      }
-
+      return getEntryByRollResult(tableResult);
     } catch (NumberFormatException nfe) {
       throw new ParserException("Error lookup up value: " + tableResult);
     }
-
-    return retEntry;
   }
 
   private LookupEntry getPickOnceLookup(String roll) throws ParserException {

@@ -27,7 +27,6 @@ import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
-import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -182,14 +181,9 @@ public class ImageSupport {
       LookupTable lookupTable =
           MapTool.getCampaign().getLookupTableMap().get(token.getImageTableName());
       if (lookupTable != null) {
-        try {
-          LookupTable.LookupEntry result =
-              lookupTable.getLookup(Integer.toString(token.getFacing()));
-          if (result != null) {
-            image = ImageManager.getImage(result.getImageId(), observers);
-          }
-        } catch (ParserException p) {
-          // do nothing
+        LookupTable.LookupEntry result = lookupTable.getEntryByRollResult(token.getFacing());
+        if (result != null) {
+          image = ImageManager.getImage(result.getImageId(), observers);
         }
       }
     }
