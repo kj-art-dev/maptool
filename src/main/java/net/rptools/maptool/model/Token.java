@@ -1133,27 +1133,53 @@ public class Token implements Cloneable {
     return assetId;
   }
 
-  public MD5Key getTokenImageAssetId() {
+  /**
+   * Looks up the token's facing in the token's image table.
+   *
+   * <p>If the token does not have an image table, or does not have its facing set, or otherwise
+   * cannot find an image ID from the lookup table, this method return {@code null}.
+   *
+   * @return The image ID from the image table, or {@code null} if none can be found.
+   */
+  private @Nullable MD5Key lookupImageTableByFacing() {
     if (!getHasImageTable() || !hasFacing() || getImageTableName() == null) {
-      return getImageAssetId();
+      return null;
     }
 
     LookupTable lookupTable = MapTool.getCampaign().getLookupTableMap().get(getImageTableName());
     if (lookupTable == null) {
-      return getImageAssetId();
+      return null;
     }
 
+    LookupTable.LookupEntry result;
     try {
-      LookupTable.LookupEntry result = lookupTable.getLookup(String.valueOf(getFacing()));
-      if (result != null) {
-        return result.getImageId();
-      }
-
+      result = lookupTable.getLookup(String.valueOf(getFacing()));
     } catch (ParserException p) {
-      /* do nothing  */
+      return null;
+    }
+    if (result == null) {
+      return null;
     }
 
-    return getImageAssetId();
+    MD5Key imageId = result.getImageId();
+    if (imageId == null) {
+      return null;
+    }
+
+    return imageId;
+  }
+
+  /**
+   * Looks up the token's facing in the token's image table.
+   *
+   * <p>If the token does not have an image table, or does not have its facing set, or otherwise
+   * cannot find an image ID from the lookup table, this method returns same result as {@link
+   * #getImageAssetId()}.
+   *
+   * @return The image ID from the image table.
+   */
+  public MD5Key getTokenImageAssetId() {
+    return Objects.requireNonNullElseGet(lookupImageTableByFacing(), this::getImageAssetId);
   }
 
   /**
