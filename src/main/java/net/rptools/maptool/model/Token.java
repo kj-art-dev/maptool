@@ -1134,15 +1134,20 @@ public class Token implements Cloneable {
   }
 
   public MD5Key getTokenImageAssetId() {
-    if (!getHasImageTable() || !hasFacing() || getImageTableName() == null)
+    if (!getHasImageTable() || !hasFacing() || getImageTableName() == null) {
       return getImageAssetId();
+    }
 
     LookupTable lookupTable = MapTool.getCampaign().getLookupTableMap().get(getImageTableName());
-    if (lookupTable == null) return getImageAssetId();
+    if (lookupTable == null) {
+      return getImageAssetId();
+    }
 
     try {
       LookupTable.LookupEntry result = lookupTable.getLookup(String.valueOf(getFacing()));
-      if (result != null) return result.getImageId();
+      if (result != null) {
+        return result.getImageId();
+      }
 
     } catch (ParserException p) {
       /* do nothing  */

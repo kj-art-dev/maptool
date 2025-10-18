@@ -30,10 +30,7 @@ import javax.swing.*;
 import net.rptools.lib.MathUtil;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.util.ImageManager;
-import net.rptools.parser.ParserException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -519,39 +516,6 @@ public class ImageUtil {
     return Math.min(
         footprintBounds.getWidth() / token.getWidth(),
         footprintBounds.getHeight() * 2 / token.getHeight());
-  }
-
-  /**
-   * Checks to see if token has an image table and references that if the token has a facing
-   * otherwise uses basic image
-   *
-   * @param token the token to get the image from.
-   * @return BufferedImage
-   */
-  public static BufferedImage getTokenImage(Token token, ImageObserver... observers) {
-    BufferedImage image = null;
-    // Get the basic image
-    if (token.getHasImageTable() && token.hasFacing() && token.getImageTableName() != null) {
-      LookupTable lookupTable =
-          MapTool.getCampaign().getLookupTableMap().get(token.getImageTableName());
-      if (lookupTable != null) {
-        try {
-          LookupTable.LookupEntry result =
-              lookupTable.getLookup(Integer.toString(token.getFacing()));
-          if (result != null) {
-            image = ImageManager.getImage(result.getImageId(), observers);
-          }
-        } catch (ParserException p) {
-          // do nothing
-        }
-      }
-    }
-
-    if (image == null) {
-      // Adds zr as observer so we can repaint once the image is ready. Fixes #1700.
-      image = ImageManager.getImage(token.getImageAssetId(), observers);
-    }
-    return image;
   }
 
   public static BufferedImage flipIsometric(BufferedImage image, boolean toRhombus) {
