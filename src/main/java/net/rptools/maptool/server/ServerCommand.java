@@ -238,4 +238,8 @@ public interface ServerCommand {
   void updateTokenProperty(Token token, Token.Update update, String value, BigDecimal value2);
 
   void updatePlayerStatus(Player player);
+
+  void putLookupTable(LookupTable lookupTable);
+
+  void deleteLookupTable(String tableName);
 }

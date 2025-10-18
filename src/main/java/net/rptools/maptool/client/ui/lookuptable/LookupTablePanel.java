@@ -214,10 +214,7 @@ public class LookupTablePanel extends AbeillePanel<LookupTableImagePanelModel> {
               LookupTable lookupTable = MapTool.getCampaign().getLookupTableMap().get(ids.get(0));
 
               if (MapTool.confirm("LookupTablePanel.confirm.delete", lookupTable.getName())) {
-                MapTool.getCampaign().getLookupTableMap().remove(lookupTable.getName());
-                MapTool.serverCommand()
-                    .updateCampaign(MapTool.getCampaign().getCampaignProperties());
-
+                MapTool.serverCommand().deleteLookupTable(lookupTable.getName());
                 imagePanel.clearSelection();
                 repaint();
               }
@@ -246,24 +243,15 @@ public class LookupTablePanel extends AbeillePanel<LookupTableImagePanelModel> {
                     Map<String, LookupTable> lookupTables =
                         MapTool.getCampaign().getLookupTableMap();
                     LookupTable newTable = PersistenceUtil.loadTable(selectedFile);
-                    Boolean alreadyExists = lookupTables.keySet().contains(newTable.getName());
-                    if (alreadyExists) {
-                      if (MapTool.confirm("LookupTablePanel.confirm.import", newTable.getName())) {
-                        lookupTables.remove(newTable.getName());
-                      } else {
-                        return;
-                      }
-                      lookupTables.put(newTable.getName(), newTable);
-                      imagePanel.clearSelection();
-                      imagePanel.repaint();
-                      MapTool.serverCommand()
-                          .updateCampaign(MapTool.getCampaign().getCampaignProperties());
+                    boolean alreadyExists = lookupTables.keySet().contains(newTable.getName());
+                    if (alreadyExists
+                        && !MapTool.confirm(
+                            "LookupTablePanel.confirm.import", newTable.getName())) {
+                      return;
                     }
-                    lookupTables.put(newTable.getName(), newTable);
+                    MapTool.serverCommand().putLookupTable(newTable);
                     imagePanel.clearSelection();
                     imagePanel.repaint();
-                    MapTool.serverCommand()
-                        .updateCampaign(MapTool.getCampaign().getCampaignProperties());
                   });
             });
   }

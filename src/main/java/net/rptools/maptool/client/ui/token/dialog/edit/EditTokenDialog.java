@@ -672,7 +672,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
   }
 
   private void updateImageTableCombo() {
-    List<String> typeList = new ArrayList<String>(MapTool.getCampaign().getLookupTables());
+    List<String> typeList =
+        new ArrayList<String>(MapTool.getCampaign().getLookupTableMap().keySet());
     Collections.sort(typeList);
 
     DefaultComboBoxModel model = new DefaultComboBoxModel(typeList.toArray());
