@@ -273,10 +273,12 @@ public class FunctionUtil {
       String functionName, List<Object> parameters, int index, boolean allowString)
       throws ParserException {
     Object parameter = parameters.get(index);
-    if (parameter instanceof BigDecimal) return (BigDecimal) parameter;
+    if (parameter instanceof BigDecimal) {
+      return (BigDecimal) parameter;
+    }
     try {
       if (!allowString && parameter instanceof String) throw new NumberFormatException("String");
-      return (new BigDecimal(parameter.toString()));
+      return new BigDecimal(parameter.toString());
     } catch (NumberFormatException ne) {
       throw new ParserException(
           I18N.getText(KEY_NOT_NUMBER, functionName, index + 1, parameter.toString()));
@@ -299,7 +301,9 @@ public class FunctionUtil {
       throws ParserException {
     Object parameter = parameters.get(index);
     try {
-      if (!allowString && parameter instanceof String) throw new NumberFormatException("String");
+      if (!allowString && parameter instanceof String) {
+        throw new NumberFormatException("String");
+      }
       BigDecimal val = new BigDecimal(parameter.toString());
       return !val.equals(BigDecimal.ZERO); // true if any value except zero
     } catch (NumberFormatException ne) {
@@ -320,13 +324,15 @@ public class FunctionUtil {
    * @throws ParserException if the parameter can't be converted to BigDecimal, or if disallowed
    *     text
    */
-  public static Integer paramAsInteger(
+  public static int paramAsInteger(
       String functionName, List<Object> parameters, int index, boolean allowString)
       throws ParserException {
     Object parameter = parameters.get(index);
     try {
-      if (!allowString && parameter instanceof String) throw new NumberFormatException("String");
-      return Integer.valueOf(parameter.toString());
+      if (!allowString && parameter instanceof String) {
+        throw new NumberFormatException("String");
+      }
+      return Integer.parseInt(parameter.toString());
     } catch (NumberFormatException ne) {
       throw new ParserException(
           I18N.getText(KEY_NOT_INT, functionName, index + 1, parameter.toString()));
@@ -344,13 +350,15 @@ public class FunctionUtil {
    * @return the parameter as a Double
    * @throws ParserException if can't be converted to Double, or disallowed text
    */
-  public static Double paramAsDouble(
+  public static double paramAsDouble(
       String functionName, List<Object> parameters, int index, boolean allowString)
       throws ParserException {
     Object parameter = parameters.get(index);
     try {
-      if (!allowString && parameter instanceof String) throw new NumberFormatException("String");
-      return (Double.valueOf(parameter.toString()));
+      if (!allowString && parameter instanceof String) {
+        throw new NumberFormatException("String");
+      }
+      return Double.parseDouble(parameter.toString());
     } catch (NumberFormatException ne) {
       throw new ParserException(
           I18N.getText(KEY_NOT_NUMBER, functionName, index + 1, parameter.toString()));
@@ -368,13 +376,15 @@ public class FunctionUtil {
    * @return the parameter as a Float
    * @throws ParserException if can't be converted to Float, or if disallowed text
    */
-  public static Float paramAsFloat(
+  public static float paramAsFloat(
       String functionName, List<Object> parameters, int index, boolean allowString)
       throws ParserException {
     Object parameter = parameters.get(index);
     try {
-      if (!allowString && parameter instanceof String) throw new NumberFormatException("String");
-      return (Float.valueOf(parameter.toString()));
+      if (!allowString && parameter instanceof String) {
+        throw new NumberFormatException("String");
+      }
+      return Float.parseFloat(parameter.toString());
     } catch (NumberFormatException ne) {
       throw new ParserException(
           I18N.getText(KEY_NOT_NUMBER, functionName, index + 1, parameter.toString()));

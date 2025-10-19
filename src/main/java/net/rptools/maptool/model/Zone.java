@@ -1316,7 +1316,7 @@ public class Zone {
    * @param view holds whether or not tokens are selected
    * @return the exposed area
    */
-  public Area getExposedArea(PlayerView view) {
+  public @Nonnull Area getExposedArea(PlayerView view) {
     Area combined = new Area(exposedArea);
 
     // Don't need to worry about StrictTokenOwnership since the PlayerView only contains tokens we

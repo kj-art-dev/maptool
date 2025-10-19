@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,7 +56,6 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
-import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -535,7 +535,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   protected void setViewOffset(int x, int y) {
     zoneScale.setOffset(x, y);
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void centerOn(ZonePoint point) {
@@ -568,7 +567,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     visibleScreenArea = null;
 
     zoneView.flush(token);
-    GdxRenderer.getInstance().flushFog();
   }
 
   /**
@@ -609,7 +607,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   public void flushFog() {
     visibleScreenArea = null;
     repaintDebouncer.dispatch();
-    GdxRenderer.getInstance().flushFog();
   }
 
   /**
@@ -648,19 +645,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   public void zoomReset(int x, int y) {
     zoneScale.zoomReset(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void zoomIn(int x, int y) {
     zoneScale.zoomIn(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void zoomOut(int x, int y) {
     zoneScale.zoomOut(x, y);
     MapTool.getFrame().getZoomStatusBar().update();
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void enforceView(int x, int y, double scale, int gmWidth, int gmHeight) {
@@ -680,7 +674,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     setScale(scale);
     centerOn(new ZonePoint(x, y));
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void restoreView() {
@@ -689,7 +682,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     centerOn(previousZonePoint);
     setScale(previousScale);
-    GdxRenderer.getInstance().setScale(zoneScale);
   }
 
   public void forcePlayersView() {
@@ -713,7 +705,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     CodeTimer.using(
         "ZoneRenderer.renderZone",
         timer -> {
-          timer.setThreshold(10);
+          timer.setThreshold(1, TimeUnit.MICROSECONDS);
+          timer.setReportingUnit(TimeUnit.MICROSECONDS);
 
           if (!viewModel.isUsingGdxRenderer()) {
             timer.start("paintComponent");
@@ -867,7 +860,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.start("calcs-1");
     if (visibleScreenArea == null) {
       timer.start("ZoneRenderer-getVisibleArea");
-      Area a = zoneView.getVisibleArea(view);
+      Area a = zoneView.getVisibility(view).visibleArea();
       timer.stop("ZoneRenderer-getVisibleArea");
 
       timer.start("createTransformedArea");
@@ -1188,13 +1181,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // Regardless of vision settings, no need to render beyond the fog.
     Area clearArea = null;
     if (!view.isGMView()) {
-      if (zone.hasFog() && zoneView.isUsingVision()) {
-        clearArea = new Area(zoneView.getExposedArea(view));
-        clearArea.intersect(zoneView.getVisibleArea(view));
-      } else if (zone.hasFog()) {
-        clearArea = zoneView.getExposedArea(view);
+      if (zone.hasFog()) {
+        clearArea = zoneView.getVisibility(view).clearArea();
       } else if (zoneView.isUsingVision()) {
-        clearArea = zoneView.getVisibleArea(view);
+        clearArea = zoneView.getVisibility(view).visibleArea();
       }
 
       if (clearArea != null) {

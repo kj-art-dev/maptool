@@ -347,7 +347,7 @@ public class ZoneViewModel {
 
   /** Updates {@link #visibleArea} based on {@link #playerView}. */
   private void updateVisibleArea() {
-    visibleArea = zoneView.getVisibleArea(playerView);
+    visibleArea = zoneView.getVisibility(playerView).visibleArea();
   }
 
   /** Updates {@link #playerView}. */

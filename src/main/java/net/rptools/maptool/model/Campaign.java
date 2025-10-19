@@ -307,12 +307,6 @@ public class Campaign implements Serializable {
     return campaignProperties.getLookupTableMap();
   }
 
-  public List<String> getLookupTables() {
-    List<String> list = new ArrayList<String>(getLookupTableMap().keySet());
-    Collections.sort(list);
-    return list;
-  }
-
   /**
    * Stub that calls <code>campaignProperties.getLightSourcesMap()</code>.
    *

@@ -851,6 +851,20 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setUpdatePlayerStatusMsg(msg).build());
   }
 
+  @Override
+  public void putLookupTable(LookupTable lookupTable) {
+    var msg = PutLookupTableMsg.newBuilder().setTable(lookupTable.toDto());
+    client.getCampaign().getLookupTableMap().put(lookupTable.getName(), lookupTable);
+    makeServerCall(Message.newBuilder().setUpdateLookupTableMsg(msg).build());
+  }
+
+  @Override
+  public void deleteLookupTable(String tableName) {
+    var msg = DeleteLookupTableMsg.newBuilder().setTableName(tableName);
+    client.getCampaign().getLookupTableMap().remove(tableName);
+    makeServerCall(Message.newBuilder().setDeleteLookupTableMsg(msg).build());
+  }
+
   /**
    * Some events become obsolete very quickly, such as dragging a token around. This queue always
    * has exactly one element, the more current version of the event. The event is then dispatched at
