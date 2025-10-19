@@ -44,7 +44,7 @@ public class HaloSyntaxTest {
     var result = parser.parseCategorizedHalos(input, originals);
     assertFalse(result.isEmpty());
 
-    var optionalCategory = result.getCategory("Color");
+    var optionalCategory = result.getCategory("Colored");
     assertTrue(optionalCategory.isPresent());
     var category = optionalCategory.get();
 
