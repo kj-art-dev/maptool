@@ -69,7 +69,6 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.*;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
-import net.rptools.maptool.util.ImageSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1792,7 +1791,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("token-list-1b");
       // get token image, using image table if present
-      BufferedImage image = ImageSupport.getTokenImage(token, this);
+      MD5Key tokenImageId = token.getTokenImageAssetId();
+      BufferedImage image = ImageManager.getImage(tokenImageId, this);
       timer.stop("token-list-1b");
 
       timer.start("token-list-5a");
