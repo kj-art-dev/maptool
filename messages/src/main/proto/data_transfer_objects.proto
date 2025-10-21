@@ -201,30 +201,67 @@ enum QuadrantDto {
 }
 
 message BooleanTokenOverlayDto {
-  enum BooleanTokenOverlayTypeDto {
+  TokenOverlayDto common = 1;
+  oneof child_type {
+    ShapeTokenOverlayDto shape = 2;
+    FlowShapeTokenOverlayDto flow_shape = 3;
+    ColorDotTokenOverlayDto color_dot = 4;
+    ImageTokenOverlayDto image = 5;
+    CornerImageTokenOverlayDto corner_image = 6;
+    FlowImageTokenOverlayDto flow_image = 7;
+    ShadedTokenOverlayDto shaded = 8;
+  }
+}
+
+message ShapeTokenOverlayDto {
+  enum TypeTag {
     X = 0;
     YIELD = 1;
     O = 2;
-    COLOR_DOT = 3;
-    DIAMOND = 4;
-    TRIANGLE = 5;
-    CROSS = 6;
-    FLOW_COLOR_DOT = 7;
-    FLOW_DIAMOND = 8;
-    FLOW_COLOR_SQUARE = 9;
-    FLOW_YIELD = 10;
-    SHADED = 11;
-    IMAGE = 12;
-    FLOW_IMAGE = 13;
-    CORNER_IMAGE = 14;
+    DIAMOND = 3;
+    TRIANGLE = 4;
+    CROSS = 5;
   }
-  TokenOverlayDto common = 1;
-  int32 color = 2;
-  StrokeDto stroke = 3;
-  QuadrantDto quadrant = 4;
-  int32 grid_size = 5;
-  string asset_id = 6;
-  BooleanTokenOverlayTypeDto type = 7;
+
+  int32 color = 1;
+  float stroke_width = 2;
+  TypeTag type = 3;
+}
+
+message FlowShapeTokenOverlayDto {
+  enum TypeTag {
+    DOT = 0;
+    SQUARE = 1;
+    DIAMOND = 2;
+    TRIANGLE = 3;
+    YIELD = 4;
+  }
+
+  int32 color = 1;
+  int32 grid_size = 2;
+  TypeTag type = 3;
+}
+
+message ColorDotTokenOverlayDto {
+  int32 color = 1;
+}
+
+message ImageTokenOverlayDto {
+  string asset_id = 1;
+}
+
+message CornerImageTokenOverlayDto {
+  string asset_id = 1;
+  QuadrantDto quadrant = 2;
+}
+
+message FlowImageTokenOverlayDto {
+  string asset_id = 1;
+  int32 gridSize = 2;
+}
+
+message ShadedTokenOverlayDto {
+  int32 color = 1;
 }
 
 message StrokeDto {
@@ -250,7 +287,6 @@ message TokenPropertyListDto {
 message LightSourceListDto {
   repeated LightSourceDto light_sources = 1;
 }
-
 
 enum WalkerMetricDto {
   NO_DIAGONALS = 0;
