@@ -27,6 +27,7 @@ import java.util.Objects;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.drawing.AbstractTemplate.Quadrant;
 import net.rptools.maptool.server.proto.ColorDotTokenOverlayDto;
+import net.rptools.maptool.server.proto.QuadrantDto;
 
 /**
  * Token overlay that draws a colored dot in one of the corners.
@@ -125,11 +126,14 @@ public final class ColorDotTokenOverlay extends BooleanTokenOverlay {
   public ColorDotTokenOverlayDto toColorDotDto() {
     var dto = ColorDotTokenOverlayDto.newBuilder();
     dto.setColor(color.getRGB());
+    // Fixes #5828
+    dto.setQuadrant(QuadrantDto.valueOf(corner.name()));
     return dto.build();
   }
 
   public static ColorDotTokenOverlay fromDto(ColorDotTokenOverlayDto dto) {
     var color = new Color(dto.getColor(), true);
-    return new ColorDotTokenOverlay(DEFAULT_STATE_NAME, color, Quadrant.SOUTH_EAST);
+    var quadrant = Quadrant.valueOf(dto.getQuadrant().name());
+    return new ColorDotTokenOverlay(DEFAULT_STATE_NAME, color, quadrant);
   }
 }

@@ -244,6 +244,7 @@ message FlowShapeTokenOverlayDto {
 
 message ColorDotTokenOverlayDto {
   int32 color = 1;
+  QuadrantDto quadrant = 2;
 }
 
 message ImageTokenOverlayDto {
