@@ -376,9 +376,7 @@ public class CampaignProperties implements Serializable {
     }
 
     categorizedHalos.addAllToCategory(
-        I18N.getText("CampaignPropertiesDialog.label.title")
-            + " "
-            + I18N.getText("token.popup.menu.halos"),
+        I18N.getText("Default.campaign.halo.category.generic"),
         List.of(
             createHaloSource(
                 "Yellow Circle",
@@ -408,7 +406,7 @@ public class CampaignProperties implements Serializable {
                 5,
                 new DrawableColorPaint(new Color(255, 0, 255, 255)),
                 new ArrayList<>(Arrays.asList(5F, 5F)),
-                true,
+                false,
                 false,
                 0,
                 0,
@@ -419,7 +417,7 @@ public class CampaignProperties implements Serializable {
                 5,
                 new DrawableColorPaint(new Color(255, 0, 255, 255)),
                 new ArrayList<>(Arrays.asList(10F, 5F)),
-                true,
+                false,
                 false,
                 0,
                 0,
@@ -473,7 +471,8 @@ public class CampaignProperties implements Serializable {
      * Initial work to replace original halos
      */
     // Creates a halo for each color name which would have been displayed for the original halos
-    List<HaloSource> haloColors = new ArrayList<>();
+    List<HaloSource> haloColoredGrid = new ArrayList<>();
+    List<HaloSource> haloColoredCircle = new ArrayList<>();
     Set<String> colorNames = MapToolUtil.getColorNames();
     for (String colorName : colorNames) {
       Color color = MapToolUtil.getColor(colorName);
@@ -481,7 +480,8 @@ public class CampaignProperties implements Serializable {
       if (displayName == null) {
         displayName = colorName;
       }
-      haloColors.add(
+      // grid shape is equivalent to original halo shape
+      haloColoredGrid.add(
           createHaloSource(
               displayName,
               Halo.HaloShapeType.GRID,
@@ -493,10 +493,24 @@ public class CampaignProperties implements Serializable {
               0,
               0,
               0));
+      // circle shapes for a little variety
+      haloColoredCircle.add(
+          createHaloSource(
+              displayName,
+              Halo.HaloShapeType.CIRCLE,
+              null,
+              new DrawableColorPaint(color),
+              null,
+              false,
+              false,
+              0,
+              0,
+              0));
     }
     categorizedHalos.addAllToCategory(
-        I18N.getText("CampaignPropertiesDialog.label.title") + " " + I18N.getText("Label.colors"),
-        haloColors);
+        I18N.getText("Default.campaign.halo.category.coloredGrid"), haloColoredGrid);
+    categorizedHalos.addAllToCategory(
+        I18N.getText("Default.campaign.halo.category.coloredCircle"), haloColoredCircle);
   }
 
   private static HaloSource createHaloSource(
