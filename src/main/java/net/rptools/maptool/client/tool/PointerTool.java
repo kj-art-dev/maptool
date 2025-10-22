@@ -795,6 +795,9 @@ public class PointerTool extends DefaultTool {
    * <td>D
    * <td>Stop dragging token
    * <tr>
+   * <td>Enter
+   * <td>Stop dragging token
+   * <tr>
    * <td>T
    * <td>Cycle forward through tokens
    * <tr>
@@ -813,17 +816,22 @@ public class PointerTool extends DefaultTool {
    * <td>NumPad digits
    * <td>Move token (specifics based on the grid type are not implemented yet):<br>
    * <tr>
-   * <td>7 (up/left)
-   * <td>8 (up)
-   * <td>9 (up/right)
-   * <tr>
-   * <td>4 (left)
-   * <td>5 (stop)
-   * <td>6(right)
-   * <tr>
-   * <td>1 (down/left)
-   * <td>2 (down)
-   * <td>3 (down/right)
+   * <td>
+   * <td>
+   * <table>
+   *    <tr>
+   *    <td>7 (up/left)
+   *    <td>8 (up)
+   *    <td>9 (up/right)
+   *    <tr>
+   *    <td>4 (left)
+   *    <td>5 (stop)
+   *    <td>6 (right)
+   *    <tr>
+   *    <td>1 (down/left)
+   *    <td>2 (down)
+   *    <td>3 (down/right)
+   * </table>
    * <tr>
    * <td>Down
    * <td>Move token down
@@ -890,6 +898,19 @@ public class PointerTool extends DefaultTool {
 
     actionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            if (tokenDragOp == null) {
+              return;
+            }
+            // Stop
+            stopTokenDrag();
+          }
+        });
+    actionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
         new AbstractAction() {
           private static final long serialVersionUID = 1L;
 
