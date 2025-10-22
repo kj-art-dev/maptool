@@ -56,14 +56,19 @@ public abstract sealed class BooleanTokenOverlay extends AbstractTokenOverlay
 
   @Override
   public final void paintOverlay(Graphics2D g, Token token, Rectangle bounds, Object value) {
-    if (FunctionUtil.getBooleanValue(value)) {
+    if (!FunctionUtil.getBooleanValue(value)) {
+      return;
+    }
+
+    g = (Graphics2D) g.create();
+    try {
       // Apply Alpha Transparency
-      float opacity = token.getTokenOpacity();
-      if (opacity < 1.0f) {
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-      }
+      float opacity = token.getTokenOpacity() * getOpacity() / 100.f;
+      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
 
       paintOverlay(g, token, bounds);
+    } finally {
+      g.dispose();
     }
   }
 

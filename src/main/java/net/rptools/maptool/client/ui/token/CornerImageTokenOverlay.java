@@ -14,8 +14,6 @@
  */
 package net.rptools.maptool.client.ui.token;
 
-import java.awt.AlphaComposite;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
@@ -104,28 +102,18 @@ public final class CornerImageTokenOverlay extends BooleanTokenOverlay {
 
   @Override
   public void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
-    Composite tempComposite = g.getComposite();
-    try {
-      if (getOpacity() != 100) {
-        g.setComposite(
-            AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) getOpacity() / 100));
-      }
+    BufferedImage image = ImageManager.getImageAndWait(assetId);
+    Rectangle2D imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
+    AwtUtil.fitInto(imageBounds, bounds);
+    imageBounds = getBounds(imageBounds);
 
-      BufferedImage image = ImageManager.getImageAndWait(assetId);
-      Rectangle2D imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
-      AwtUtil.fitInto(imageBounds, bounds);
-      imageBounds = getBounds(imageBounds);
+    // Paint it at the right location
+    int width = (int) imageBounds.getWidth();
+    int height = (int) imageBounds.getHeight();
+    int x = (int) imageBounds.getMinX();
+    int y = (int) imageBounds.getMinY();
 
-      // Paint it at the right location
-      int width = (int) imageBounds.getWidth();
-      int height = (int) imageBounds.getHeight();
-      int x = (int) imageBounds.getMinX();
-      int y = (int) imageBounds.getMinY();
-
-      g.drawImage(image, x, y, width, height, null);
-    } finally {
-      g.setComposite(tempComposite);
-    }
+    g.drawImage(image, x, y, width, height, null);
   }
 
   public CornerImageTokenOverlayDto toCornerImageDto() {

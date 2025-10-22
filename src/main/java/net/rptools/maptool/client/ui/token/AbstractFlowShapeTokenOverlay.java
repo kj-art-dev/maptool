@@ -14,10 +14,8 @@
  */
 package net.rptools.maptool.client.ui.token;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -98,22 +96,11 @@ public abstract sealed class AbstractFlowShapeTokenOverlay extends BooleanTokenO
   }
 
   @Override
-  public void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
-    Color tempColor = g.getColor();
-    Composite tempComposite = g.getComposite();
-    try {
-      g.setColor(getColor());
-      if (getOpacity() != 100) {
-        g.setComposite(
-            AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) getOpacity() / 100));
-      }
-      Rectangle2D gridCellBounds = getFlow().getStateBounds2D(bounds, token, getName());
-      Shape s = getShape(gridCellBounds);
-      g.fill(s);
-    } finally {
-      g.setColor(tempColor);
-      g.setComposite(tempComposite);
-    }
+  public final void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
+    g.setColor(getColor());
+    Rectangle2D gridCellBounds = getFlow().getStateBounds2D(bounds, token, getName());
+    Shape s = getShape(getFlow().getStateBounds2D(bounds, token, getName()));
+    g.fill(s);
   }
 
   /**

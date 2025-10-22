@@ -14,8 +14,6 @@
  */
 package net.rptools.maptool.client.ui.token;
 
-import java.awt.AlphaComposite;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
@@ -92,30 +90,20 @@ public final class FlowImageTokenOverlay extends BooleanTokenOverlay {
 
   @Override
   public void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
-    Composite tempComposite = g.getComposite();
-    try {
-      if (getOpacity() != 100) {
-        g.setComposite(
-            AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) getOpacity() / 100));
-      }
+    BufferedImage image = ImageManager.getImageAndWait(assetId);
 
-      BufferedImage image = ImageManager.getImageAndWait(assetId);
+    var imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
+    AwtUtil.fitInto(imageBounds, bounds);
 
-      var imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
-      AwtUtil.fitInto(imageBounds, bounds);
+    var gridCellBounds = getFlow().getStateBounds2D(imageBounds, token, getName());
 
-      var gridCellBounds = getFlow().getStateBounds2D(imageBounds, token, getName());
+    // Paint it at the right location
+    int width = (int) gridCellBounds.getWidth();
+    int height = (int) gridCellBounds.getHeight();
+    int x = (int) gridCellBounds.getMinX();
+    int y = (int) gridCellBounds.getMinY();
 
-      // Paint it at the right location
-      int width = (int) gridCellBounds.getWidth();
-      int height = (int) gridCellBounds.getHeight();
-      int x = (int) gridCellBounds.getMinX();
-      int y = (int) gridCellBounds.getMinY();
-
-      g.drawImage(image, x, y, width, height, null);
-    } finally {
-      g.setComposite(tempComposite);
-    }
+    g.drawImage(image, x, y, width, height, null);
   }
 
   /**

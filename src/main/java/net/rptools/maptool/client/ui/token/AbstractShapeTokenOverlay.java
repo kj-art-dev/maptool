@@ -14,14 +14,11 @@
  */
 package net.rptools.maptool.client.ui.token;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.ShapeTokenOverlayDto;
@@ -119,23 +116,9 @@ public abstract sealed class AbstractShapeTokenOverlay extends BooleanTokenOverl
 
   @Override
   public final void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
-    Color tempColor = g.getColor();
-    Stroke tempStroke = g.getStroke();
-    Composite tempComposite = g.getComposite();
-    try {
-      g.setColor(color);
-      g.setStroke(stroke);
-      if (getOpacity() != 100) {
-        g.setComposite(
-            AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) getOpacity() / 100));
-      }
-
-      g.draw(getShape(bounds));
-    } finally {
-      g.setColor(tempColor);
-      g.setStroke(tempStroke);
-      g.setComposite(tempComposite);
-    }
+    g.setColor(color);
+    g.setStroke(stroke);
+    g.draw(getShape(bounds));
   }
 
   public abstract Shape getShape(Rectangle2D bounds);
