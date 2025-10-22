@@ -159,7 +159,7 @@ public class CampaignProperties implements Serializable {
     categorizedHalos = new CategorizedHalos(properties.categorizedHalos);
 
     for (BooleanTokenOverlay overlay : properties.tokenStates.values()) {
-      overlay = (BooleanTokenOverlay) overlay.clone();
+      overlay = overlay.clone();
       tokenStates.put(overlay.getName(), overlay);
     } // endfor
 
