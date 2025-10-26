@@ -2705,6 +2705,18 @@ public class Token implements Cloneable {
       }
     }
 
+    // Remove null and duplicate attached halo sources.
+    List<AttachedHaloSource> haloSources =
+        Objects.requireNonNullElseGet(haloSourceList, ArrayList::new);
+    haloSourceList = new ArrayList<>();
+    final var haloGuids = new HashSet<GUID>();
+    for (final var haloSource : haloSources) {
+      if (haloSource != null && !haloGuids.contains(haloSource.getId())) {
+        haloSourceList.add(haloSource);
+        haloGuids.add(haloSource.getId());
+      }
+    }
+
     if (macroPropertiesMap == null) {
       macroPropertiesMap = new HashMap<>();
     }
