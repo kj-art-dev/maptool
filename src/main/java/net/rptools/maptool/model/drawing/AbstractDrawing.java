@@ -55,7 +55,7 @@ public abstract class AbstractDrawing implements Drawable, ImageObserver {
   @Override
   public void draw(Zone zone, Graphics2D g, Pen pen) {
     if (pen == null) {
-      pen = Pen.DEFAULT;
+      pen = new Pen();
     }
     Stroke oldStroke = g.getStroke();
     g.setStroke(pen.getStroke());

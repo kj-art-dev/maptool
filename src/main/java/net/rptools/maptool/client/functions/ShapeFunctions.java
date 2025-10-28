@@ -531,7 +531,7 @@ public class ShapeFunctions extends AbstractFunction {
       return false;
     }
 
-    Pen pen = new Pen(Pen.DEFAULT);
+    Pen pen = new Pen();
     if (parameters.size() > 2) {
       String delimiter = ";";
       if (parameters.size() > 3) {

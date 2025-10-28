@@ -29,8 +29,6 @@ public class Pen implements Serializable {
   private static final int MODE_SOLID = 0;
   private static final int MODE_TRANSPARENT = 1;
 
-  public static final Pen DEFAULT = new Pen(new DrawableColorPaint(Color.black), 3.0f);
-
   private @Nullable DrawablePaint paint;
   private @Nullable DrawablePaint backgroundPaint;
 
@@ -45,26 +43,40 @@ public class Pen implements Serializable {
   @Deprecated private int color;
   @Deprecated private int backgroundColor;
 
-  public Pen() {}
-
-  public Pen(@Nullable DrawablePaint paint, float thickness) {
-    this(paint, thickness, false, true);
-  }
-
-  public Pen(@Nullable DrawablePaint paint, float thickness, boolean eraser, boolean squareCap) {
+  /** "Primary" pen constructor that sets all fields */
+  public Pen(
+      @Nullable DrawablePaint paint,
+      @Nullable DrawablePaint backgroundPaint,
+      float thickness,
+      boolean eraser,
+      boolean squareCap,
+      float opacity) {
     this.paint = paint;
+    this.backgroundPaint = backgroundPaint;
     this.thickness = thickness;
     this.eraser = eraser;
     this.squareCap = squareCap;
+    this.opacity = opacity;
+  }
+
+  public Pen() {
+    this(
+        new DrawableColorPaint(Color.black),
+        new DrawableColorPaint(Color.black),
+        3.0f,
+        false,
+        true,
+        1.f);
   }
 
   public Pen(Pen copy) {
-    this.paint = copy.paint;
-    this.backgroundPaint = copy.backgroundPaint;
-    this.thickness = copy.thickness;
-    this.eraser = copy.eraser;
-    this.squareCap = copy.squareCap;
-    this.opacity = copy.opacity;
+    this(
+        copy.paint,
+        copy.backgroundPaint,
+        copy.thickness,
+        copy.eraser,
+        copy.squareCap,
+        copy.opacity);
   }
 
   @Serial
@@ -157,15 +169,13 @@ public class Pen implements Serializable {
   }
 
   public static Pen fromDto(PenDto dto) {
-    var pen = new Pen();
-    pen.paint = dto.hasForegroundPaint() ? DrawablePaint.fromDto(dto.getForegroundPaint()) : null;
-    pen.backgroundPaint =
-        dto.hasBackgroundPaint() ? DrawablePaint.fromDto(dto.getBackgroundPaint()) : null;
-    pen.eraser = dto.getEraser();
-    pen.thickness = dto.getThickness();
-    pen.opacity = dto.getOpacity();
-    pen.squareCap = dto.getSquareCap();
-    return pen;
+    return new Pen(
+        dto.hasForegroundPaint() ? DrawablePaint.fromDto(dto.getForegroundPaint()) : null,
+        dto.hasBackgroundPaint() ? DrawablePaint.fromDto(dto.getBackgroundPaint()) : null,
+        dto.getThickness(),
+        dto.getEraser(),
+        dto.getSquareCap(),
+        dto.getOpacity());
   }
 
   public PenDto toDto() {

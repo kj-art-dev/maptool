@@ -1577,7 +1577,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    * @return A new pen matching the color picker state.
    */
   public Pen getPen(boolean isEraser) {
-    var pen = new Pen(Pen.DEFAULT);
+    var pen = new Pen();
     pen.setEraser(isEraser);
 
     if (colorPicker.isFillForegroundSelected()) {
