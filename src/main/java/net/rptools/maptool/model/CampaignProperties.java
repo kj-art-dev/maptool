@@ -54,7 +54,7 @@ import net.rptools.maptool.model.sheet.stats.StatSheetLocation;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.proto.CampaignPropertiesDto;
-import net.rptools.maptool.server.proto.HaloSourceListDto;
+import net.rptools.maptool.server.proto.HaloListDto;
 import net.rptools.maptool.server.proto.LightSourceListDto;
 import net.rptools.maptool.server.proto.TokenPropertyListDto;
 
@@ -101,7 +101,7 @@ public class CampaignProperties implements Serializable {
    * @deprecated Only present for serialization. Instead use {@link #categorizedHalos} (outside of
    *     {@link #readResolve()} and {@code #writeReplace()}).
    */
-  @Deprecated private Map<String, Map<GUID, HaloSource>> haloSourcesMap = new TreeMap<>();
+  @Deprecated private Map<String, Map<GUID, Halo>> halosMap = new TreeMap<>();
 
   private transient @Nonnull CategorizedHalos categorizedHalos = new CategorizedHalos();
 
@@ -268,12 +268,12 @@ public class CampaignProperties implements Serializable {
     categorizedLights = new CategorizedLights(newLights);
   }
 
-  public CategorizedHalos getHaloSources() {
+  public CategorizedHalos getCategorizedHalos() {
     return new CategorizedHalos(categorizedHalos);
   }
 
-  public void setHaloSources(CategorizedHalos newHalos) {
-    categorizedHalos = new CategorizedHalos(newHalos);
+  public void setCategorizedHalos(CategorizedHalos newCategorizedHalos) {
+    categorizedHalos = new CategorizedHalos(newCategorizedHalos);
   }
 
   public Map<String, LookupTable> getLookupTableMap() {
@@ -305,7 +305,7 @@ public class CampaignProperties implements Serializable {
 
   public void initDefaultProperties() {
     initLightSources();
-    initHaloSources();
+    initHalos();
     initTokenTypeMap();
     initSightTypeMap();
     initTokenStatesMap();
@@ -370,17 +370,17 @@ public class CampaignProperties implements Serializable {
                 false)));
   }
 
-  private void initHaloSources() {
+  private void initHalos() {
     if (!categorizedHalos.isEmpty()) {
       return;
     }
 
     categorizedHalos.addAllToCategory(
-        I18N.getText("Default.campaign.halo.category.generic"),
+        I18N.getText("Default.campaign.halos.category.generic"),
         List.of(
-            createHaloSource(
+            createHalo(
                 "Yellow Circle",
-                Halo.HaloShapeType.CIRCLE,
+                HaloPart.HaloShapeType.CIRCLE,
                 5,
                 new DrawableColorPaint(new Color(255, 255, 0, 255)),
                 null,
@@ -389,9 +389,9 @@ public class CampaignProperties implements Serializable {
                 0,
                 0,
                 0),
-            createHaloSource(
+            createHalo(
                 "Aqua Square",
-                Halo.HaloShapeType.SQUARE,
+                HaloPart.HaloShapeType.SQUARE,
                 5,
                 new DrawableColorPaint(new Color(0, 255, 255, 255)),
                 null,
@@ -400,9 +400,9 @@ public class CampaignProperties implements Serializable {
                 0,
                 0,
                 0),
-            createHaloSource(
+            createHalo(
                 "Magenta Dots",
-                Halo.HaloShapeType.TOKEN,
+                HaloPart.HaloShapeType.TOKEN,
                 5,
                 new DrawableColorPaint(new Color(255, 0, 255, 255)),
                 new ArrayList<>(Arrays.asList(5F, 5F)),
@@ -411,9 +411,9 @@ public class CampaignProperties implements Serializable {
                 0,
                 0,
                 0),
-            createHaloSource(
+            createHalo(
                 "Magenta Dashes",
-                Halo.HaloShapeType.TOKEN,
+                HaloPart.HaloShapeType.TOKEN,
                 5,
                 new DrawableColorPaint(new Color(255, 0, 255, 255)),
                 new ArrayList<>(Arrays.asList(10F, 5F)),
@@ -422,9 +422,9 @@ public class CampaignProperties implements Serializable {
                 0,
                 0,
                 0),
-            createHaloSource(
+            createHalo(
                 "Yellow Mini Circles",
-                Halo.HaloShapeType.CIRCLE,
+                HaloPart.HaloShapeType.CIRCLE,
                 10,
                 new DrawableColorPaint(new Color(255, 255, 0, 255)),
                 null,
@@ -433,9 +433,9 @@ public class CampaignProperties implements Serializable {
                 6,
                 6,
                 0),
-            createHaloSource(
+            createHalo(
                 "Aqua Mini Squares",
-                Halo.HaloShapeType.SQUARE,
+                HaloPart.HaloShapeType.SQUARE,
                 10,
                 new DrawableColorPaint(new Color(0, 255, 255, 255)),
                 null,
@@ -444,9 +444,9 @@ public class CampaignProperties implements Serializable {
                 6,
                 6,
                 0),
-            createHaloSource(
+            createHalo(
                 "Blue Mini Triangles",
-                Halo.HaloShapeType.TRIANGLE,
+                HaloPart.HaloShapeType.TRIANGLE,
                 10,
                 new DrawableColorPaint(new Color(0, 0, 255, 255)),
                 null,
@@ -455,9 +455,9 @@ public class CampaignProperties implements Serializable {
                 6,
                 6,
                 0),
-            createHaloSource(
+            createHalo(
                 "White Mini Stars",
-                Halo.HaloShapeType.STAR,
+                HaloPart.HaloShapeType.STAR,
                 10,
                 new DrawableColorPaint(new Color(255, 255, 255, 125)),
                 null,
@@ -471,8 +471,8 @@ public class CampaignProperties implements Serializable {
      * Initial work to replace original halos
      */
     // Creates a halo for each color name which would have been displayed for the original halos
-    List<HaloSource> haloColoredGrid = new ArrayList<>();
-    List<HaloSource> haloColoredCircle = new ArrayList<>();
+    List<Halo> haloColoredGrid = new ArrayList<>();
+    List<Halo> haloColoredCircle = new ArrayList<>();
     Set<String> colorNames = MapToolUtil.getColorNames();
     for (String colorName : colorNames) {
       Color color = MapToolUtil.getColor(colorName);
@@ -482,9 +482,9 @@ public class CampaignProperties implements Serializable {
       }
       // grid shape is equivalent to original halo shape
       haloColoredGrid.add(
-          createHaloSource(
+          createHalo(
               displayName,
-              Halo.HaloShapeType.GRID,
+              HaloPart.HaloShapeType.GRID,
               null,
               new DrawableColorPaint(color),
               null,
@@ -495,9 +495,9 @@ public class CampaignProperties implements Serializable {
               0));
       // circle shapes for a little variety
       haloColoredCircle.add(
-          createHaloSource(
+          createHalo(
               displayName,
-              Halo.HaloShapeType.CIRCLE,
+              HaloPart.HaloShapeType.CIRCLE,
               null,
               new DrawableColorPaint(color),
               null,
@@ -508,14 +508,14 @@ public class CampaignProperties implements Serializable {
               0));
     }
     categorizedHalos.addAllToCategory(
-        I18N.getText("Default.campaign.halo.category.coloredGrid"), haloColoredGrid);
+        I18N.getText("Default.campaign.halos.category.coloredGrid"), haloColoredGrid);
     categorizedHalos.addAllToCategory(
-        I18N.getText("Default.campaign.halo.category.coloredCircle"), haloColoredCircle);
+        I18N.getText("Default.campaign.halos.category.coloredCircle"), haloColoredCircle);
   }
 
-  private static HaloSource createHaloSource(
+  private static Halo createHalo(
       String haloName,
-      Halo.HaloShapeType haloShapeType,
+      HaloPart.HaloShapeType haloShapeType,
       Integer width,
       DrawableColorPaint paint,
       ArrayList<Float> dashedPattern,
@@ -524,18 +524,21 @@ public class CampaignProperties implements Serializable {
       int mini,
       int offset,
       int vertices) {
-    return new HaloSource(
-        haloName,
+    return new Halo(
         new GUID(),
+        haloName,
+        gm,
+        owner,
+        false,
+        false,
+        false,
         false,
         List.of(
-            new Halo(
+            new HaloPart(
                 paint,
                 haloShapeType,
                 width,
                 dashedPattern,
-                gm,
-                owner,
                 false,
                 false,
                 false,
@@ -768,12 +771,12 @@ public class CampaignProperties implements Serializable {
     }
 
     categorizedHalos = new CategorizedHalos();
-    if (haloSourcesMap != null) {
-      // Import the serialized halo sources.
-      categorizedHalos = CategorizedHalos.copyOf(haloSourcesMap);
+    if (halosMap != null) {
+      // Import the serialized halos.
+      categorizedHalos = CategorizedHalos.copyOf(halosMap);
     } else {
       // We'll still need it when serializing.
-      haloSourcesMap = new TreeMap<>();
+      halosMap = new TreeMap<>();
     }
 
     sights = new Sights();
@@ -821,13 +824,13 @@ public class CampaignProperties implements Serializable {
       lightSourcesMap.put(category.name(), map);
     }
 
-    haloSourcesMap.clear();
+    halosMap.clear();
     for (var category : categorizedHalos.getCategories()) {
-      var map = new LinkedHashMap<GUID, HaloSource>();
-      for (var haloSource : category.halos()) {
-        map.put(haloSource.getId(), haloSource);
+      var map = new LinkedHashMap<GUID, Halo>();
+      for (var halo : category.halos()) {
+        map.put(halo.getId(), halo);
       }
-      haloSourcesMap.put(category.name(), map);
+      halosMap.put(category.name(), map);
     }
 
     sightTypeMap.clear();
@@ -883,11 +886,11 @@ public class CampaignProperties implements Serializable {
               v.getLightSourcesList()
                   .forEach(l -> props.categorizedLights.addToCategory(k, LightSource.fromDto(l)));
             });
-    dto.getHaloSourcesMap()
+    dto.getHalosMap()
         .forEach(
             (k, v) -> {
-              v.getHaloSourcesList()
-                  .forEach(l -> props.categorizedHalos.addToCategory(k, HaloSource.fromDto(l)));
+              v.getHalosList()
+                  .forEach(l -> props.categorizedHalos.addToCategory(k, Halo.fromDto(l)));
             });
     props.remoteRepositoryList.addAll(dto.getRemoteRepositoriesList());
     dto.getLookupTablesList()
@@ -957,11 +960,9 @@ public class CampaignProperties implements Serializable {
         .getCategories()
         .forEach(
             category -> {
-              HaloSourceListDto.Builder haloSources = HaloSourceListDto.newBuilder();
-              category.halos().stream()
-                  .map(HaloSource::toDto)
-                  .forEachOrdered(haloSources::addHaloSources);
-              dto.putHaloSources(category.name(), haloSources.build());
+              HaloListDto.Builder halos = HaloListDto.newBuilder();
+              category.halos().stream().map(Halo::toDto).forEachOrdered(halos::addHalos);
+              dto.putHalos(category.name(), halos.build());
             });
 
     dto.addAllRemoteRepositories(remoteRepositoryList);

@@ -14,295 +14,189 @@
  */
 package net.rptools.maptool.model;
 
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.StringValue;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.server.proto.HaloDto;
 
+/**
+ * Represents a halo that can be attached to tokens, each containing {@link HaloPart}{@code s}.
+ *
+ * <p>This class is immutable.
+ */
 public final class Halo implements Serializable {
-  private final @Nonnull DrawablePaint paint;
-  private final @Nullable HaloShapeType haloShapeType; // otherwise use default
-  private final @Nullable Integer width; // otherwise use default from AppPreferences
-  private final @Nullable ArrayList<Float> dashedPattern; // otherwise a solid line
-  private final boolean isGM;
+
+  private final @Nonnull GUID id;
+  private final @Nonnull String name;
+  private final boolean gmOnly;
   private final boolean ownerOnly;
-  private final boolean fill; // whether to fill a non-mini-shape
-  private final boolean flipHorizontal; // flip over horizontally
-  private final boolean flipVertical; // flip over vertically
-  private final double angle; // the inner angle of an arc, pie, or chord shape in degrees
-  private final double offset; //  a distance offset from the token center
-  private final double rotate; // rotate the halo shape a number of degrees
-  private final double scaleX; // scale in the horizontal axis
-  private final double scaleY; // scale in the vertical axis
-  private final int vertices; // number of points on a polygon / star shape
-  private final int mini; // how many mini-shapes to revolve around the token
-  private final int miniStart; // limit how many mini-shapes
-  private final int miniStop; // limit how many mini-shapes
-  private final double miniRotate; // rotate the halo mini-shape a number of degrees
-  private final double miniSpin; // spin factor as mini shape revolves
+  private final boolean inner;
+  private final boolean facingWithToken;
+  private final boolean flipWithToken;
+  private final boolean scaleWithToken;
 
-  /** The default halo shape used in HaloRenderer and HaloSyntax */
-  public static final HaloShapeType DEFAULT_HALO_SHAPE_TYPE = HaloShapeType.GRID;
-
-  /** A list of different halo shapes, including basic, mini, and complex shapes */
-  public enum HaloShapeType {
-    /*
-     * geometric halo shapes
-     */
-    CIRCLE(), // a normal circle shape
-    ARC(), // an arc of a circle
-    PIE(), // a pie of a circle
-    CHORD(), // a chord of a circle
-    TRIANGLE(), // an equilateral triangle
-    SQUARE(), // a regular quadrilateral
-    POLYGON(), // a regular polygon with n > 2 sides, with vertices on the circumcircle
-    STAR(), // a star polygon with n > 4 points
-    /*
-     * derived halo shapes
-     */
-    FOOTPRINT(), //  derived from the token's footprint
-    GRID(), // derived from the grid's shape
-    MBL(), // derived from the token's MBL topology mask
-    TOKEN(), // derived from the token's shape
-    TOPOLOGY(); // derived from the token's image topology
-  }
+  /** The halo parts that make up the halo. */
+  private final @Nonnull List<HaloPart> haloParts;
 
   public Halo(
-      @Nonnull DrawablePaint paint,
-      @Nullable HaloShapeType haloShapeType,
-      @Nullable Integer width,
-      @Nullable ArrayList<Float> dashedPattern,
-      boolean isGM,
-      boolean owner,
-      boolean fill,
-      boolean flipHorizontal,
-      boolean flipVertical,
-      double angle,
-      double offset,
-      double rotate,
-      double scaleX,
-      double scaleY,
-      int vertices,
-      int mini,
-      int miniStart,
-      int miniStop,
-      double miniRotate,
-      double miniSpin) {
-    this.paint = paint;
-    this.haloShapeType = haloShapeType;
-    this.width = width;
-    this.dashedPattern = dashedPattern;
-    this.isGM = isGM;
-    this.ownerOnly = owner;
-    this.fill = fill;
-    this.flipHorizontal = flipHorizontal;
-    this.flipVertical = flipVertical;
-    this.angle = (angle == 0) ? 90 : angle % 360d;
-    this.offset = offset;
-    this.rotate = rotate % 360d;
-    this.scaleX = scaleX;
-    this.scaleY = scaleY;
-    this.vertices = isPolygonalShape(haloShapeType) ? Math.max(3, vertices) : 0;
-    this.mini = isGeometricShape(haloShapeType) ? mini : 0;
-    this.miniStart = miniStart > 0 && miniStart != mini ? Math.min(miniStart, mini) : 0;
-    this.miniStop = miniStop > 0 && miniStop != mini ? Math.min(miniStop, mini) : 0;
-    this.miniRotate = miniRotate % 360d;
-    this.miniSpin = miniSpin;
+      @Nonnull GUID id,
+      @Nonnull String name,
+      boolean gmOnly,
+      boolean ownerOnly,
+      boolean inner,
+      boolean facingWithToken,
+      boolean flipWithToken,
+      boolean scaleWithToken,
+      @Nonnull List<HaloPart> haloParts) {
+    this.id = id;
+    this.name = name;
+    this.gmOnly = gmOnly;
+    this.ownerOnly = ownerOnly;
+    this.inner = inner;
+    this.facingWithToken = facingWithToken;
+    this.flipWithToken = flipWithToken;
+    this.scaleWithToken = scaleWithToken;
+    this.haloParts = haloParts;
   }
 
-  @SuppressWarnings("ConstantConditions")
+  @Serial
+  public Object writeReplace() {
+    // Make sure XStream keeps the serialization nice. We don't need the XML to contain
+    // implementation details of the ImmutableList in use.
+    return new Halo(
+        id,
+        name,
+        gmOnly,
+        ownerOnly,
+        inner,
+        facingWithToken,
+        flipWithToken,
+        scaleWithToken,
+        new ArrayList<>(haloParts));
+  }
+
   @Serial
   private @Nonnull Object readResolve() {
     // Rather than modifying the current object, we'll create a replacement that is definitely
     // initialized properly.
     return new Halo(
-        paint,
-        haloShapeType,
-        width,
-        dashedPattern,
-        isGM,
-        ownerOnly,
-        fill,
-        flipHorizontal,
-        flipVertical,
-        angle,
-        offset,
-        rotate,
-        scaleX,
-        scaleY,
-        vertices,
-        mini,
-        miniStart,
-        miniStop,
-        miniRotate,
-        miniSpin);
+        this.id,
+        this.name,
+        this.gmOnly,
+        this.ownerOnly,
+        this.inner,
+        this.facingWithToken,
+        this.flipWithToken,
+        this.scaleWithToken,
+        ImmutableList.copyOf(this.haloParts));
   }
 
-  public @Nullable HaloShapeType getHaloShapeType() {
-    return haloShapeType;
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Halo)) {
+      return false;
+    }
+    return Objects.equals(((Halo) obj).id, id);
   }
 
-  public boolean isGM() {
-    return isGM;
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 
+  public @Nonnull GUID getId() {
+    return id;
+  }
+
+  public @Nonnull String getName() {
+    return name;
+  }
+
+  /**
+   * @return A read-only list of halo parts belonging to this halo.
+   */
+  public @Nonnull List<HaloPart> getHaloParts() {
+    return haloParts;
+  }
+
+  /**
+   * @return Whether the halo is visible to GMs only.
+   */
+  public boolean isGMOnly() {
+    return gmOnly;
+  }
+
+  /**
+   * @return Whether the halo is visible to owners only.
+   */
   public boolean isOwnerOnly() {
     return ownerOnly;
   }
 
-  public boolean getFill() {
-    return fill;
+  /**
+   * @return Whether to place the halo next to the token and ignore any halo concentric offsets from
+   *     multiple halos.
+   */
+  public boolean isInner() {
+    return inner;
   }
 
-  public boolean getFlipHorizontal() {
-    return flipHorizontal;
+  /**
+   * @return Whether to rotate the halo with the token's facing.
+   */
+  public boolean isFacingWithToken() {
+    return facingWithToken;
   }
 
-  public boolean getFlipVertical() {
-    return flipVertical;
+  /**
+   * @return Whether to flip the halo with the token's flipping.
+   */
+  public boolean isFlipWithToken() {
+    return flipWithToken;
   }
 
-  public double getAngle() {
-    return angle;
+  /**
+   * @return Whether to scale the halo with the token's size.
+   */
+  public boolean isScaleWithToken() {
+    return scaleWithToken;
   }
 
-  public double getOffset() {
-    return offset;
-  }
-
-  public double getRotate() {
-    return rotate;
-  }
-
-  public double getScaleX() {
-    return scaleX;
-  }
-
-  public double getScaleY() {
-    return scaleY;
-  }
-
-  public int getVertices() {
-    return vertices;
-  }
-
-  public int getMini() {
-    return mini;
-  }
-
-  public int getMiniStart() {
-    return miniStart;
-  }
-
-  public int getMiniStop() {
-    return miniStop;
-  }
-
-  public double getMiniRotate() {
-    return miniRotate;
-  }
-
-  public double getMiniSpin() {
-    return miniSpin;
-  }
-
-  public @Nullable Integer getWidth() {
-    return width;
-  }
-
-  public @Nonnull DrawablePaint getPaint() {
-    return paint;
-  }
-
-  public @Nullable ArrayList<Float> getDashedPattern() {
-    return dashedPattern;
-  }
-
-  public boolean isPolygonalShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> polygonHaloShapeTypes =
-        EnumSet.of(HaloShapeType.POLYGON, HaloShapeType.STAR);
-    return polygonHaloShapeTypes.contains(haloShapeType);
-  }
-
-  public boolean isAngleBasedShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> angledBasedShapeTypes =
-        EnumSet.of(HaloShapeType.ARC, HaloShapeType.CHORD, HaloShapeType.PIE);
-    return angledBasedShapeTypes.contains(haloShapeType);
-  }
-
-  public boolean isGeometricShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> isGeometricShapeTypes =
-        EnumSet.of(
-            HaloShapeType.CIRCLE,
-            HaloShapeType.ARC,
-            HaloShapeType.PIE,
-            HaloShapeType.CHORD,
-            HaloShapeType.TRIANGLE,
-            HaloShapeType.SQUARE,
-            HaloShapeType.POLYGON,
-            HaloShapeType.STAR);
-    return isGeometricShapeTypes.contains(haloShapeType);
+  @Override
+  public String toString() {
+    return name;
   }
 
   public static @Nonnull Halo fromDto(@Nonnull HaloDto dto) {
     return new Halo(
-        // dto.hasPaint() ? DrawablePaint.fromDto(dto.getPaint()) : null,
-        Objects.requireNonNull(DrawablePaint.fromDto(dto.getPaint())),
-        HaloShapeType.valueOf(dto.getHaloShapeType().name()),
-        dto.getWidth(),
-        new ArrayList<>(dto.getDashedPatternList()),
-        dto.getIsGm(),
+        GUID.valueOf(dto.getId().getValue()),
+        dto.getName().getValue(),
+        dto.getGmOnly(),
         dto.getOwnerOnly(),
-        dto.getFill(),
-        dto.getFlipHorizontal(),
-        dto.getFlipVertical(),
-        dto.getAngle(),
-        dto.getOffset(),
-        dto.getRotate(),
-        dto.getScaleX(),
-        dto.getScaleY(),
-        dto.getVertices(),
-        dto.getMini(),
-        dto.getMiniStart(),
-        dto.getMiniStop(),
-        dto.getMiniRotate(),
-        dto.getMiniSpin());
+        dto.getInner(),
+        dto.getFacingWithToken(),
+        dto.getFlipWithToken(),
+        dto.getScaleWithToken(),
+        dto.getHaloPartsList().stream()
+            .map(HaloPart::fromDto)
+            .collect(ImmutableList.toImmutableList()));
   }
 
   public @Nonnull HaloDto toDto() {
     var dto = HaloDto.newBuilder();
-    dto.setPaint(paint.toDto());
-    if (haloShapeType != null) {
-      dto.setHaloShapeType(HaloDto.HaloShapeTypeDto.valueOf(haloShapeType.name()));
-    }
-    if (width != null) {
-      dto.setWidth(width);
-    }
-    if (dashedPattern != null) {
-      dto.addAllDashedPattern(dashedPattern);
-    }
-    dto.setIsGm(isGM);
+    dto.setId(StringValue.of(id.toString()));
+    dto.setName(StringValue.of(name));
+    dto.setGmOnly(gmOnly);
     dto.setOwnerOnly(ownerOnly);
-    dto.setFill(fill);
-    dto.setFlipHorizontal(flipHorizontal);
-    dto.setFlipVertical(flipVertical);
-    dto.setAngle(angle);
-    dto.setOffset(offset);
-    dto.setRotate(rotate);
-    dto.setScaleX(scaleX);
-    dto.setScaleY(scaleY);
-    dto.setVertices(vertices);
-    dto.setMini(mini);
-    dto.setMiniStart(miniStart);
-    dto.setMiniStop(miniStop);
-    dto.setMiniRotate(miniRotate);
-    dto.setMiniSpin(miniSpin);
+    dto.setInner(inner);
+    dto.setFacingWithToken(facingWithToken);
+    dto.setFlipWithToken(flipWithToken);
+    dto.setScaleWithToken(scaleWithToken);
+    dto.addAllHaloParts(haloParts.stream().map(hp -> hp.toDto()).collect(Collectors.toList()));
     return dto.build();
   }
 }

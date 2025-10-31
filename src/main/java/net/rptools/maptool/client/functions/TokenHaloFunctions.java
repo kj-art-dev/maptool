@@ -25,7 +25,7 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.CategorizedHalos;
-import net.rptools.maptool.model.HaloSource;
+import net.rptools.maptool.model.Halo;
 import net.rptools.maptool.model.Halos;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.util.FunctionUtil;
@@ -39,13 +39,13 @@ public class TokenHaloFunctions extends AbstractFunction {
 
   private TokenHaloFunctions() {
     super(
-        0, 3, "getHalo", "setHalo", "hasHalos", "clearHalos", "getHalos", "setHalos", "showHalos");
+        0, 5, "getHalo", "setHalo", "hasHalos", "clearHalos", "getHalos", "setHalos", "showHalos");
   }
 
   /**
-   * Gets the singleton Halo instance.
+   * Gets the singleton HaloPart instance.
    *
-   * @return the Halo instance.
+   * @return the HaloPart instance.
    */
   public static TokenHaloFunctions getInstance() {
     return instance;
@@ -71,7 +71,7 @@ public class TokenHaloFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      MapTool.serverCommand().updateTokenProperty(token, Token.Update.clearHaloSources);
+      MapTool.serverCommand().updateTokenProperty(token, Token.Update.clearHalos);
       return "";
     } else if (functionName.equalsIgnoreCase("getHalos")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 4);
@@ -81,13 +81,18 @@ public class TokenHaloFunctions extends AbstractFunction {
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 2, 3);
       return getHalos(token, type, delim);
     } else if (functionName.equalsIgnoreCase("setHalos")) {
-      FunctionUtil.checkNumberParam(functionName, parameters, 3, 5);
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 5);
 
-      String type = parameters.get(0).toString();
-      String name = parameters.get(1).toString();
-      BigDecimal value = FunctionUtil.paramAsBigDecimal(functionName, parameters, 2, false);
+      String haloCategory = parameters.get(0).toString();
+      String haloName = parameters.get(1).toString();
+      BigDecimal value;
+      if (parameters.size() > 2) {
+        value = FunctionUtil.paramAsBigDecimal(functionName, parameters, 2, false);
+      } else {
+        value = BigDecimal.ONE;
+      }
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 3, 4);
-      return setHalos(token, type, name, value);
+      return setHalos(haloCategory, haloName, value, token);
     } else if (functionName.equalsIgnoreCase("showHalos")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
@@ -106,8 +111,48 @@ public class TokenHaloFunctions extends AbstractFunction {
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
 
+  /*
+   * Simple Halos:
+   *  - a token can only have one simple halo
+   *  - are the only halo displayed in the initiative window
+   *  - can be used to color a token's vision overlay
+   *  - if used with custom campaign halos, it is displayed outermost concentrically
+   */
+
   /**
-   * Gets the halo for the token.
+   * Gets the simple halo on the token.
+   *
+   * @param args The arguments.
+   * @return the halo color.
+   * @throws ParserException if an error occurs.
+   */
+  private Object getHalo(MapToolVariableResolver resolver, List<Object> args)
+      throws ParserException {
+    Token token;
+
+    if (args.size() == 1) {
+      if (!MapTool.getParser().isMacroTrusted()) {
+        throw new ParserException(I18N.getText("macro.function.general.noPermOther", "getHalo"));
+      }
+      token = FindTokenFunctions.findToken(args.get(0).toString(), null);
+      if (token == null) {
+        throw new ParserException(
+            I18N.getText("macro.function.general.unknownToken", "getHalo", args.get(0).toString()));
+      }
+    } else if (args.size() == 0) {
+      token = resolver.getTokenInContext();
+      if (token == null) {
+        throw new ParserException(I18N.getText("macro.function.general.noImpersonated", "getHalo"));
+      }
+    } else {
+      throw new ParserException(
+          I18N.getText("macro.function.general.tooManyParam", "getHalo", 1, args.size()));
+    }
+    return getHalo(token);
+  }
+
+  /**
+   * Gets the simple halo color on the token.
    *
    * @param token the token to get the halo for.
    * @return the halo.
@@ -122,7 +167,7 @@ public class TokenHaloFunctions extends AbstractFunction {
   }
 
   /**
-   * Sets the halo color of the token.
+   * Sets the simple halo color on the token.
    *
    * @param token the token to set halo of.
    * @param value the value to set.
@@ -155,39 +200,7 @@ public class TokenHaloFunctions extends AbstractFunction {
   }
 
   /**
-   * Gets the halo of the token.
-   *
-   * @param args The arguments.
-   * @return the halo color.
-   * @throws ParserException if an error occurs.
-   */
-  private Object getHalo(MapToolVariableResolver resolver, List<Object> args)
-      throws ParserException {
-    Token token;
-
-    if (args.size() == 1) {
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPermOther", "getHalo"));
-      }
-      token = FindTokenFunctions.findToken(args.get(0).toString(), null);
-      if (token == null) {
-        throw new ParserException(
-            I18N.getText("macro.function.general.unknownToken", "getHalo", args.get(0).toString()));
-      }
-    } else if (args.size() == 0) {
-      token = resolver.getTokenInContext();
-      if (token == null) {
-        throw new ParserException(I18N.getText("macro.function.general.noImpersonated", "getHalo"));
-      }
-    } else {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "getHalo", 1, args.size()));
-    }
-    return getHalo(token);
-  }
-
-  /**
-   * Sets the halo of the token.
+   * Sets the simple halo on the token.
    *
    * @param args The arguments.
    * @return the halo color.
@@ -228,12 +241,20 @@ public class TokenHaloFunctions extends AbstractFunction {
     return value;
   }
 
+  /*
+   * Custom Campaign Halos:
+   *  - custom campaign halos are configured in Campaign Settings
+   *  - a token can only have zero or more custom campaign halos
+   *  - custom campaign halos are categorized by a unique category name
+   *  - a custom campaign halo has a unique name within each category
+   */
+
   /**
-   * Gets the names of the halo sources that are on.
+   * Gets the names of the custom campaign halos that are on a token.
    *
-   * @param token The token to get the halo sources for.
-   * @param categoryName The category to get the halo sources for. If "*" then the halo sources for
-   *     all categories will be returned.
+   * @param token The token to get the halos for.
+   * @param categoryName The category to get the halos for. If "*" then the halo sources for all
+   *     categories will be returned.
    * @param delim the delimiter for the list.
    * @return a string list containing the halo that are on.
    * @throws ParserException if the halo type can't be found.
@@ -241,22 +262,22 @@ public class TokenHaloFunctions extends AbstractFunction {
   private static String getHalos(Token token, String categoryName, String delim)
       throws ParserException {
     ArrayList<String> haloList = new ArrayList<String>();
-    CategorizedHalos haloSources = MapTool.getCampaign().getHaloSources();
+    CategorizedHalos categorizedHalos = MapTool.getCampaign().getCategorizedHalos();
 
     if (categoryName.equals("*")) {
-      for (CategorizedHalos.Category category : haloSources.getCategories()) {
-        for (HaloSource hs : category.halos()) {
-          if (token.hasHaloSource(hs)) {
-            haloList.add(hs.getName());
+      for (CategorizedHalos.Category category : categorizedHalos.getCategories()) {
+        for (Halo halo : category.halos()) {
+          if (token.hasHalo(halo.getId())) {
+            haloList.add(halo.getName());
           }
         }
       }
     } else {
-      var category = haloSources.getCategory(categoryName);
+      var category = categorizedHalos.getCategory(categoryName);
       if (category.isPresent()) {
-        for (HaloSource hs : category.get().halos()) {
-          if (token.hasHaloSource(hs)) {
-            haloList.add(hs.getName());
+        for (Halo halo : category.get().halos()) {
+          if (token.hasHalo(halo.getId())) {
+            haloList.add(halo.getName());
           }
         }
       } else {
@@ -275,19 +296,19 @@ public class TokenHaloFunctions extends AbstractFunction {
   }
 
   /**
-   * Sets the halo value for a token.
+   * Sets whether a custom campaign halo is on a token.
    *
    * @param token the token to set the halo for.
-   * @param categoryName the category of the halo source.
-   * @param name the name of the halo source.
-   * @param val the value to set for the halo source, 0 for off non 0 for on.
+   * @param categoryName the category of the halo.
+   * @param haloName = the name of the halo.
+   * @param value the value to set for the halo, 0 for off non 0 for on.
    * @return 0 if the halo was not found, otherwise 1;
    * @throws ParserException if the halo type can't be found.
    */
-  private static BigDecimal setHalos(Token token, String categoryName, String name, BigDecimal val)
-      throws ParserException {
+  private static BigDecimal setHalos(
+      String categoryName, String haloName, BigDecimal value, Token token) throws ParserException {
     boolean found = false;
-    CategorizedHalos categorizedHalos = MapTool.getCampaign().getHaloSources();
+    CategorizedHalos categorizedHalos = MapTool.getCampaign().getCategorizedHalos();
 
     Halos halos;
 
@@ -299,11 +320,11 @@ public class TokenHaloFunctions extends AbstractFunction {
           I18N.getText("macro.function.tokenHalo.unknownHaloCategory", "setHalos", categoryName));
     }
 
-    final var add = !BigDecimal.ZERO.equals(val);
-    for (HaloSource hs : halos) {
-      if (name.equals(hs.getName())) {
+    final var add = !BigDecimal.ZERO.equals(value);
+    for (Halo halo : halos) {
+      if (haloName.equals(halo.getName())) {
         found = true;
-        MapTool.serverCommand().toggleHaloSourceOnToken(token, add, hs);
+        MapTool.serverCommand().toggleHaloSourceOnToken(token, add, halo);
       }
     }
 
@@ -311,30 +332,28 @@ public class TokenHaloFunctions extends AbstractFunction {
   }
 
   /**
-   * Checks to see if the token has a halo source. The token is checked to see if it has a halo
-   * source with the name in the second parameter from the category in the first parameter. A "*"
-   * for category indicates all categories are checked; a "*" for name indicates all names are
-   * checked. The "$token" category indicates that only halo sources defined on the token are
-   * checked.
+   * Checks to see if the token has a custom campaign halo. The token is checked to see if it has a
+   * halo with the name in the second parameter from the category in the first parameter. A "*" for
+   * category indicates all categories are checked; a "*" for name indicates all names are checked.
    *
    * @param token the token to check.
-   * @param categoryName the type of halo to check.
-   * @param name the name of the halo to check.
-   * @return true if the token has the halo source.
+   * @param categoryName the name of the halo category to check.
+   * @param haloName the name of the halo to check.
+   * @return true if the token has the halo.
    * @throws ParserException if the halo type can't be found.
    */
-  public static boolean hasHalos(Token token, String categoryName, String name)
+  public static boolean hasHalos(Token token, String categoryName, String haloName)
       throws ParserException {
-    if ("*".equals(categoryName) && "*".equals(name)) {
-      return token.hasHaloSources();
+    if ("*".equals(categoryName) && "*".equals(haloName)) {
+      return token.hasHalos();
     }
 
-    CategorizedHalos categorizedHalos = MapTool.getCampaign().getHaloSources();
+    CategorizedHalos categorizedHalos = MapTool.getCampaign().getCategorizedHalos();
 
     if ("*".equals(categoryName)) {
       for (CategorizedHalos.Category category : categorizedHalos.getCategories()) {
-        for (HaloSource hs : category.halos()) {
-          if (name.equals(hs.getName()) && token.hasHaloSource(hs)) {
+        for (Halo halo : category.halos()) {
+          if (haloName.equals(halo.getName()) && token.hasHalo(halo.getId())) {
             return true;
           }
         }
@@ -343,8 +362,9 @@ public class TokenHaloFunctions extends AbstractFunction {
     } else {
       var category = categorizedHalos.getCategory(categoryName);
       if (category.isPresent()) {
-        for (HaloSource hs : category.get().halos()) {
-          if ((name.equals(hs.getName()) || name.equals("*")) && token.hasHaloSource(hs)) {
+        for (Halo halo : category.get().halos()) {
+          if ((haloName.equals(halo.getName()) || haloName.equals("*"))
+              && token.hasHalo(halo.getId())) {
             return true;
           }
         }

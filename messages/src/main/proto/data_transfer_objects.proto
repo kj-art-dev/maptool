@@ -100,19 +100,19 @@ message LightDto {
   int32 lumens = 9;
 }
 
-message HaloSourceDto {
-  enum HaloTypeDto {
-    NORMAL = 0;
-    CUSTOM = 1;
-  }
-  google.protobuf.StringValue name = 1;
-  google.protobuf.StringValue id = 2;
-  HaloTypeDto halo_type = 3;
-  bool scale_with_token = 4;
-  repeated HaloDto halos = 5;
+message HaloDto {
+  google.protobuf.StringValue id = 1;
+  google.protobuf.StringValue name = 2;
+  bool gm_only = 3;
+  bool owner_only = 4;
+  bool inner = 5;
+  bool facing_with_token = 6;
+  bool flip_with_token = 7;
+  bool scale_with_token = 8;
+  repeated HaloPartDto halo_parts = 9;
 }
 
-message HaloDto {
+message HaloPartDto {
   enum HaloShapeTypeDto {
     CIRCLE = 0;
     ARC = 1;
@@ -125,29 +125,31 @@ message HaloDto {
     GRID = 8;
     FOOTPRINT = 9;
     TOKEN = 10;
-    TOPOLOGY = 11;
+    OUTLINE = 11;
     MBL = 12;
+    VBLCOVER = 13;
+    VBLHILL = 14;
+    VBLPIT = 15;
+    VBLWALL = 16;
   }
   DrawablePaintDto paint = 1;
   HaloShapeTypeDto halo_shape_type = 2;
-  int32 width = 3;
+  google.protobuf.Int32Value width = 3;
   repeated float dashed_pattern = 4;
-  bool is_gm = 5;
-  bool owner_only = 6;
-  bool fill = 7;
-  bool flip_horizontal = 8;
-  bool flip_vertical = 9;
-  double angle = 10;
-  double offset = 11;
-  double rotate = 12;
-  double scale_x = 13;
-  double scale_y = 14;
-  int32 vertices = 15;
-  int32 mini = 16;
-  int32 mini_start = 17;
-  int32 mini_stop = 18;
-  double mini_rotate = 19;
-  double mini_spin = 20;
+  bool fill = 5;
+  bool flip_horizontal = 6;
+  bool flip_vertical = 7;
+  double angle = 8;
+  double offset = 9;
+  double rotate = 10;
+  double scale_x = 11;
+  double scale_y = 12;
+  int32 vertices = 13;
+  int32 mini = 14;
+  int32 mini_start = 15;
+  int32 mini_stop = 16;
+  double mini_rotate = 17;
+  double mini_spin = 18;
 }
 
 message LocationDto {
@@ -184,7 +186,7 @@ message CampaignPropertiesDto {
   repeated SightTypeDto sight_types = 13;
   map<string, StatSheetPropertiesDto> token_type_stat_sheet = 14;
   google.protobuf.StringValue default_token_property_type = 15;
-  map<string, HaloSourceListDto> halo_sources = 16;
+  map<string, HaloListDto> halos = 16;
 }
 
 message SightTypeDto {
@@ -340,8 +342,8 @@ message LightSourceListDto {
   repeated LightSourceDto light_sources = 1;
 }
 
-message HaloSourceListDto {
-  repeated HaloSourceDto halo_sources = 1;
+message HaloListDto {
+  repeated HaloDto halos = 1;
 }
 
 enum WalkerMetricDto {
@@ -458,7 +460,7 @@ message TokenDto {
   string notes_type = 68;
   string gm_notes_type = 69;
   StatSheetPropertiesDto stat_sheet_properties = 70;
-  repeated AttachedHaloSourceDto halo_sources = 73;
+  repeated string halo_guids = 73;
 }
 
 message PathDto {
@@ -485,10 +487,6 @@ message TerrainModifierOperationListDto {
 
 message AttachedLightSourceDto {
   string light_source_id = 1;
-}
-
-message AttachedHaloSourceDto {
-  string halo_source_id = 1;
 }
 
 message MacroButtonPropertiesDto {
@@ -755,9 +753,9 @@ enum TokenUpdateDto {
     flipIso = 55;
     setSpeechName = 56;
     removeFacing = 57;
-    clearHaloSources = 58;
-    removeHaloSource = 59;
-    addHaloSource = 60;
+    clearHalos = 58;
+    removeHalo = 59;
+    addHalo = 60;
 }
 
 message AssetTransferHeaderDto {
@@ -785,8 +783,8 @@ message TokenPropertyValueDto {
     GridDto grid = 10;
     TokenFootPrintDto token_foot_print = 11;
     string topology_type = 12;
-    string halo_source_id = 13;
-    HaloSourceDto halo_source = 14;
+    string halo_id = 13;
+    HaloDto halo = 14;
   }
 }
 

@@ -247,7 +247,7 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
     getAuraPanel().setCaretPosition(0);
 
     String haloText =
-        new HaloSyntax().stringifyCategorizedHalos(campaignProperties.getHaloSources());
+        new HaloSyntax().stringifyCategorizedHalos(campaignProperties.getCategorizedHalos());
     getHaloPanel().setText(haloText);
     getHaloPanel().setCaretPosition(0);
 
@@ -285,10 +285,10 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
     lights.addAll(auras);
     campaign.setLightSources(lights);
 
-    CategorizedHalos existingHaloSources = campaign.getHaloSources();
-    CategorizedHalos halos =
-        new HaloSyntax().parseCategorizedHalos(getHaloPanel().getText(), existingHaloSources);
-    campaign.setHaloSources(halos);
+    CategorizedHalos oldCategorizedHalos = campaign.getCategorizedHalos();
+    CategorizedHalos newCategorizedHalos =
+        new HaloSyntax().parseCategorizedHalos(getHaloPanel().getText(), oldCategorizedHalos);
+    campaign.setCategorizedHalos(newCategorizedHalos);
 
     Sights sightMap = commitSightMap(getSightPanel().getText());
     campaign.setSightTypes(sightMap);
@@ -504,8 +504,12 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
             "<code>GRID</code>",
             "<code>FOOTPRINT</code>",
             "<code>TOKEN</code>",
-            "<code>TOPOLOGY</code>",
-            "<code>MBL</code>");
+            "<code>OUTLINE</code>",
+            "<code>MBL</code>",
+            "<code>VBLCOVER</code>",
+            "<code>VBLHILL</code>",
+            "<code>VBLPIT</code>",
+            "<code>VBLWALL</code>");
     if (MapTool.getLanguage().toLowerCase().startsWith("en")) {
       /* remove translated version of words for English locales. */
       optionShapeDescriptionHalos = optionShapeDescriptionHalos.replaceAll("\\s*[(][^)]+[)]", "");
@@ -624,7 +628,7 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
            <pre><font size="3">
            ${syntaxLabelGroupName}
            -------
-           [ ${syntaxLabelName} ] : [ scale ] ([ ${optionLabelRestriction} ] [ fill ] [ flipH ] [ flipV ] [ ${optionLabelShape} [ angle= ] [ offset= ] [ rotate= ] [ scaleX= ] [ scaleY= ] [vertices= ] [ mini= ] [miniStart= ] [miniStop= ] [miniRotate= ] [miniSpin= ] [ ${optionLabelHalosWidth}|${optionLabelColor}|${optionLabelHalosDashPattern} ])...<sup>1</sup>
+           [ ${syntaxLabelName} ] : [ facing ] [ inner ] [ scale ] [ ${optionLabelRestriction} ] ( [ fill ] [ flipH ] [ flipV ] [ ${optionLabelShape} [ angle= ] [ offset= ] [ rotate= ] [ scaleX= ] [ scaleY= ] [vertices= ] [ mini= ] [miniStart= ] [miniStop= ] [miniRotate= ] [miniSpin= ] [ ${optionLabelHalosWidth}|${optionLabelColor}|${optionLabelHalosDashPattern} ])...<sup>1</sup>
            </font></pre>
            """;
     /*
@@ -862,12 +866,28 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
                   <td${alignCellCenter}>Target</td>
                 </tr>
                 <tr>
+                  <th><code>facing</code></th>
+                  <td${alignCellCenter}>${optionTypeKeyword}</td>
+                  <td>${optionDescriptionHalosFacing}</td>
+                  <td>${wordNo}</td>
+                  <td${alignCellCenter}>${wordUnused}</td>
+                  <td${alignCellCenter}><code>FACING</code></td>
+                </tr>
+                <tr>
+                  <th><code>inner</code></th>
+                  <td${alignCellCenter}>${optionTypeKeyword}</td>
+                  <td>${optionDescriptionHalosInner}</td>
+                  <td>${wordNo}</td>
+                  <td${alignCellCenter}>${wordUnused}</td>
+                  <td${alignCellCenter}><code>INNER</code></td>
+                </tr>
+                <tr>
                   <th><code>scale</code></th>
                   <td${alignCellCenter}>${optionTypeKeyword}</td>
                   <td>${optionDescriptionHalosScale}</td>
                   <td>${wordNo}</td>
                   <td${alignCellCenter}>${wordUnused}</td>
-                  <td${alignCellCenter}><code>scale</code></td>
+                  <td${alignCellCenter}><code>SCALE</code></td>
                 </tr>
                 <tr>
                   <th>${optionLabelRestriction}</th>

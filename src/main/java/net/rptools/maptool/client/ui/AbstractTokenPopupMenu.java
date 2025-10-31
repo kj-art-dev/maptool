@@ -208,19 +208,19 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
     JMenu menu = new JMenu(I18N.getText("token.popup.menu.halos"));
 
     boolean hasHalos = false;
-    boolean hasGmHalos = false;
+    boolean hasGmOnlyHalos = false;
     boolean hasOwnerOnlyHalos = false;
 
     for (GUID tokenGUID : selectedTokenSet) {
       Token token = renderer.getZone().getToken(tokenGUID);
-      hasHalos |= token.hasHaloSources() || token.getHaloColor() != null;
-      hasGmHalos |= token.hasGMHalos();
-      hasOwnerOnlyHalos |= token.hasOwnerOnlyHalos();
+      hasHalos |= token.hasHalos() || token.getHaloColor() != null;
+      hasGmOnlyHalos |= token.hasGMOnlyHalos(MapTool.getCampaign());
+      hasOwnerOnlyHalos |= token.hasOwnerOnlyHalos(MapTool.getCampaign());
     }
 
     if (hasHalos) {
       menu.add(new ClearHalosAction());
-      if (hasGmHalos & MapTool.getPlayer().isGM()) {
+      if (hasGmOnlyHalos & MapTool.getPlayer().isGM()) {
         menu.add(new ClearGMHalosOnlyAction());
       }
       if (hasOwnerOnlyHalos) {
@@ -233,7 +233,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
     menu.addSeparator();
 
     for (CategorizedHalos.Category category :
-        MapTool.getCampaign().getHaloSources().getCategories()) {
+        MapTool.getCampaign().getCategorizedHalos().getCategories()) {
       JMenu subMenu = createHaloCategoryMenu(category.name(), category.halos());
       if (subMenu.getItemCount() != 0) {
         menu.add(subMenu);
@@ -242,17 +242,16 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
     return menu;
   }
 
-  protected JMenu createHaloCategoryMenu(String categoryName, Halos sources) {
+  protected JMenu createHaloCategoryMenu(String categoryName, Halos halos) {
     JMenu subMenu = new JMenu(categoryName);
 
-    for (HaloSource haloSource : sources) {
-      // Don't include halo sources that don't have halos visible to the player. Note that the
+    for (Halo halo : halos) {
+      // Don't include halos that are not visible to the player. Note that the
       // player must be an owner to use the popup, so don't bother checking `::isOwner()`.
-      boolean include =
-          MapTool.getPlayer().isGM() || !haloSource.getHaloList().stream().allMatch(Halo::isGM);
+      boolean include = MapTool.getPlayer().isGM() || !halo.isGMOnly();
       if (include) {
-        JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(new ToggleHaloSourceAction(haloSource));
-        menuItem.setSelected(tokenUnderMouse.hasHaloSource(haloSource));
+        JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(new ToggleHaloAction(halo));
+        menuItem.setSelected(tokenUnderMouse.hasHalo(halo.getId()));
         subMenu.add(menuItem);
       }
     }
@@ -915,12 +914,12 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
     }
   }
 
-  public class ToggleHaloSourceAction extends AbstractAction {
-    private final HaloSource haloSource;
+  public class ToggleHaloAction extends AbstractAction {
+    private final Halo halo;
 
-    public ToggleHaloSourceAction(HaloSource haloSource) {
-      super(haloSource.getName());
-      this.haloSource = haloSource;
+    public ToggleHaloAction(Halo halo) {
+      super(halo.getName());
+      this.halo = halo;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -930,10 +929,10 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
         if (token == null) {
           continue;
         }
-        if (token.hasHaloSource(haloSource)) {
-          token.removeHaloSource(haloSource.getId());
+        if (token.hasHalo(halo.getId())) {
+          token.removeHalo(halo.getId());
         } else {
-          token.addHaloSource(haloSource.getId());
+          token.addHalo(halo.getId());
         }
         MapTool.serverCommand().putToken(renderer.getZone().getId(), token);
 
@@ -957,8 +956,8 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
           continue;
         }
 
-        if (token.hasHaloSources()) {
-          token.removeHalos();
+        if (token.hasHalos()) {
+          token.clearHalos();
         }
         token.setHaloColor(null);
         MapTool.serverCommand().putToken(renderer.getZone().getId(), token);
@@ -977,8 +976,8 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = renderer.getZone().getToken(tokenGUID);
-        if (token.hasGMHalos()) {
-          token.removeGMHalos();
+        if (token.hasGMOnlyHalos(MapTool.getCampaign())) {
+          token.removeGMOnlyHalos(MapTool.getCampaign());
         }
         renderer.flush(token);
         MapTool.serverCommand().putToken(renderer.getZone().getId(), token);
@@ -997,8 +996,8 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = renderer.getZone().getToken(tokenGUID);
-        if (token.hasOwnerOnlyHalos()) {
-          token.removeOwnerOnlyHalos();
+        if (token.hasOwnerOnlyHalos(MapTool.getCampaign())) {
+          token.removeOwnerOnlyHalos(MapTool.getCampaign());
         }
         renderer.flush(token);
         MapTool.serverCommand().putToken(renderer.getZone().getId(), token);

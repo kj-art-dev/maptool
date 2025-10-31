@@ -673,13 +673,13 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void toggleHaloSourceOnToken(Token token, boolean toggleOn, HaloSource haloSource) {
-    var update = toggleOn ? Token.Update.addHaloSource : Token.Update.removeHaloSource;
+  public void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo) {
+    var update = toggleOn ? Token.Update.addHalo : Token.Update.removeHalo;
     // We only need to send the ID of the halo source.
     updateTokenProperty(
         token,
         update,
-        TokenPropertyValueDto.newBuilder().setHaloSourceId(haloSource.getId().toString()).build());
+        TokenPropertyValueDto.newBuilder().setHaloId(halo.getId().toString()).build());
   }
 
   public void setTokenMaskTopology(

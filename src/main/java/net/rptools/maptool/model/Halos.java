@@ -21,24 +21,24 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
- * A collection of {@link HaloSource} with unique IDs.
+ * A collection of {@link Halo}{@code s} with unique IDs.
  *
- * <p>When adding a {@code HaloSource}, if the collection already has one with the same ID it will
- * be replaced.
+ * <p>When adding a {@code Halo}, if the collection already has one with the same ID it will be
+ * replaced.
  */
-public class Halos extends AbstractSet<HaloSource> {
-  public static Halos copyOf(Iterable<HaloSource> sources) {
-    var halos = new Halos();
-    for (var source : sources) {
-      halos.add(source);
+public class Halos extends AbstractSet<Halo> {
+  public static Halos copyOf(Iterable<Halo> halos) {
+    var aHalos = new Halos();
+    for (var halo : halos) {
+      aHalos.add(halo);
     }
-    return halos;
+    return aHalos;
   }
 
-  private final LinkedHashMap<GUID, HaloSource> sources;
+  private final LinkedHashMap<GUID, Halo> guidHaloMap;
 
   public Halos() {
-    this.sources = new LinkedHashMap<>();
+    this.guidHaloMap = new LinkedHashMap<>();
   }
 
   public Halos(Halos other) {
@@ -48,40 +48,40 @@ public class Halos extends AbstractSet<HaloSource> {
 
   @Override
   public int size() {
-    return sources.size();
+    return guidHaloMap.size();
   }
 
   @Override
   public void clear() {
-    sources.clear();
+    guidHaloMap.clear();
   }
 
   @Override
   public boolean contains(Object o) {
-    return o instanceof HaloSource haloSource && this.sources.containsKey(haloSource.getId());
+    return o instanceof Halo halo && this.guidHaloMap.containsKey(halo.getId());
   }
 
   @Override
-  public boolean add(HaloSource haloSource) {
-    sources.put(haloSource.getId(), haloSource);
+  public boolean add(Halo halo) {
+    guidHaloMap.put(halo.getId(), halo);
     return true;
   }
 
   @Override
   public boolean remove(Object o) {
-    if (o instanceof HaloSource haloSource) {
-      var previous = sources.remove(haloSource.getId());
+    if (o instanceof Halo halo) {
+      var previous = guidHaloMap.remove(halo.getId());
       return previous != null;
     }
     return false;
   }
 
   @Override
-  public @Nonnull Iterator<HaloSource> iterator() {
-    return sources.values().iterator();
+  public @Nonnull Iterator<Halo> iterator() {
+    return guidHaloMap.values().iterator();
   }
 
-  public Optional<HaloSource> get(GUID haloSourceId) {
-    return Optional.ofNullable(sources.get(haloSourceId));
+  public Optional<Halo> get(GUID haloId) {
+    return Optional.ofNullable(guidHaloMap.get(haloId));
   }
 }

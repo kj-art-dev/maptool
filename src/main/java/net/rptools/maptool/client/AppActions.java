@@ -1625,7 +1625,7 @@ public class AppActions {
 
   public static final Action TOGGLE_SHOW_TOKEN_HALOS =
       new TranslatedClientAction(
-          "action.showTokenHalos", withMenuShortcut(KeyStroke.getKeyStroke("P"))) {
+          "action.showTokenHalos", withMenuShortcut(KeyStroke.getKeyStroke("Q"))) {
         {
           putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SHOW_TOKEN_HALOS));
         }

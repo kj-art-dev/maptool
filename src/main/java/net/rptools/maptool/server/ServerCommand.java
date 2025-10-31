@@ -207,9 +207,9 @@ public interface ServerCommand {
    * @param token The token to modify
    * @param toggleOn If {@code true}, the halo source is turned on for the token. Otherwise, it is
    *     turned off.
-   * @param haloSource The halo source to add.
+   * @param halo The halo source to add.
    */
-  void toggleHaloSourceOnToken(Token token, boolean toggleOn, HaloSource haloSource);
+  void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo);
 
   void setTokenMaskTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
 

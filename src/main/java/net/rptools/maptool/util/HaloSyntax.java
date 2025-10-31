@@ -33,7 +33,7 @@ import net.rptools.maptool.model.CategorizedHalos;
 import net.rptools.maptool.model.CategorizedHalos.Category;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Halo;
-import net.rptools.maptool.model.HaloSource;
+import net.rptools.maptool.model.HaloPart;
 import net.rptools.maptool.model.Halos;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import org.apache.logging.log4j.LogManager;
@@ -53,9 +53,9 @@ public class HaloSyntax {
       while ((line = reader.readLine()) != null) {
         line = line.trim();
 
-        var source = parseHaloLine(line, reader.getLineNumber(), original, errlog);
-        if (source != null) {
-          halos.add(source);
+        var halo = parseHaloLine(line, reader.getLineNumber(), original, errlog);
+        if (halo != null) {
+          halos.add(halo);
         }
       }
     } catch (IOException ioe) {
@@ -104,9 +104,9 @@ public class HaloSyntax {
           continue;
         }
 
-        var source = parseHaloLine(line, reader.getLineNumber(), currentGroupOriginalHalos, errlog);
-        if (source != null) {
-          currentGroup.halos().add(source);
+        var halo = parseHaloLine(line, reader.getLineNumber(), currentGroupOriginalHalos, errlog);
+        if (halo != null) {
+          currentGroup.halos().add(halo);
         }
       }
 
@@ -161,24 +161,37 @@ public class HaloSyntax {
    * Stringify the halos line by line into a list.
    *
    * @param builder the erm... builder
-   * @param halos the halos with a category
+   * @param halos the halos within a category
    */
   private void writeHaloLines(StringBuilder builder, Halos halos) {
-    for (HaloSource haloSource : halos) {
+    for (Halo halo : halos) {
 
-      // region 1 write haloSource properties
-      builder.append(haloSource.getName()).append(":");
+      // region 1 write halo properties
+      builder.append(halo.getName()).append(":");
 
-      if (haloSource.isScaleWithToken()) {
-        builder.append(" scale");
+      if (halo.isGMOnly()) {
+        builder.append(" GM");
+      }
+      if (halo.isOwnerOnly()) {
+        builder.append(" OWNER");
+      }
+      if (halo.isInner()) {
+        builder.append(" INNER");
+      }
+      if (halo.isFacingWithToken()) {
+        builder.append(" FACING");
+      }
+      if (halo.isFlipWithToken()) {
+        builder.append(" FLIP");
+      }
+      if (halo.isScaleWithToken()) {
+        builder.append(" SCALE");
       }
       // endregion
 
-      // region 2 write halo properties
+      // region 2 write haloPart properties
       final var lastParameters = new LinkedHashMap<String, Object>();
       lastParameters.put("", null);
-      lastParameters.put("GM", false);
-      lastParameters.put("OWNER", false);
       lastParameters.put("fill", false);
       lastParameters.put("flipH", false);
       lastParameters.put("flipV", false);
@@ -194,50 +207,52 @@ public class HaloSyntax {
       lastParameters.put("miniRotate", 0.);
       lastParameters.put("miniSpin", 1d);
 
-      for (Halo halo : haloSource.getHaloList()) {
+      for (HaloPart haloPart : halo.getHaloParts()) {
         final var parameters = new HashMap<>();
 
-        parameters.put("GM", halo.isGM());
-        parameters.put("OWNER", halo.isOwnerOnly());
-        parameters.put("fill", halo.getFill());
+        parameters.put("fill", haloPart.getFill());
 
-        Halo.HaloShapeType haloShapeType = halo.getHaloShapeType();
+        HaloPart.HaloShapeType haloShapeType = haloPart.getHaloShapeType();
         if (haloShapeType != null) {
-          if (!halo.getHaloShapeType().equals(Halo.DEFAULT_HALO_SHAPE_TYPE)) {
-            parameters.put("", halo.getHaloShapeType().name().toLowerCase());
+          if (!haloPart.getHaloShapeType().equals(HaloPart.DEFAULT_HALO_SHAPE_TYPE)) {
+            parameters.put("", haloPart.getHaloShapeType().name().toLowerCase());
           }
 
-          if (halo.getHaloShapeType().equals(Halo.HaloShapeType.TOPOLOGY)
-              || halo.getHaloShapeType().equals(Halo.HaloShapeType.MBL)
-              || halo.getHaloShapeType().equals(Halo.HaloShapeType.FOOTPRINT)) {
-            // these type of halo shapes should not be rotated, scaled, or flipped or have
+          if (haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.OUTLINE)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.MBL)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLCOVER)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLHILL)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLPIT)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLWALL)
+              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.FOOTPRINT)) {
+            // these type of haloPart shapes should not be rotated, scaled, or flipped or have
             // mini-shapes
           } else {
-            if (halo.getFlipHorizontal()) {
+            if (haloPart.getFlipHorizontal()) {
               parameters.put("flipH", true);
             }
-            if (halo.getFlipVertical()) {
+            if (haloPart.getFlipVertical()) {
               parameters.put("flipV", true);
             }
-            parameters.put("offset", halo.getOffset());
-            parameters.put("rotate", halo.getRotate());
-            parameters.put("scaleX", halo.getScaleX());
-            parameters.put("scaleY", halo.getScaleY());
-            parameters.put("mini", halo.getMini());
+            parameters.put("offset", haloPart.getOffset());
+            parameters.put("rotate", haloPart.getRotate());
+            parameters.put("scaleX", haloPart.getScaleX());
+            parameters.put("scaleY", haloPart.getScaleY());
+            parameters.put("mini", haloPart.getMini());
           }
 
-          if (halo.isPolygonalShape(halo.getHaloShapeType())) {
-            parameters.put("vertices", halo.getVertices());
+          if (haloPart.isPolygonalShape(haloPart.getHaloShapeType())) {
+            parameters.put("vertices", haloPart.getVertices());
           }
 
-          if (halo.isAngleBasedShape(halo.getHaloShapeType())) {
-            parameters.put("angle", halo.getAngle());
+          if (haloPart.isAngleBasedShape(haloPart.getHaloShapeType())) {
+            parameters.put("angle", haloPart.getAngle());
           }
-          if (halo.getMini() > 0) {
-            parameters.put("miniStart", halo.getMiniStart());
-            parameters.put("miniStop", halo.getMiniStop());
-            parameters.put("miniRotate", halo.getMiniRotate());
-            parameters.put("miniSpin", halo.getMiniSpin());
+          if (haloPart.getMini() > 0) {
+            parameters.put("miniStart", haloPart.getMiniStart());
+            parameters.put("miniStop", haloPart.getMiniStop());
+            parameters.put("miniRotate", haloPart.getMiniRotate());
+            parameters.put("miniSpin", haloPart.getMiniSpin());
           }
         }
 
@@ -270,26 +285,26 @@ public class HaloSyntax {
         }
         // endregion
 
-        // region 3 write halo properties: width, color, and pattern
+        // region 3 write haloPart properties: width, color, and pattern
         DecimalFormat decimalFormat =
             new DecimalFormat(
                 "0.###"); // do not add thousand separators and remove trailing d.p. zeros
-        if (halo.getWidth() != null) {
-          builder.append(' ').append(decimalFormat.format(halo.getWidth()));
+        if (haloPart.getWidth() != null) {
+          builder.append(' ').append(decimalFormat.format(haloPart.getWidth()));
         } else {
           builder.append(' ');
         }
-        if (halo.getPaint() instanceof DrawableColorPaint dcp) {
+        if (haloPart.getPaint() instanceof DrawableColorPaint dcp) {
           builder.append(colorToHexRGBA(dcp));
         }
-        if (halo.getDashedPattern() != null) {
-          if (!halo.getDashedPattern().isEmpty()) {
+        if (haloPart.getDashedPattern() != null) {
+          if (!haloPart.getDashedPattern().isEmpty()) {
             builder.append('(');
             int i = 0;
-            for (Float dashOrGap : halo.getDashedPattern()) {
+            for (Float dashOrGap : haloPart.getDashedPattern()) {
               i = i + 1;
               builder.append(decimalFormat.format(dashOrGap));
-              if (i < halo.getDashedPattern().size()) {
+              if (i < haloPart.getDashedPattern().size()) {
                 builder.append(',');
               }
             }
@@ -302,7 +317,7 @@ public class HaloSyntax {
     }
   }
 
-  private HaloSource parseHaloLine(
+  private Halo parseHaloLine(
       String line, int lineNumber, Halos originalInCategory, List<String> errlog) {
     // Blank lines, comments
     if (line.isEmpty() || line.charAt(0) == '-') {
@@ -315,17 +330,21 @@ public class HaloSyntax {
       return null;
     }
 
-    // region 1 parse haloSource properties
     String name = line.substring(0, split).trim();
     GUID id = new GUID();
-    boolean scaleWithToken = false;
-    List<Halo> halos = new ArrayList<>();
-    // endregion
 
-    // region 2 parse halo properties
-    Halo.HaloShapeType shape = null;
+    // region halo properties
     boolean gmOnly = false;
     boolean ownerOnly = false;
+    boolean inner = false;
+    boolean facingWithToken = false;
+    boolean flipWithToken = false;
+    boolean scaleWithToken = false;
+    List<HaloPart> haloParts = new ArrayList<>();
+    // endregion
+
+    // region haloPart properties
+    HaloPart.HaloShapeType shape = null;
     boolean fill = false;
     boolean flipHorizontal = false;
     boolean flipVertical = false;
@@ -340,6 +359,7 @@ public class HaloSyntax {
     int miniStop = 0;
     double miniRotate = 0.;
     double miniSpin = 1d;
+    // endregion
 
     for (String arg : line.substring(split + 1).split("\\s+")) {
       arg = arg.trim();
@@ -347,21 +367,40 @@ public class HaloSyntax {
         continue;
       }
 
+      // region halo properties designations
+      // Visible to GM only designation
+      if (arg.equalsIgnoreCase("GM")) {
+        gmOnly = true;
+        continue;
+      }
+      // Visible to token owner only designation
+      if (arg.equalsIgnoreCase("OWNER")) {
+        ownerOnly = true;
+        continue;
+      }
+      // Inner token designation
+      if (arg.equalsIgnoreCase("INNER")) {
+        inner = true;
+        continue;
+      }
+      // Facing with token designation
+      if (arg.equalsIgnoreCase("FACING")) {
+        facingWithToken = true;
+        continue;
+      }
+      // Facing with token designation
+      if (arg.equalsIgnoreCase("FLIP")) {
+        flipWithToken = true;
+        continue;
+      }
       // Scale with token designation
       if (arg.equalsIgnoreCase("SCALE")) {
         scaleWithToken = true;
         continue;
       }
-      if (arg.equalsIgnoreCase("GM")) {
-        gmOnly = true;
-        ownerOnly = false;
-        continue;
-      }
-      if (arg.equalsIgnoreCase("OWNER")) {
-        gmOnly = false;
-        ownerOnly = true;
-        continue;
-      }
+      // endregion
+
+      // region haloPart properties designations
       if (arg.equalsIgnoreCase("FILL")) {
         fill = true;
         continue;
@@ -371,11 +410,6 @@ public class HaloSyntax {
         continue;
       }
       if (arg.equalsIgnoreCase("FLIPV")) {
-        flipVertical = true;
-        continue;
-      }
-      if (arg.equalsIgnoreCase("FLIP")) {
-        flipHorizontal = true;
         flipVertical = true;
         continue;
       }
@@ -492,14 +526,14 @@ public class HaloSyntax {
 
       // Shape designation
       try {
-        shape = Halo.HaloShapeType.valueOf(arg.toUpperCase());
+        shape = HaloPart.HaloShapeType.valueOf(arg.toUpperCase());
         continue;
       } catch (IllegalArgumentException iae) {
         // Expected when not defining a shape
       }
       // endregion
 
-      // region 3 parse halo properties: width, color, and pattern
+      // region haloPart properties: width, color, and pattern
       Integer width = null;
       Color color = null;
       ArrayList<Float> dashedPattern = new ArrayList<>();
@@ -556,17 +590,13 @@ public class HaloSyntax {
       }
       // endregion
 
-      ownerOnly = !gmOnly && ownerOnly;
-
       try {
-        Halo t =
-            new Halo(
+        HaloPart t =
+            new HaloPart(
                 new DrawableColorPaint(color),
                 shape,
                 width,
                 dashedPattern,
-                gmOnly,
-                ownerOnly,
                 fill,
                 flipHorizontal,
                 flipVertical,
@@ -581,23 +611,33 @@ public class HaloSyntax {
                 miniStop,
                 miniRotate,
                 miniSpin);
-        halos.add(t);
+        haloParts.add(t);
       } catch (Exception e) {
-        errlog.add(I18N.getText("msg.error.mtprops.halo.color", lineNumber, color));
+        errlog.add(I18N.getText("msg.error.mtprops.halo.haloPart", lineNumber, name));
       }
     }
 
-    // Keep ID the same if modifying existing halos. This avoids tokens losing their halos when
-    // the halo definition is modified.
-    for (HaloSource hs : originalInCategory) {
-      if (name.equalsIgnoreCase(hs.getName())) {
-        assert hs.getId() != null;
-        id = hs.getId();
+    // Keep ID the same if modifying existing halos. This avoids tokens losing their halos
+    // when the halo definition is modified.
+    for (Halo h : originalInCategory) {
+      if (name.equalsIgnoreCase(h.getName())) {
+        assert h.getId() != null;
+        id = h.getId();
         break;
       }
     }
 
-    return new HaloSource(name, id, scaleWithToken, halos);
+    ownerOnly = !gmOnly && ownerOnly;
+    return new Halo(
+        id,
+        name,
+        gmOnly,
+        ownerOnly,
+        inner,
+        facingWithToken,
+        flipWithToken,
+        scaleWithToken,
+        haloParts);
   }
 
   /**

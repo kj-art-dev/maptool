@@ -20,17 +20,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import javax.annotation.Nullable;
 
-/** A collection of {@link HaloSource} grouped into categories. */
+/** A collection of {@link Halos} grouped into categories. */
 public class CategorizedHalos {
   public record Category(String name, Halos halos) {}
 
-  public static CategorizedHalos copyOf(Map<String, ? extends Map<GUID, HaloSource>> sources) {
-    var categorized = new CategorizedHalos();
-    for (var entry : sources.entrySet()) {
-      categorized.addAllToCategory(entry.getKey(), entry.getValue().values());
+  public static CategorizedHalos copyOf(Map<String, ? extends Map<GUID, Halo>> categorized) {
+    var aCategorized = new CategorizedHalos();
+    for (var entry : categorized.entrySet()) {
+      aCategorized.addAllToCategory(entry.getKey(), entry.getValue().values());
     }
-    return categorized;
+    return aCategorized;
   }
 
   private final TreeMap<String, Halos> allHalos;
@@ -73,11 +74,28 @@ public class CategorizedHalos {
     return Optional.of(new Category(name, halos));
   }
 
-  public void addToCategory(String categoryName, HaloSource halo) {
+  /**
+   * Find a specific {@link Halo} within all categorized {@link Halos} by its unique ID.
+   *
+   * @param guid the halo's ID.
+   * @return the {@code Halo} for the given {@code guid}, or {@code null} if not found
+   */
+  public @Nullable Halo getHalo(GUID guid) {
+    for (var entry : allHalos.entrySet()) {
+      for (Halo halo : entry.getValue()) {
+        if (halo.getId().equals(guid)) {
+          return halo;
+        }
+      }
+    }
+    return null;
+  }
+
+  public void addToCategory(String categoryName, Halo halo) {
     addAllToCategory(categoryName, List.of(halo));
   }
 
-  public void addAllToCategory(String categoryName, Collection<HaloSource> halos) {
+  public void addAllToCategory(String categoryName, Collection<Halo> halos) {
     if (halos.isEmpty()) {
       // Don't create a category if we don't have to.
       return;

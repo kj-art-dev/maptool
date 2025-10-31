@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Iterables;
 import net.rptools.maptool.model.CategorizedHalos;
-import net.rptools.maptool.model.HaloSource;
+import net.rptools.maptool.model.Halo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +53,7 @@ public class HaloSyntaxTest {
     var halos = category.halos();
     assertEquals(1, halos.size());
 
-    var halosArray = halos.toArray(HaloSource[]::new);
+    var halosArray = halos.toArray(Halo[]::new);
     assertEquals("Red", halosArray[0].getName());
   }
 
@@ -89,7 +89,7 @@ public class HaloSyntaxTest {
     assertEquals("Test", categories[1].name());
 
     var coloredCategory = categories[0];
-    var coloredHalos = coloredCategory.halos().toArray(HaloSource[]::new);
+    var coloredHalos = coloredCategory.halos().toArray(Halo[]::new);
     assertEquals(6, coloredHalos.length);
     assertEquals("Red", coloredHalos[0].getName());
     assertEquals("Yellow", coloredHalos[1].getName());
@@ -99,7 +99,7 @@ public class HaloSyntaxTest {
     assertEquals("Magenta", coloredHalos[5].getName());
 
     var testCategory = categories[1];
-    var testHalos = testCategory.halos().toArray(HaloSource[]::new);
+    var testHalos = testCategory.halos().toArray(Halo[]::new);
     assertEquals("Circle 5 Red", testHalos[0].getName());
     assertEquals("Triangle 10 Red", testHalos[1].getName());
     assertEquals("Square 15 Red", testHalos[2].getName());

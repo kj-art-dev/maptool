@@ -463,20 +463,24 @@ public class getInfoFunction extends AbstractFunction {
     cinfo.add("sight", sightInfo);
 
     JsonObject haloInfo = new JsonObject();
-    for (CategorizedHalos.Category category : c.getHaloSources().getCategories()) {
-      JsonArray hcinfo = new JsonArray();
-      for (HaloSource hs : category.halos()) {
+    for (CategorizedHalos.Category category : c.getCategorizedHalos().getCategories()) {
+      JsonArray chinfo = new JsonArray();
+      for (Halo h : category.halos()) {
         JsonObject hsinfo = new JsonObject();
-        hsinfo.addProperty("name", hs.getName());
-        hsinfo.addProperty("scale", hs.isScaleWithToken());
-        JsonArray haloList = new JsonArray();
-        for (Halo halo : hs.getHaloList()) {
-          haloList.add(gson.toJsonTree(halo));
+        hsinfo.addProperty("name", h.getName());
+        hsinfo.addProperty("gm", h.isGMOnly());
+        hsinfo.addProperty("owner", h.isOwnerOnly());
+        hsinfo.addProperty("inner", h.isInner());
+        hsinfo.addProperty("facing", h.isFacingWithToken());
+        hsinfo.addProperty("scale", h.isScaleWithToken());
+        JsonArray hpinfo = new JsonArray();
+        for (HaloPart hp : h.getHaloParts()) {
+          hpinfo.add(gson.toJsonTree(hp));
         }
-        hsinfo.add("halo", haloList);
-        hcinfo.add(hsinfo);
+        hsinfo.add("haloParts", hpinfo);
+        chinfo.add(hsinfo);
       }
-      haloInfo.add(category.name(), hcinfo);
+      haloInfo.add(category.name(), chinfo);
     }
     cinfo.add("halos", haloInfo);
 
