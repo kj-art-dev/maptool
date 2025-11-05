@@ -955,7 +955,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
     token.setSnapToGrid(getSnapToGrid().isSelected());
 
-    /* TOPOLOGY */
+    /* OUTLINE */
     for (final var type : Zone.TopologyType.values()) {
       token.setMaskTopology(type, getTokenTopologyPanel().getTopology(type));
     }

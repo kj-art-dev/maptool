@@ -220,7 +220,10 @@ public class Token implements Cloneable {
     flipY,
     flipIso,
     setSpeechName,
-    removeFacing
+    removeFacing,
+    clearHalos,
+    removeHalo,
+    addHalo,
   }
 
   public static final Comparator<Token> NAME_COMPARATOR =
@@ -333,6 +336,9 @@ public class Token implements Cloneable {
    * <p>The elements should be unique, i.e., no two should reference the same light source.
    */
   private List<AttachedLightSource> lightSourceList = new ArrayList<>();
+
+  /** All halos attached to the token. */
+  private LinkedHashSet<GUID> haloIdSet = new LinkedHashSet<>();
 
   private String sightType;
   private boolean hasSight;
@@ -468,6 +474,10 @@ public class Token implements Cloneable {
 
     uniqueLightSources.putAll(token.uniqueLightSources);
     lightSourceList.addAll(token.lightSourceList);
+
+    if (token.haloIdSet != null) {
+      haloIdSet.addAll(token.haloIdSet);
+    }
 
     state.putAll(token.state);
     getPropertyMap().clear();
@@ -987,6 +997,83 @@ public class Token implements Cloneable {
 
   public List<AttachedLightSource> getLightSources() {
     return Collections.unmodifiableList(lightSourceList);
+  }
+
+  public void addHalo(GUID haloId) {
+    haloIdSet.add(haloId);
+  }
+
+  public void removeGMOnlyHalos(Campaign campaign) {
+    CategorizedHalos ch = campaign.getCategorizedHalos();
+    Iterator<GUID> i = haloIdSet.iterator();
+    while (i.hasNext()) {
+      Halo halo = ch.getHalo(i.next());
+      if (halo != null) {
+        if (halo.isGMOnly()) {
+          i.remove();
+        }
+      }
+    }
+  }
+
+  public void removeOwnerOnlyHalos(Campaign campaign) {
+    CategorizedHalos ch = campaign.getCategorizedHalos();
+    Iterator<GUID> i = haloIdSet.iterator();
+    while (i.hasNext()) {
+      Halo halo = ch.getHalo(i.next());
+      if (halo != null) {
+        if (halo.isOwnerOnly()) {
+          i.remove();
+        }
+      }
+    }
+  }
+
+  public boolean hasHalos() {
+    return !haloIdSet.isEmpty();
+  }
+
+  public boolean hasGMOnlyHalos(Campaign campaign) {
+    CategorizedHalos ch = campaign.getCategorizedHalos();
+    for (GUID id : haloIdSet) {
+      Halo halo = ch.getHalo(id);
+      if (halo != null) {
+        if (halo.isGMOnly()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean hasOwnerOnlyHalos(Campaign campaign) {
+    CategorizedHalos ch = campaign.getCategorizedHalos();
+    for (GUID id : haloIdSet) {
+      Halo halo = ch.getHalo(id);
+      if (halo != null) {
+        if (halo.isOwnerOnly()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public void removeHalo(GUID haloId) {
+    haloIdSet.remove(haloId);
+  }
+
+  /** Clear the list of halos */
+  public void clearHalos() {
+    haloIdSet.clear();
+  }
+
+  public boolean hasHalo(GUID id) {
+    return haloIdSet.contains(id);
+  }
+
+  public Set<GUID> getHalos() {
+    return Collections.unmodifiableSet(haloIdSet);
   }
 
   public synchronized void addOwner(String playerId) {
@@ -2598,6 +2685,9 @@ public class Token implements Cloneable {
       }
     }
 
+    if (haloIdSet == null) {
+      haloIdSet = new LinkedHashSet<>();
+    }
     if (macroPropertiesMap == null) {
       macroPropertiesMap = new HashMap<>();
     }
@@ -2924,6 +3014,15 @@ public class Token implements Cloneable {
         lightChanged = true;
         addLightSource(GUID.valueOf(parameters.get(0).getLightSourceId()));
         break;
+      case clearHalos:
+        clearHalos();
+        break;
+      case removeHalo:
+        removeHalo(GUID.valueOf(parameters.get(0).getHaloId()));
+        break;
+      case addHalo:
+        addHalo(GUID.valueOf(parameters.get(0).getHaloId()));
+        break;
       case setHasSight:
         if (hasLightSources()) {
           lightChanged = true;
@@ -3055,6 +3154,7 @@ public class Token implements Cloneable {
         dto.getLightSourcesList().stream()
             .map(AttachedLightSource::fromDto)
             .collect(Collectors.toList()));
+    dto.getHaloGuidsList().stream().forEach(id -> token.haloIdSet.add(new GUID(id)));
     token.sightType = dto.hasSightType() ? dto.getSightType().getValue() : null;
     token.hasSight = dto.getHasSight();
     token.hasImageTable = dto.getHasImageTable();
@@ -3184,6 +3284,7 @@ public class Token implements Cloneable {
         uniqueLightSources.values().stream().map(LightSource::toDto).collect(Collectors.toList()));
     dto.addAllLightSources(
         lightSourceList.stream().map(AttachedLightSource::toDto).collect(Collectors.toList()));
+    dto.addAllHaloGuids(haloIdSet.stream().map(GUID::toString).collect(Collectors.toList()));
     if (sightType != null) {
       dto.setSightType(StringValue.of(sightType));
     }

@@ -1623,11 +1623,37 @@ public class AppActions {
     }
   }
 
+  public static final Action TOGGLE_SHOW_TOKEN_HALOS =
+      new TranslatedClientAction(
+          "action.showTokenHalos", withMenuShortcut(KeyStroke.getKeyStroke("Q"))) {
+        {
+          putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SHOW_TOKEN_HALOS));
+        }
+
+        @Override
+        public boolean isSelected() {
+          return AppState.isShowTokenHalos();
+        }
+
+        @Override
+        protected void executeAction() {
+          AppState.setShowTokenHalos(!AppState.isShowTokenHalos());
+          if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
+            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+          }
+        }
+      };
+
   public static final Action TOGGLE_SHOW_TOKEN_NAMES =
       new TranslatedClientAction(
           "action.showNames", withMenuShortcut(KeyStroke.getKeyStroke("T"))) {
         {
           putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SHOW_TOKEN_NAMES));
+        }
+
+        @Override
+        public boolean isSelected() {
+          return AppState.isShowTokenNames();
         }
 
         @Override

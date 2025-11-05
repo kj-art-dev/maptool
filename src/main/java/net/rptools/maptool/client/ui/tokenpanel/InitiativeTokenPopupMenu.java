@@ -93,7 +93,7 @@ public class InitiativeTokenPopupMenu extends TokenPopupMenu {
     addOwnedItem(createMacroMenu());
     addOwnedItem(createSpeechMenu());
     addOwnedItem(createStateMenu());
-    addOwnedItem(createHaloMenu());
+    addOwnedItem(createHalosMenu());
 
     // Do move up or move down need to be disabled
     InitiativeList list = getRenderer().getZone().getInitiativeList();
