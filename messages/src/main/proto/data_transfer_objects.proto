@@ -101,8 +101,8 @@ message LightDto {
 }
 
 message HaloDto {
-  google.protobuf.StringValue id = 1;
-  google.protobuf.StringValue name = 2;
+  string id = 1;
+  string name = 2;
   bool gm_only = 3;
   bool owner_only = 4;
   bool inner = 5;

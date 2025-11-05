@@ -15,7 +15,6 @@
 package net.rptools.maptool.model;
 
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.StringValue;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
@@ -173,8 +172,8 @@ public final class Halo implements Serializable {
 
   public static @Nonnull Halo fromDto(@Nonnull HaloDto dto) {
     return new Halo(
-        GUID.valueOf(dto.getId().getValue()),
-        dto.getName().getValue(),
+        GUID.valueOf(dto.getId()),
+        dto.getName(),
         dto.getGmOnly(),
         dto.getOwnerOnly(),
         dto.getInner(),
@@ -188,8 +187,8 @@ public final class Halo implements Serializable {
 
   public @Nonnull HaloDto toDto() {
     var dto = HaloDto.newBuilder();
-    dto.setId(StringValue.of(id.toString()));
-    dto.setName(StringValue.of(name));
+    dto.setId(id.toString());
+    dto.setName(name);
     dto.setGmOnly(gmOnly);
     dto.setOwnerOnly(ownerOnly);
     dto.setInner(inner);
