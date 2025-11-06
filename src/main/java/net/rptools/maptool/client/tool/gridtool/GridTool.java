@@ -266,7 +266,8 @@ public class GridTool extends DefaultTool {
   @Override
   public void mousePressed(java.awt.event.MouseEvent e) {
     if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
       int x = zp.x - renderer.getZone().getGrid().getOffsetX();
       int y = zp.y - renderer.getZone().getGrid().getOffsetY();
 
@@ -282,7 +283,8 @@ public class GridTool extends DefaultTool {
   @Override
   public void mouseDragged(java.awt.event.MouseEvent e) {
     if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
       int x = zp.x - dragOffsetX;
       int y = zp.y - dragOffsetY;
 

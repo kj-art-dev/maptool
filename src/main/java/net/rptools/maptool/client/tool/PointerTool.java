@@ -205,7 +205,11 @@ public class PointerTool extends DefaultTool {
 
   public void startTokenDrag(Token keyToken, Set<GUID> tokens) {
     startTokenDrag(
-        keyToken, tokens, new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer), false);
+        keyToken,
+        tokens,
+        new ScreenPoint(dragStartX, dragStartY)
+            .convertToZone(renderer.getViewModel().getZoneScale()),
+        false);
   }
 
   private void startTokenDrag(
@@ -314,7 +318,8 @@ public class PointerTool extends DefaultTool {
             .startTokenDrag(
                 token,
                 Collections.singleton(token.getId()),
-                new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer),
+                new ScreenPoint(dragStartX, dragStartY)
+                    .convertToZone(renderer.getViewModel().getZoneScale()),
                 false);
       }
     }
@@ -602,7 +607,8 @@ public class PointerTool extends DefaultTool {
     }
 
     if (isShowingPointer) {
-      ZonePoint zp = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
       Pointer pointer =
           MapTool.getFrame().getPointerOverlay().getPointer(MapTool.getPlayer().getName());
       if (pointer != null) {
@@ -760,7 +766,8 @@ public class PointerTool extends DefaultTool {
         startTokenDrag(
             tokenUnderMouse,
             selectedTokenSet,
-            new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer),
+            new ScreenPoint(dragStartX, dragStartY)
+                .convertToZone(renderer.getViewModel().getZoneScale()),
             false);
         if (AppPreferences.hideMousePointerWhileDragging.get()) {
           SwingUtil.hidePointer(renderer);
@@ -1128,7 +1135,8 @@ public class PointerTool extends DefaultTool {
         // Pointer
         isShowingPointer = true;
 
-        ZonePoint zp = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+        ZonePoint zp =
+            new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
         Pointer pointer = new Pointer(renderer.getZone(), zp.x, zp.y, 0, type);
         if (MapTool.getPlayer().isGM() && type.equals(Pointer.Type.LOOK_HERE)) {
           MapTool.serverCommand()
@@ -1790,7 +1798,8 @@ public class PointerTool extends DefaultTool {
         renderer.setShape4(new Rectangle2D.Double(dragAnchor.x - 5, dragAnchor.y - 5, 10, 10));
       }
 
-      ZonePoint zonePoint = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+      ZonePoint zonePoint =
+          new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
       zonePoint.x += dragAnchor.x - tokenDragStart.x;
       zonePoint.y += dragAnchor.y - tokenDragStart.y;
 

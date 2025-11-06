@@ -232,8 +232,11 @@ public class SquareGrid extends Grid {
     FontMetrics fm = g.getFontMetrics();
 
     double cellSize = renderer.getScaledGridSize();
-    CellPoint topLeft = convert(new ScreenPoint(0, 0).convertToZone(renderer));
-    ScreenPoint sp = ScreenPoint.fromZonePoint(renderer, convert(topLeft));
+    CellPoint topLeft =
+        convert(new ScreenPoint(0, 0).convertToZone(renderer.getViewModel().getZoneScale()));
+    var topLeftZone = convert(topLeft);
+    ScreenPoint sp =
+        renderer.getViewModel().getZoneScale().toScreenSpace(topLeftZone.x, topLeftZone.y);
 
     Dimension size = renderer.getSize();
 

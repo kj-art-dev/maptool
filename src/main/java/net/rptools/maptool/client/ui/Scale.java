@@ -126,6 +126,20 @@ public class Scale implements Serializable {
     return oneToOneScale;
   }
 
+  public AffineTransform toWorldTransform() {
+    var transform = new AffineTransform();
+    transform.scale(1 / scale, 1 / scale);
+    transform.translate(-offsetX, -offsetY);
+    return transform;
+  }
+
+  public AffineTransform toScreenTransform() {
+    var transform = new AffineTransform();
+    transform.translate(offsetX, offsetY);
+    transform.scale(scale, scale);
+    return transform;
+  }
+
   public void reset() {
     setZoomLevel(0);
   }
@@ -167,6 +181,14 @@ public class Scale implements Serializable {
     zoomTo(x, y, oldScale);
   }
 
+  public Point2D toWorldSpace(Point2D screenPoint) {
+    return toWorldSpace(screenPoint.getX(), screenPoint.getY());
+  }
+
+  public Point2D toWorldSpace(double x, double y) {
+    return new Point2D.Double((x - offsetX) / scale, (y - offsetY) / scale);
+  }
+
   /**
    * Transforms a rectangle from screen space to world space.
    *
@@ -182,10 +204,7 @@ public class Scale implements Serializable {
   }
 
   public Area toWorldSpace(Area area) {
-    var transform = new AffineTransform();
-    transform.scale(1 / scale, 1 / scale);
-    transform.translate(-offsetX, -offsetY);
-    return area.createTransformedArea(transform);
+    return area.createTransformedArea(toWorldTransform());
   }
 
   /**
@@ -211,10 +230,7 @@ public class Scale implements Serializable {
   }
 
   public Area toScreenSpace(Area area) {
-    var transform = new AffineTransform();
-    transform.translate(offsetX, offsetY);
-    transform.scale(scale, scale);
-    return area.createTransformedArea(transform);
+    return area.createTransformedArea(toScreenTransform());
   }
 
   private PropertyChangeSupport getPropertyChangeSupport() {

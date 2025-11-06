@@ -831,9 +831,11 @@ public class AppActions {
           ScreenPoint screenPoint = renderer.getPointUnderMouse();
           if (screenPoint == null) {
             // Pick the middle of the map
-            screenPoint = ScreenPoint.fromZonePoint(renderer, renderer.getCenterPoint());
+            var centerPoint = renderer.getCenterPoint();
+            screenPoint =
+                renderer.getViewModel().getZoneScale().toScreenSpace(centerPoint.x, centerPoint.y);
           }
-          ZonePoint zonePoint = screenPoint.convertToZone(renderer);
+          ZonePoint zonePoint = screenPoint.convertToZone(renderer.getViewModel().getZoneScale());
           pasteTokens(zonePoint, renderer.getActiveLayer());
           keepIdsOnPaste = false; // once pasted, subsequent paste should have new ids
           renderer.repaint();

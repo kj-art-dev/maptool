@@ -125,7 +125,8 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
    */
   protected ZonePoint getCellAtMouse(MouseEvent e) {
     // Find the cell that the mouse is in.
-    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    ZonePoint mouse =
+        new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
     CellPoint cp = renderer.getZone().getGrid().convert(mouse);
     ZonePoint working = renderer.getZone().getGrid().convert(cp);
 
@@ -174,7 +175,7 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
    */
   protected void paintRadius(Graphics2D g, ZonePoint p) {
     if (template.getRadius() > 0 && anchorSet) {
-      ScreenPoint centerText = ScreenPoint.fromZonePoint(renderer, p);
+      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(p.x, p.y);
       centerText.translate(CURSOR_WIDTH, -CURSOR_WIDTH);
       ToolHelper.drawMeasurement(
           g,

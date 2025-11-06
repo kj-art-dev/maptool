@@ -262,7 +262,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public ZonePoint getCenterPoint() {
-    return new ScreenPoint(getSize().width / 2d, getSize().height / 2d).convertToZone(this);
+    return new ScreenPoint(getSize().width / 2d, getSize().height / 2d)
+        .convertToZone(viewModel.getZoneScale());
   }
 
   public boolean isPathShowing(Token token) {
@@ -685,7 +686,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void forcePlayersView() {
-    ZonePoint zp = new ScreenPoint(getWidth() / 2d, getHeight() / 2d).convertToZone(this);
+    ZonePoint zp =
+        new ScreenPoint(getWidth() / 2d, getHeight() / 2d).convertToZone(viewModel.getZoneScale());
     MapTool.serverCommand()
         .enforceZoneView(getZone().getId(), zp.x, zp.y, getScale(), getWidth(), getHeight());
   }
@@ -1076,7 +1078,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         continue;
       }
       timer.start("labels-1.1");
-      ScreenPoint sp = ScreenPoint.fromZonePointRnd(this, zp.x, zp.y);
+      ScreenPoint sp = ScreenPoint.fromZonePointRnd(viewModel.getZoneScale(), zp.x, zp.y);
       var dim = fLabel.getDimensions(g, label.getLabel());
       Rectangle bounds =
           fLabel.render(
@@ -1443,8 +1445,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             int dx = dzp.x;
             int dy = dzp.y;
 
-            ScreenPoint origin = ScreenPoint.fromZonePoint(this, ox, oy);
-            ScreenPoint destination = ScreenPoint.fromZonePoint(this, dx, dy);
+            ScreenPoint origin = viewModel.getZoneScale().toScreenSpace(ox, oy);
+            ScreenPoint destination = viewModel.getZoneScale().toScreenSpace(dx, dy);
 
             int halfX = (int) ((origin.x + destination.x) / 2);
             int halfY = (int) ((origin.y + destination.y) / 2);
@@ -1486,16 +1488,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (lastPoint == null) {
           lastPoint =
               ScreenPoint.fromZonePointRnd(
-                  this,
+                  viewModel.getZoneScale(),
                   zp.x + (footprintBounds.width / 2d) * footprint.getScale(),
                   zp.y + (footprintBounds.height / 2d) * footprint.getScale());
           continue;
         }
         ScreenPoint nextPoint =
-            ScreenPoint.fromZonePoint(
-                this,
-                zp.x + (footprintBounds.width / 2d) * footprint.getScale(),
-                zp.y + (footprintBounds.height / 2d) * footprint.getScale());
+            viewModel
+                .getZoneScale()
+                .toScreenSpace(
+                    zp.x + (footprintBounds.width / 2d) * footprint.getScale(),
+                    zp.y + (footprintBounds.height / 2d) * footprint.getScale());
 
         g.setColor(highlight);
         g.setStroke(highlightStroke);
@@ -1585,7 +1588,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
 
-    ScreenPoint sp = ScreenPoint.fromZonePoint(this, point);
+    ScreenPoint sp = viewModel.getZoneScale().toScreenSpace(point.x, point.y);
 
     AffineTransform backup = g.getTransform();
 
@@ -1607,7 +1610,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
 
-    ScreenPoint sp = ScreenPoint.fromZonePoint(this, point);
+    ScreenPoint sp = viewModel.getZoneScale().toScreenSpace(point.x, point.y);
 
     g.drawImage(
         image,
@@ -1631,7 +1634,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
 
-    ScreenPoint sp = ScreenPoint.fromZonePoint(this, point);
+    ScreenPoint sp = viewModel.getZoneScale().toScreenSpace(point.x, point.y);
 
     int cellX = (int) (sp.x - iWidth / 2);
     int cellY = (int) (sp.y - iHeight / 2);
@@ -2181,7 +2184,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @return the token
    */
   public @Nullable Token getTokenAt(int x, int y) {
-    var zonePoint = ScreenPoint.convertToZone2d(this, x, y);
+    var zonePoint = viewModel.getZoneScale().toWorldSpace(x, y);
 
     List<ZoneViewModel.TokenPosition> positionList =
         new ArrayList<>(getTokenPositions(getActiveLayer()));
@@ -2195,7 +2198,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public @Nullable Token getMarkerAt(int x, int y) {
-    var zonePoint = ScreenPoint.convertToZone2d(this, x, y);
+    var zonePoint = viewModel.getZoneScale().toWorldSpace(x, y);
 
     List<ZoneViewModel.TokenPosition> positionList =
         new ArrayList<>(viewModel.getMarkerPositions());
@@ -2255,7 +2258,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @return The cell coordinates of the passed screen point.
    */
   public CellPoint getCellAt(ScreenPoint screenPoint) {
-    ZonePoint zp = screenPoint.convertToZone(this);
+    ZonePoint zp = screenPoint.convertToZone(viewModel.getZoneScale());
     return zone.getGrid().convert(zp);
   }
 
@@ -2343,7 +2346,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     List<String> failedPaste = new ArrayList<>(tokens.size());
     List<GUID> selectThese = new ArrayList<>(tokens.size());
 
-    ScreenPoint sp = ScreenPoint.fromZonePoint(this, zp);
+    ScreenPoint sp = viewModel.getZoneScale().toScreenSpace(zp.x, zp.y);
     Point dropPoint = new Point((int) sp.x, (int) sp.y);
     SwingUtilities.convertPointToScreen(dropPoint, this);
     int tokenIndex = 0;
@@ -2511,7 +2514,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().getDisablePlayerAssetPanel()) {
       ZonePoint zp =
           new ScreenPoint((int) dtde.getLocation().getX(), (int) dtde.getLocation().getY())
-              .convertToZone(this);
+              .convertToZone(viewModel.getZoneScale());
       TransferableHelper th = (TransferableHelper) getTransferHandler();
       List<Token> tokens = th.getTokens();
       if (tokens != null && !tokens.isEmpty()) {

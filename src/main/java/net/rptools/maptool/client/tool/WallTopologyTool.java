@@ -38,7 +38,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.swing.walls.WallConfigurationController;
 import net.rptools.maptool.client.tool.drawing.TopologyTool;
@@ -238,7 +237,8 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   }
 
   private Point2D updateCurrentPosition(MouseEvent e) {
-    return currentPosition = ScreenPoint.convertToZone2d(renderer, e.getX(), e.getY());
+    return currentPosition =
+        renderer.getViewModel().getZoneScale().toWorldSpace(e.getX(), e.getY());
   }
 
   private Snap getSnapMode(MouseEvent e) {
