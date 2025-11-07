@@ -67,6 +67,12 @@ public class Pen {
     this.opacity = copy.opacity;
   }
 
+  public BasicStroke getStroke() {
+    var cap = squareCap ? BasicStroke.CAP_SQUARE : BasicStroke.CAP_ROUND;
+    var join = squareCap ? BasicStroke.JOIN_MITER : BasicStroke.JOIN_ROUND;
+    return new BasicStroke(thickness, cap, join);
+  }
+
   public DrawablePaint getPaint() {
     return paint;
   }
@@ -129,16 +135,6 @@ public class Pen {
 
   public void setSquareCap(boolean squareCap) {
     this.squareCap = squareCap;
-  }
-
-  public int getStrokeCap() {
-    if (squareCap) return BasicStroke.CAP_SQUARE;
-    else return BasicStroke.CAP_ROUND;
-  }
-
-  public int getStrokeJoin() {
-    if (squareCap) return BasicStroke.JOIN_MITER;
-    else return BasicStroke.JOIN_ROUND;
   }
 
   // ***** Legacy support, these supports drawables from 1.1
