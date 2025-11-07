@@ -415,16 +415,11 @@ public class DrawingFunctions extends AbstractFunction {
    * @param pen the replacement pen.
    * @throws ParserException if the drawing is not found.
    */
-  protected void setPen(String functionName, Zone map, GUID guid, Object pen)
-      throws ParserException {
-    if (!(pen instanceof Pen))
-      throw new ParserException(
-          I18N.getText("macro.function.drawingFunction.invalidPen", functionName));
-    Pen p = new Pen((Pen) pen);
+  protected void setPen(String functionName, Zone map, GUID guid, Pen pen) throws ParserException {
     List<DrawnElement> drawableList = map.getAllDrawnElements();
     DrawnElement de = findDrawnElement(drawableList, guid);
     if (de != null) {
-      de.setPen(p);
+      de.setPen(new Pen(pen));
       return;
     }
     throw new ParserException(
