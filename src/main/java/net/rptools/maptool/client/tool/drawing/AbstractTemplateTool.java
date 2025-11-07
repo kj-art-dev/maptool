@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
@@ -26,6 +27,7 @@ import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.Drawable;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
 
 /** Base class for tools that draw templates. */
@@ -87,8 +89,31 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
     return defaultValue;
   }
 
+  /**
+   * @return The pen to used for the finished template.
+   */
   protected Pen getPen() {
-    return MapTool.getFrame().getPen(isEraser());
+    var pen = MapTool.getFrame().getPen(isEraser());
+    pen.setBackgroundMode(Pen.MODE_SOLID);
+    return pen;
+  }
+
+  /**
+   * Get the pen set up to paint the overlay.
+   *
+   * @return The pen used to paint the overlay.
+   */
+  protected Pen getPenForOverlay() {
+    // Get the pen and modify to only show a cursor and the boundary
+    Pen pen = getPen(); // new copy of pen, OK to modify
+    pen.setBackgroundMode(Pen.MODE_SOLID);
+    pen.setForegroundMode(Pen.MODE_SOLID);
+    pen.setThickness(3);
+    if (pen.isEraser()) {
+      pen.setEraser(false);
+      pen.setPaint(new DrawableColorPaint(Color.WHITE));
+    }
+    return pen;
   }
 
   @Override

@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.event.MouseEvent;
@@ -30,7 +29,6 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.RadiusCellTemplate;
 
@@ -165,24 +163,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
     g.setStroke(new BasicStroke(thickness));
     g.drawLine(vertex.x - halfCursor, vertex.y, vertex.x + halfCursor, vertex.y);
     g.drawLine(vertex.x, vertex.y - halfCursor, vertex.x, vertex.y + halfCursor);
-  }
-
-  /**
-   * Get the pen set up to paint the overlay.
-   *
-   * @return The pen used to paint the overlay.
-   */
-  protected Pen getPenForOverlay() {
-    // Get the pen and modify to only show a cursor and the boundary
-    Pen pen = getPen(); // new copy of pen, OK to modify
-    pen.setBackgroundMode(Pen.MODE_SOLID);
-    pen.setForegroundMode(Pen.MODE_SOLID);
-    pen.setThickness(3);
-    if (pen.isEraser()) {
-      pen.setEraser(false);
-      pen.setPaint(new DrawableColorPaint(Color.WHITE));
-    } // endif
-    return pen;
   }
 
   /**
@@ -332,19 +312,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
       return;
     }
     resetTool(null);
-  }
-
-  /**
-   * It is OK to modify the pen returned by this method
-   *
-   * @see AbstractTemplateTool#getPen()
-   */
-  @Override
-  protected Pen getPen() {
-    // Just paint the foreground
-    Pen pen = super.getPen();
-    pen.setBackgroundMode(Pen.MODE_SOLID);
-    return pen;
   }
 
   /**
