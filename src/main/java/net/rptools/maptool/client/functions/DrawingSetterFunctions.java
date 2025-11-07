@@ -71,20 +71,16 @@ public class DrawingSetterFunctions extends DrawingFunctions {
     } else if ("setPenColor".equalsIgnoreCase(functionName)) {
       String paint = parameters.get(2).toString();
       if ("".equalsIgnoreCase(paint)) {
-        getPen(functionName, map, guid).setForegroundMode(Pen.MODE_TRANSPARENT);
         getPen(functionName, map, guid).setPaint(null);
       } else {
-        getPen(functionName, map, guid).setForegroundMode(Pen.MODE_SOLID);
         getPen(functionName, map, guid).setPaint(FunctionUtil.getPaintFromString(paint));
       }
       return "";
     } else if ("setFillColor".equalsIgnoreCase(functionName)) {
       String paint = parameters.get(2).toString();
       if ("".equalsIgnoreCase(paint)) {
-        getPen(functionName, map, guid).setBackgroundMode(Pen.MODE_TRANSPARENT);
         getPen(functionName, map, guid).setBackgroundPaint(null);
       } else {
-        getPen(functionName, map, guid).setBackgroundMode(Pen.MODE_SOLID);
         getPen(functionName, map, guid).setBackgroundPaint(FunctionUtil.getPaintFromString(paint));
       }
       return "";

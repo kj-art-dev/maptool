@@ -113,8 +113,7 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   private boolean hasPaint(Pen pen) {
-    return pen.getForegroundMode() != Pen.MODE_TRANSPARENT
-        || pen.getBackgroundMode() != Pen.MODE_TRANSPARENT;
+    return pen.getPaint() != null || pen.getBackgroundPaint() != null;
   }
 
   private Pen getPen() {
@@ -186,8 +185,9 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
           pen.setPaint(new DrawableColorPaint(Color.white));
           pen.setBackgroundPaint(new DrawableColorPaint(Color.white));
         }
-        if (isLinearTool()) {
-          pen.setForegroundMode(Pen.MODE_SOLID);
+        if (isLinearTool() && pen.getPaint() == null) {
+          // Make sure the user can see what they're drawing, even if it is a transparent line.
+          pen.setPaint(new DrawableColorPaint(Color.black));
         }
 
         drawable.draw(renderer.getZone(), g2, pen);

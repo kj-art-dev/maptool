@@ -1581,17 +1581,13 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     pen.setEraser(isEraser);
 
     if (colorPicker.isFillForegroundSelected()) {
-      pen.setForegroundMode(Pen.MODE_SOLID);
       pen.setPaint(DrawablePaint.convertPaint(colorPicker.getForegroundPaint()));
     } else {
-      pen.setForegroundMode(Pen.MODE_TRANSPARENT);
       pen.setPaint(null);
     }
     if (colorPicker.isFillBackgroundSelected()) {
-      pen.setBackgroundMode(Pen.MODE_SOLID);
       pen.setBackgroundPaint(DrawablePaint.convertPaint(colorPicker.getBackgroundPaint()));
     } else {
-      pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
       pen.setBackgroundPaint(null);
     }
 

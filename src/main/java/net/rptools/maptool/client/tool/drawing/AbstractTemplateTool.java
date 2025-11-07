@@ -94,7 +94,9 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
    */
   protected Pen getPen() {
     var pen = MapTool.getFrame().getPen(isEraser());
-    pen.setBackgroundMode(Pen.MODE_SOLID);
+    if (pen.getBackgroundPaint() == null) {
+      pen.setBackgroundPaint(new DrawableColorPaint(Color.black));
+    }
     return pen;
   }
 
@@ -106,8 +108,12 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   protected Pen getPenForOverlay() {
     // Get the pen and modify to only show a cursor and the boundary
     Pen pen = getPen(); // new copy of pen, OK to modify
-    pen.setBackgroundMode(Pen.MODE_SOLID);
-    pen.setForegroundMode(Pen.MODE_SOLID);
+    if (pen.getBackgroundPaint() == null) {
+      pen.setBackgroundPaint(new DrawableColorPaint(Color.black));
+    }
+    if (pen.getPaint() == null) {
+      pen.setPaint(new DrawableColorPaint(Color.black));
+    }
     pen.setThickness(3);
     if (pen.isEraser()) {
       pen.setEraser(false);
@@ -153,7 +159,6 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   }
 
   private boolean hasPaint(Pen pen) {
-    return pen.getForegroundMode() != Pen.MODE_TRANSPARENT
-        || pen.getBackgroundMode() != Pen.MODE_TRANSPARENT;
+    return pen.getPaint() != null || pen.getBackgroundPaint() != null;
   }
 }

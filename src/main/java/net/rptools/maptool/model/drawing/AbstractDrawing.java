@@ -66,24 +66,19 @@ public abstract class AbstractDrawing implements Drawable, ImageObserver {
     } else if (pen.getOpacity() != 1) {
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
     }
-    if (pen.getBackgroundMode() == Pen.MODE_SOLID) {
-      if (pen.getBackgroundPaint() != null) {
-        g.setPaint(pen.getBackgroundPaint().getPaint(this));
-      } else {
-        // **** Legacy support for 1.1
-        g.setColor(new Color(pen.getBackgroundColor()));
-      }
+
+    var backgroundPaint = pen.getBackgroundPaint();
+    if (backgroundPaint != null) {
+      g.setPaint(backgroundPaint.getPaint(this));
       drawBackground(zone, g);
     }
-    if (pen.getForegroundMode() == Pen.MODE_SOLID) {
-      if (pen.getPaint() != null) {
-        g.setPaint(pen.getPaint().getPaint(this));
-      } else {
-        // **** Legacy support for 1.1
-        g.setColor(new Color(pen.getColor()));
-      }
+
+    var foregroundPaint = pen.getPaint();
+    if (foregroundPaint != null) {
+      g.setPaint(foregroundPaint.getPaint(this));
       draw(zone, g);
     }
+
     g.setComposite(oldComposite);
     g.setStroke(oldStroke);
   }
