@@ -21,7 +21,6 @@ import java.awt.geom.AffineTransform;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
 import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -89,23 +88,7 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   }
 
   protected Pen getPen() {
-    Pen pen = new Pen(MapTool.getFrame().getPen());
-    pen.setEraser(isEraser());
-
-    ColorPicker picker = MapTool.getFrame().getColorPicker();
-    if (picker.isFillForegroundSelected()) {
-      pen.setForegroundMode(Pen.MODE_SOLID);
-    } else {
-      pen.setForegroundMode(Pen.MODE_TRANSPARENT);
-    }
-    if (picker.isFillBackgroundSelected()) {
-      pen.setBackgroundMode(Pen.MODE_SOLID);
-    } else {
-      pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
-    }
-    pen.setSquareCap(picker.isSquareCapSelected());
-    pen.setThickness(picker.getStrokeWidth());
-    return pen;
+    return MapTool.getFrame().getPen(isEraser());
   }
 
   @Override
