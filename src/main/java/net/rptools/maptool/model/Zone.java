@@ -2049,7 +2049,7 @@ public class Zone {
         continue;
       }
       // Are we possibly covering something up?
-      if (drawn.getPen().isEraser() && (drawn.getPen().getBackgroundMode() == Pen.MODE_SOLID)) {
+      if (drawn.getPen().isEraser() && (drawn.getPen().getBackgroundPaint() != null)) {
         area.add(drawnArea);
         eraserCount++;
         continue;

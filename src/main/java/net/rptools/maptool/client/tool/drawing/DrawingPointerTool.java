@@ -32,7 +32,6 @@ import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.events.ZoneActivated;
-import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
 import net.rptools.maptool.client.swing.label.FlatImageLabel;
 import net.rptools.maptool.client.swing.label.FlatImageLabelFactory;
 import net.rptools.maptool.client.tool.DefaultTool;
@@ -769,23 +768,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @return Pen
    */
   protected Pen getPen() {
-    Pen pen = new Pen(MapTool.getFrame().getPen());
-    pen.setEraser(isEraser);
-
-    ColorPicker picker = MapTool.getFrame().getColorPicker();
-    if (picker.isFillForegroundSelected()) {
-      pen.setForegroundMode(Pen.MODE_SOLID);
-    } else {
-      pen.setForegroundMode(Pen.MODE_TRANSPARENT);
-    }
-    if (picker.isFillBackgroundSelected()) {
-      pen.setBackgroundMode(Pen.MODE_SOLID);
-    } else {
-      pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
-    }
-    pen.setSquareCap(picker.isSquareCapSelected());
-    pen.setThickness(picker.getStrokeWidth());
-    return pen;
+    return MapTool.getFrame().getPen(isEraser);
   }
 
   /**
