@@ -126,7 +126,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private static final int WINDOW_WIDTH = 800;
   private static final int WINDOW_HEIGHT = 600;
 
-  private final Pen pen = new Pen(Pen.DEFAULT);
   private final Map<MTFrame, DockableFrame> frameMap = new HashMap<MTFrame, DockableFrame>();
 
   /** Are the drawing measurements being painted? */
@@ -1571,12 +1570,31 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     assetPanel.addAssetRoot(new AssetDirectory(rootDir, AppConstants.IMAGE_FILE_FILTER));
   }
 
-  public Pen getPen() {
-    pen.setPaint(DrawablePaint.convertPaint(colorPicker.getForegroundPaint()));
-    pen.setBackgroundPaint(DrawablePaint.convertPaint(colorPicker.getBackgroundPaint()));
+  /**
+   * Creates a new {@link Pen} based on the color picker state.
+   *
+   * @param isEraser If {@code true}, the return pen will be an eraser.
+   * @return A new pen matching the color picker state.
+   */
+  public Pen getPen(boolean isEraser) {
+    var pen = new Pen();
+    pen.setEraser(isEraser);
+
+    if (colorPicker.isFillForegroundSelected()) {
+      pen.setPaint(DrawablePaint.convertPaint(colorPicker.getForegroundPaint()));
+    } else {
+      pen.setPaint(null);
+    }
+    if (colorPicker.isFillBackgroundSelected()) {
+      pen.setBackgroundPaint(DrawablePaint.convertPaint(colorPicker.getBackgroundPaint()));
+    } else {
+      pen.setBackgroundPaint(null);
+    }
+
     pen.setThickness(colorPicker.getStrokeWidth());
     pen.setOpacity(colorPicker.getOpacity());
-    pen.setThickness(colorPicker.getStrokeWidth());
+    pen.setSquareCap(colorPicker.isSquareCapSelected());
+
     return pen;
   }
 
