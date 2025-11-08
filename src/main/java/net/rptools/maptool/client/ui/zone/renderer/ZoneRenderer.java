@@ -1113,14 +1113,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       AppPreferences.renderQuality.get().setRenderingHints(bbg);
 
       // Background texture
-      Paint paint =
-          zone.getBackgroundPaint().getPaint(getViewOffsetX(), getViewOffsetY(), getScale(), this);
+      Paint paint = zone.getBackgroundPaint().getPaint(zoneScale, this);
       bbg.setPaint(paint);
       bbg.fillRect(0, 0, size.width, size.height);
 
       // Only apply the noise if the feature is on and the background a textured paint
       if (bgTextureNoiseFilterOn && paint instanceof TexturePaint) {
-        bbg.setPaint(noise.getPaint(getViewOffsetX(), getViewOffsetY(), getScale()));
+        bbg.setPaint(noise.getPaint(zoneScale));
         bbg.fillRect(0, 0, size.width, size.height);
       }
 
