@@ -37,6 +37,7 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -129,6 +130,10 @@ public class ZoneViewModel {
     this.zone = zone;
     this.zoneView = zoneView;
     this.selectionModel = selectionModel;
+  }
+
+  public void repaintNeeded() {
+    new MapToolEventBus().getMainEventBus().post(new RepaintZoneRequested(zone));
   }
 
   /** Marks the zone as not loaded, so that it ensures once again that all assets are loaded. */

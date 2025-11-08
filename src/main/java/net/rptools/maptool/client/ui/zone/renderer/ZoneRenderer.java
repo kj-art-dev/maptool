@@ -42,6 +42,7 @@ import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
 import net.rptools.maptool.client.swing.GenericDialog;
 import net.rptools.maptool.client.swing.ImageLabel;
@@ -2536,6 +2537,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   @Override
   public void dropActionChanged(DropTargetDragEvent dtde) {}
+
+  @Subscribe
+  private void onRepaintRequested(RepaintZoneRequested event) {
+    if (event.zone() != this.zone) {
+      return;
+    }
+
+    repaintDebouncer.dispatch();
+  }
 
   @Subscribe
   private void onSelectionChanged(SelectionModel.SelectionChanged event) {
