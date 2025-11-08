@@ -40,10 +40,7 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   private boolean isEraser;
 
   protected AffineTransform getPaintTransform(ZoneRenderer renderer) {
-    AffineTransform transform = new AffineTransform();
-    transform.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    transform.scale(renderer.getScale(), renderer.getScale());
-    return transform;
+    return renderer.getViewModel().getZoneScale().toScreenTransform();
   }
 
   @Override

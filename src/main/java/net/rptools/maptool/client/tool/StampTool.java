@@ -1006,7 +1006,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
         }
         // Resize
         if (!token.isSnapToScale()) {
-          double scale = renderer.getScale();
+          double scale = renderer.getViewModel().getZoneScale().getScale();
           Rectangle footprintBounds = token.getFootprintBounds(renderer.getZone());
 
           double scaledWidth = (footprintBounds.width * scale);
@@ -1097,7 +1097,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
         && cellWidthSelected > 0
         && cellHeightSelected > 0) {
       double gridSize = renderer.getZone().getGrid().getSize();
-      double zoneScale = renderer.getScale();
+      double zoneScale = renderer.getViewModel().getZoneScale().getScale();
       double newScaleX =
           ((gridSize * cellWidthSelected) / (selectedWidth / zoneScale)) * currentScaleX;
       double newScaleY =

@@ -102,7 +102,6 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
-import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
@@ -1275,15 +1274,18 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
                 tree.clearSelection();
               }
               tree.addSelectionInterval(rowIndex, rowIndex);
-              if (row instanceof DrawnElement && e.getClickCount() == 2) {
-                DrawnElement de = (DrawnElement) row;
+              if (row instanceof DrawnElement de && e.getClickCount() == 2) {
                 var renderer = getCurrentZoneRenderer();
                 var zone = renderer.getZone();
-                getCurrentZoneRenderer()
-                    .centerOn(
-                        new ZonePoint(
-                            (int) de.getDrawable().getBounds(zone).getCenterX(),
-                            (int) de.getDrawable().getBounds(zone).getCenterY()));
+                var bounds = de.getDrawable().getBounds(zone);
+                var viewModel = renderer.getViewModel();
+                viewModel.setZoneScale(
+                    viewModel
+                        .getZoneScale()
+                        .centeredOn(
+                            (int) bounds.getCenterX(),
+                            (int) bounds.getCenterY(),
+                            renderer.getSize()));
               }
               /*
                * int[] treeRows = tree.getSelectionRows(); java.util.Arrays.sort(treeRows); drawablesPanel.clearSelectedIds(); for (int i = 0; i < treeRows.length; i++) { TreePath p =

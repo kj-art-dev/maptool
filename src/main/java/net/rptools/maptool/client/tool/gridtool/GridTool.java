@@ -36,6 +36,7 @@ import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.ColorWell;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.DefaultTool;
+import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.CellPoint;
@@ -319,11 +320,13 @@ public class GridTool extends DefaultTool {
     }
     ZoneRenderer renderer = (ZoneRenderer) e.getSource();
     if (SwingUtil.isControlDown(e)) {
+      var scale = renderer.getViewModel().getZoneScale();
       if (e.getWheelRotation() > 0) {
-        renderer.zoomOut(e.getX(), e.getY());
+        scale = scale.zoomedOut(e.getX(), e.getY());
       } else {
-        renderer.zoomIn(e.getX(), e.getY());
+        scale = scale.zoomedIn(e.getX(), e.getY());
       }
+      renderer.getViewModel().setZoneScale(scale);
     } else {
       if (e.getWheelRotation() > 0) {
         adjustGridSize(renderer, Size.Increase);
@@ -454,15 +457,16 @@ public class GridTool extends DefaultTool {
       boolean direction = delta > 0;
       delta = Math.abs(delta);
       ZonePoint centerPoint = renderer.getCenterPoint();
+      ZoneViewModel viewModel = renderer.getViewModel();
 
-      var scale = renderer.getZoneScale();
+      var scale = viewModel.getZoneScale();
       for (int i = 0; i < delta; i++) {
         scale =
             direction
                 ? scale.zoomedOut(centerPoint.x, centerPoint.y)
                 : scale.zoomedIn(centerPoint.x, centerPoint.y);
       }
-      renderer.setZoneScale(scale);
+      viewModel.setZoneScale(scale);
 
       lastZoomIndex = zoomSlider.getValue();
     }

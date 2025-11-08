@@ -120,9 +120,10 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
     var box = element.getDrawable().getBounds(getZone());
     var pen = element.getPen();
 
-    var scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    var scale = zoneScale.getScale();
 
-    var screenPoint = renderer.getViewModel().getZoneScale().toScreenSpace(box.x, box.y);
+    var screenPoint = zoneScale.toScreenSpace(box.x, box.y);
 
     var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
     var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);

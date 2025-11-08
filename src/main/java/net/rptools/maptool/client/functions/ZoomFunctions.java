@@ -50,14 +50,15 @@ public class ZoomFunctions extends AbstractFunction {
       throws ParserException {
     if ("getZoom".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 0);
-      return Double.valueOf(
-              MapTool.getFrame().getCurrentZoneRenderer().getViewModel().getZoneScale().getScale())
-          .toString();
+      var viewModel = MapTool.getFrame().getCurrentZoneRenderer().getViewModel();
+      return Double.valueOf(viewModel.getZoneScale().getScale()).toString();
     }
     if ("setZoom".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 1, 1);
-      Double zoom = FunctionUtil.paramAsDouble(functionName, args, 0, true);
-      MapTool.getFrame().getCurrentZoneRenderer().setScale(zoom);
+      double zoom = FunctionUtil.paramAsDouble(functionName, args, 0, true);
+      var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+      var viewModel = renderer.getViewModel();
+      viewModel.setZoneScale(viewModel.getZoneScale().withCenteredScale(zoom, renderer.getSize()));
       return "";
     }
     if ("getViewArea".equalsIgnoreCase(functionName)) {

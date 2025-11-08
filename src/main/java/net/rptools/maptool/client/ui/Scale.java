@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui;
 
+import java.awt.Dimension;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
@@ -72,7 +73,7 @@ public class Scale implements Serializable {
 
   @Serial
   private Object readResolve() {
-    // scale is authoratative, provided the associated zoom level lies within appropriate bounds.
+    // scale is authoritative, provided the associated zoom level lies within appropriate bounds.
     return new Scale(clampScale(this.scale), this.offsetX, this.offsetY);
   }
 
@@ -161,6 +162,19 @@ public class Scale implements Serializable {
     var newOffsetY = offsetY + y - newY;
 
     return new Scale(newScale, newOffsetX, newOffsetY);
+  }
+
+  public Scale withCenteredScale(double newScale, Dimension size) {
+    return withScale(newScale, size.width / 2, size.height / 2);
+  }
+
+  public Scale centeredOn(int x, int y, Dimension size) {
+    return withOffset(
+        size.width / 2 - (int) (x * scale) - 1, size.height / 2 - (int) (y * scale) - 1);
+  }
+
+  public Scale translated(int dx, int dy) {
+    return new Scale(scale, offsetX + dx, offsetY + dy);
   }
 
   public Scale withZoomLevel(int newZoomLevel, int x, int y) {

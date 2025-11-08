@@ -1144,7 +1144,7 @@ public class PointerTool extends DefaultTool {
                   renderer.getZone().getId(),
                   zp.x,
                   zp.y,
-                  renderer.getScale(),
+                  renderer.getViewModel().getZoneScale().getScale(),
                   renderer.getWidth(),
                   renderer.getHeight());
         }

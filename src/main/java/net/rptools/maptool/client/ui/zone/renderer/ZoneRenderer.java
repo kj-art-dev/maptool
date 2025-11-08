@@ -101,7 +101,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /** Manages the selected tokens on the zone. */
   private final SelectionModel selectionModel;
 
-  private Scale zoneScale;
   private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
   private final List<LabelLocation> labelLocationList = new LinkedList<>();
@@ -118,9 +117,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private BufferedImage miniImage;
   private BufferedImage backBuffer;
   private boolean drawBackground = true;
-  private int lastX;
-  private int lastY;
-  private double lastScale;
+  private Scale lastZoneScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<>();
   private PlayerView lastView;
@@ -159,7 +156,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       throw new IllegalArgumentException("Zone cannot be null");
     }
     this.zone = zone;
-    this.zoneScale = new Scale();
     this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);
     this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel);
@@ -251,7 +247,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       return;
     }
 
-    centerOn(new ZonePoint(token.getX(), token.getY()));
+    viewModel.setZoneScale(
+        viewModel.getZoneScale().centeredOn(token.getX(), token.getY(), getSize()));
     setActiveLayer(token.getLayer());
     MapTool.getFrame()
         .getToolbox()
@@ -268,19 +265,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   public boolean isPathShowing(Token token) {
     return showPathList.contains(token);
-  }
-
-  public Scale getZoneScale() {
-    return zoneScale;
-  }
-
-  public void setZoneScale(Scale scale) {
-    if (!zoneScale.equals(scale)) {
-      zoneScale = scale;
-      invalidateCurrentViewCache();
-      MapTool.getFrame().getZoomStatusBar().update();
-      repaintDebouncer.dispatch();
-    }
   }
 
   public void flushDrawableRenderer() {
@@ -529,25 +513,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return viewModel.isTokenMoving(token.getId());
   }
 
-  protected void setViewOffset(int x, int y) {
-    setZoneScale(zoneScale.withOffset(x, y));
-  }
-
-  public void centerOn(ZonePoint point) {
-    int x = point.x;
-    int y = point.y;
-
-    x = getSize().width / 2 - (int) (x * getScale()) - 1;
-    y = getSize().height / 2 - (int) (y * getScale()) - 1;
-
-    setViewOffset(x, y);
-    repaintDebouncer.dispatch();
-  }
-
-  public void centerOn(CellPoint point) {
-    centerOn(zone.getGrid().convert(point));
-  }
-
   /**
    * Remove the token from: {@link #labelRenderingCache}. Set the {@link #visibleScreenArea} to
    * null. Flush the token from {@link #zoneView}.
@@ -622,32 +587,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     repaintDebouncer.dispatch();
   }
 
-  public void moveViewBy(int dx, int dy) {
-    setViewOffset(getViewOffsetX() + dx, getViewOffsetY() + dy);
-  }
-
   public void moveViewByCells(int dx, int dy) {
-    int gridSize = (int) (zone.getGrid().getSize() * getScale());
+    var zoneScale = viewModel.getZoneScale();
 
-    int rawXOffset = getViewOffsetX() + dx * gridSize;
-    int rawYOffset = getViewOffsetY() + dy * gridSize;
+    int gridSize = (int) (zone.getGrid().getSize() * zoneScale.getScale());
+
+    int rawXOffset = zoneScale.getOffsetX() + dx * gridSize;
+    int rawYOffset = zoneScale.getOffsetY() + dy * gridSize;
 
     int snappedXOffset = rawXOffset - rawXOffset % gridSize;
     int snappedYOffset = rawYOffset - rawYOffset % gridSize;
 
-    setViewOffset(snappedXOffset, snappedYOffset);
-  }
-
-  public void zoomReset(int x, int y) {
-    setZoneScale(zoneScale.withZoomReset(x, y));
-  }
-
-  public void zoomIn(int x, int y) {
-    setZoneScale(zoneScale.zoomedIn(x, y));
-  }
-
-  public void zoomOut(int x, int y) {
-    setZoneScale(zoneScale.zoomedOut(x, y));
+    viewModel.setZoneScale(zoneScale.withOffset(snappedXOffset, snappedYOffset));
   }
 
   public void enforceView(int x, int y, double scale, int gmWidth, int gmHeight) {
@@ -662,26 +613,32 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       scale = scale * height / gmHeight;
     }
 
-    previousScale = getScale();
+    previousScale = viewModel.getZoneScale().getScale();
     previousZonePoint = getCenterPoint();
 
-    setScale(scale);
-    centerOn(new ZonePoint(x, y));
+    viewModel.setZoneScale(
+        viewModel.getZoneScale().withCenteredScale(scale, getSize()).centeredOn(x, y, getSize()));
   }
 
   public void restoreView() {
-    log.info("Restoring view: " + previousZonePoint);
-    log.info("previousScale: " + previousScale);
-
-    centerOn(previousZonePoint);
-    setScale(previousScale);
+    viewModel.setZoneScale(
+        viewModel
+            .getZoneScale()
+            .withCenteredScale(previousScale, getSize())
+            .centeredOn(previousZonePoint.x, previousZonePoint.y, getSize()));
   }
 
   public void forcePlayersView() {
     ZonePoint zp =
         new ScreenPoint(getWidth() / 2d, getHeight() / 2d).convertToZone(viewModel.getZoneScale());
     MapTool.serverCommand()
-        .enforceZoneView(getZone().getId(), zp.x, zp.y, getScale(), getWidth(), getHeight());
+        .enforceZoneView(
+            getZone().getId(),
+            zp.x,
+            zp.y,
+            viewModel.getZoneScale().getScale(),
+            getWidth(),
+            getHeight());
   }
 
   public void maybeForcePlayersView() {
@@ -859,10 +816,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("createTransformedArea");
       if (!a.isEmpty()) {
-        AffineTransform af = new AffineTransform();
-        af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
-        af.scale(getScale(), getScale());
-        visibleScreenArea = a.createTransformedArea(af);
+        visibleScreenArea = a.createTransformedArea(viewModel.getZoneScale().toScreenTransform());
       }
       timer.stop("createTransformedArea");
     }
@@ -1083,11 +1037,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   protected void renderDrawableOverlay(
       Graphics g, DrawableRenderer renderer, PlayerView view, List<DrawnElement> drawnElements) {
+    var zoneScale = viewModel.getZoneScale();
     Rectangle viewport =
         new Rectangle(
             zoneScale.getOffsetX(), zoneScale.getOffsetY(), getSize().width, getSize().height);
 
-    renderer.renderDrawables(g, drawnElements, viewport, getScale());
+    renderer.renderDrawables(g, drawnElements, viewport, viewModel.getZoneScale().getScale());
   }
 
   protected void renderBoard(Graphics2D g, PlayerView view) {
@@ -1098,10 +1053,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       backBuffer = new BufferedImage(size.width, size.height, Transparency.OPAQUE);
       drawBackground = true;
     }
-    Scale scale = getZoneScale();
-    if (scale.getOffsetX() != lastX
-        || scale.getOffsetY() != lastY
-        || scale.getScale() != lastScale) {
+    Scale scale = viewModel.getZoneScale();
+    if (!lastZoneScale.equals(scale)) {
       drawBackground = true;
     }
     if (zone.isBoardChanged()) {
@@ -1113,24 +1066,24 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       AppPreferences.renderQuality.get().setRenderingHints(bbg);
 
       // Background texture
-      Paint paint = zone.getBackgroundPaint().getPaint(zoneScale, this);
+      Paint paint = zone.getBackgroundPaint().getPaint(scale, this);
       bbg.setPaint(paint);
       bbg.fillRect(0, 0, size.width, size.height);
 
       // Only apply the noise if the feature is on and the background a textured paint
       if (bgTextureNoiseFilterOn && paint instanceof TexturePaint) {
-        bbg.setPaint(noise.getPaint(zoneScale));
+        bbg.setPaint(noise.getPaint(scale));
         bbg.fillRect(0, 0, size.width, size.height);
       }
 
       // Map
       if (zone.getMapAssetId() != null) {
         BufferedImage mapImage = ImageManager.getImage(zone.getMapAssetId(), this);
-        double scaleFactor = getScale();
+        double scaleFactor = viewModel.getZoneScale().getScale();
         bbg.drawImage(
             mapImage,
-            getViewOffsetX() + (int) (zone.getBoardX() * scaleFactor),
-            getViewOffsetY() + (int) (zone.getBoardY() * scaleFactor),
+            scale.getOffsetX() + (int) (zone.getBoardX() * scaleFactor),
+            scale.getOffsetY() + (int) (zone.getBoardY() * scaleFactor),
             (int) (mapImage.getWidth() * scaleFactor * zone.getImageScaleX()),
             (int) (mapImage.getHeight() * scaleFactor * zone.getImageScaleY()),
             null);
@@ -1138,9 +1091,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       bbg.dispose();
       drawBackground = false;
     }
-    lastX = scale.getOffsetX();
-    lastY = scale.getOffsetY();
-    lastScale = scale.getScale();
+    lastZoneScale = scale;
 
     g.drawImage(backBuffer, 0, 0, this);
   }
@@ -1181,11 +1132,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       if (clearArea != null) {
-        AffineTransform af = new AffineTransform();
-        af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
-        af.scale(getScale(), getScale());
-        var clip = clearArea.createTransformedArea(af);
-
+        var clip = clearArea.createTransformedArea(viewModel.getZoneScale().toScreenTransform());
         g.clip(clip);
       }
     }
@@ -1259,7 +1206,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (token == keyToken
             && (AppUtil.playerOwns(token) || shouldShowMovementLabels(token, set, clearArea))
             && viewModel.getViewport().intersects(newPosition.footprintBounds())) {
-          var screenBounds = zoneScale.toScreenSpace(newPosition.footprintBounds());
+          var screenBounds = viewModel.getZoneScale().toScreenSpace(newPosition.footprintBounds());
 
           var labelY = (int) screenBounds.getMaxY() + 10;
           var labelX = (int) screenBounds.getCenterX();
@@ -1353,7 +1300,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
     Grid grid = zone.getGrid();
-    double scale = getScale();
+    double scale = viewModel.getZoneScale().getScale();
 
     Rectangle footprintBounds = footprint.getBounds(grid);
     if (path.getCellPath().getFirst() instanceof CellPoint) {
@@ -1573,8 +1520,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     double resizeWidth = zone.getGrid().getCellWidth() / image.getWidth() * .25;
     double resizeHeight = zone.getGrid().getCellHeight() / image.getHeight() * .25;
 
-    double cWidth = image.getWidth() * getScale() * resizeWidth;
-    double cHeight = image.getHeight() * getScale() * resizeHeight;
+    double cWidth = image.getWidth() * viewModel.getZoneScale().getScale() * resizeWidth;
+    double cHeight = image.getHeight() * viewModel.getZoneScale().getScale() * resizeHeight;
 
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
@@ -1595,8 +1542,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   public void highlightCell(Graphics2D g, ZonePoint point, BufferedImage image, float size) {
     Grid grid = zone.getGrid();
-    double cWidth = grid.getCellWidth() * getScale();
-    double cHeight = grid.getCellHeight() * getScale();
+    double cWidth = grid.getCellWidth() * viewModel.getZoneScale().getScale();
+    double cHeight = grid.getCellHeight() * viewModel.getZoneScale().getScale();
 
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
@@ -1619,8 +1566,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     Grid grid = zone.getGrid();
-    double cWidth = grid.getCellWidth() * getScale();
-    double cHeight = grid.getCellHeight() * getScale();
+    double cWidth = grid.getCellWidth() * viewModel.getZoneScale().getScale();
+    double cHeight = grid.getCellHeight() * viewModel.getZoneScale().getScale();
 
     double iWidth = cWidth * size;
     double iHeight = cHeight * size;
@@ -1632,8 +1579,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // Draw distance for each cell
     double fontScale = (double) grid.getSize() / 50; // Font size of 12 at grid size 50 is default
-    int fontSize = (int) (getScale() * 12 * fontScale);
-    int textOffset = (int) (getScale() * 7 * fontScale); // 7 pixels at 100% zoom & grid size of 50
+    int fontSize = (int) (viewModel.getZoneScale().getScale() * 12 * fontScale);
+    int textOffset =
+        (int)
+            (viewModel.getZoneScale().getScale()
+                * 7
+                * fontScale); // 7 pixels at 100% zoom & grid size of 50
 
     String distanceText = NumberFormat.getInstance().format(distance);
     if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
@@ -1768,7 +1719,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           Area cellVisibleArea = new Area(visibleScreenArea);
           Area cb =
               zone.getGrid()
-                  .getTokenCellArea(zoneScale.toScreenSpace(position.transformedBounds()));
+                  .getTokenCellArea(
+                      viewModel.getZoneScale().toScreenSpace(position.transformedBounds()));
           cellVisibleArea.intersect(cb);
           tokenG.clip(cellVisibleArea);
         }
@@ -1815,7 +1767,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("token-list-9");
       // Set up the graphics so that the overlay can just be painted.
-      Rectangle2D tokenBounds = zoneScale.toScreenSpace(position.transformedBounds().getBounds2D());
+      Rectangle2D tokenBounds =
+          viewModel.getZoneScale().toScreenSpace(position.transformedBounds().getBounds2D());
       Graphics2D locG =
           (Graphics2D)
               tokenG.create(
@@ -1952,7 +1905,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         }
         // Create LabelRenderer using cached label.
         Rectangle r =
-            zoneScale.toScreenSpace(position.transformedBounds().getBounds2D()).getBounds();
+            viewModel
+                .getZoneScale()
+                .toScreenSpace(position.transformedBounds().getBounds2D())
+                .getBounds();
         delayRendering(
             new LabelRenderer(
                 this,
@@ -1983,7 +1939,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             continue;
           }
 
-          var bounds = zoneScale.toScreenSpace(position.transformedBounds().getBounds2D());
+          var bounds =
+              viewModel.getZoneScale().toScreenSpace(position.transformedBounds().getBounds2D());
 
           BufferedImage stackImage = RessourceManager.getImage(Images.ZONE_RENDERER_STACK_IMAGE);
           clippedG.drawImage(
@@ -2113,7 +2070,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @return A list of token IDs for tokens whose footprint intersects with {@code screenRect}.
    */
   public List<GUID> getTokenIdsInBounds(Rectangle screenRect) {
-    var rect = zoneScale.toWorldSpace(screenRect);
+    var rect = viewModel.getZoneScale().toWorldSpace(screenRect);
 
     final var tokens = new ArrayList<GUID>();
     for (ZoneViewModel.TokenPosition position : getTokenPositions(getActiveLayer())) {
@@ -2233,14 +2190,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return null;
   }
 
-  public int getViewOffsetX() {
-    return zoneScale.getOffsetX();
-  }
-
-  public int getViewOffsetY() {
-    return zoneScale.getOffsetY();
-  }
-
   /**
    * Since the map can be scaled, this is a convenience method to find out what cell is at this
    * location.
@@ -2266,17 +2215,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return new ZonePoint((int) p2d.getX(), (int) p2d.getY());
   }
 
-  public void setScale(double scale) {
-    setZoneScale(zoneScale.withScale(scale, getWidth() / 2, getHeight() / 2));
-  }
-
-  public double getScale() {
-    return zoneScale.getScale();
-  }
-
   public double getScaledGridSize() {
     // Optimize: only need to calc this when grid size or scale changes
-    return getScale() * zone.getGrid().getSize();
+    return viewModel.getZoneScale().getScale() * zone.getGrid().getSize();
   }
 
   /** This makes sure that any image updates get refreshed. This could be a little smarter. */

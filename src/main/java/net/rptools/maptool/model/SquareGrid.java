@@ -384,13 +384,14 @@ public class SquareGrid extends Grid {
 
   @Override
   public void draw(ZoneRenderer renderer, Graphics2D g, Rectangle bounds) {
-    double scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    double scale = zoneScale.getScale();
     double gridSize = getSize() * scale;
 
     g.setColor(new Color(getZone().getGridColor()));
 
-    int offX = (int) (renderer.getViewOffsetX() % gridSize + getOffsetX() * scale);
-    int offY = (int) (renderer.getViewOffsetY() % gridSize + getOffsetY() * scale);
+    int offX = (int) (zoneScale.getOffsetX() % gridSize + getOffsetX() * scale);
+    int offY = (int) (zoneScale.getOffsetY() % gridSize + getOffsetY() * scale);
 
     int startCol = (int) ((int) (bounds.x / gridSize) * gridSize);
     int startRow = (int) ((int) (bounds.y / gridSize) * gridSize);

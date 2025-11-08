@@ -1809,7 +1809,10 @@ public class AppActions {
           ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
           if (renderer != null) {
             Dimension size = renderer.getSize();
-            renderer.zoomIn(size.width / 2, size.height / 2);
+
+            var viewModel = renderer.getViewModel();
+            viewModel.setZoneScale(
+                viewModel.getZoneScale().zoomedIn(size.width / 2, size.height / 2));
             renderer.maybeForcePlayersView();
           }
         }
@@ -1828,7 +1831,10 @@ public class AppActions {
           ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
           if (renderer != null) {
             Dimension size = renderer.getSize();
-            renderer.zoomOut(size.width / 2, size.height / 2);
+
+            var viewModel = renderer.getViewModel();
+            viewModel.setZoneScale(
+                viewModel.getZoneScale().zoomedOut(size.width / 2, size.height / 2));
             renderer.maybeForcePlayersView();
           }
         }
@@ -1846,22 +1852,26 @@ public class AppActions {
         @Override
         protected void executeAction() {
           ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer != null) {
-            // Revert to last zoom if we have one, but don't if the user has manually
-            // changed the scale since the last reset zoom (one to one index)
-            if (lastZoom != null
-                && renderer.getScale() == renderer.getZoneScale().getOneToOneScale()) {
-              // Go back to the previous zoom
-              renderer.setScale(lastZoom);
-
-              // But make sure the next time we'll go back to 1:1
-              lastZoom = null;
-            } else {
-              lastZoom = renderer.getScale();
-              renderer.zoomReset(renderer.getWidth() / 2, renderer.getHeight() / 2);
-            }
-            renderer.maybeForcePlayersView();
+          if (renderer == null) {
+            return;
           }
+
+          var viewModel = renderer.getViewModel();
+          var zoneScale = viewModel.getZoneScale();
+
+          // Revert to last zoom if we have one, but don't if the user has manually
+          // changed the scale since the last reset zoom (one to one index)
+          if (lastZoom != null && zoneScale.getScale() == zoneScale.getOneToOneScale()) {
+            // Go back to the previous zoom
+            viewModel.setZoneScale(zoneScale.withCenteredScale(lastZoom, renderer.getSize()));
+            // But make sure the next time we'll go back to 1:1
+            lastZoom = null;
+          } else {
+            lastZoom = zoneScale.getScale();
+            viewModel.setZoneScale(
+                zoneScale.withCenteredScale(zoneScale.getOneToOneScale(), renderer.getSize()));
+          }
+          renderer.maybeForcePlayersView();
         }
       };
 
@@ -2360,10 +2370,9 @@ public class AppActions {
         MapTool.setCampaign(campaign.campaign, campaign.currentZoneId);
         ZoneRenderer current = MapTool.getFrame().getCurrentZoneRenderer();
         if (current != null) {
-          if (campaign.currentView != null) {
-            current.setZoneScale(campaign.currentView);
-          }
-          current.setZoneScale(current.getZoneScale().withResetZoomLevel());
+          Scale scale = campaign.currentView == null ? new Scale() : campaign.currentView;
+          scale = scale.withResetZoomLevel();
+          current.getViewModel().setZoneScale(scale);
         }
         MapTool.getAutoSaveManager().tidy();
 

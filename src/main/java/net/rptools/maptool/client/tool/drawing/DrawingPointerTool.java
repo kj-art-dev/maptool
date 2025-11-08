@@ -650,14 +650,15 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @return The cell at the mouse point in screen coordinates.
    */
   private ZonePoint getCellAtMouse(MouseEvent e) {
+    var zoneScale = renderer.getViewModel().getZoneScale();
+
     // Find the cell that the mouse is in.
-    ZonePoint mouse =
-        new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
+    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(zoneScale);
     CellPoint cp = getZone().getGrid().convert(mouse);
     ZonePoint working = getZone().getGrid().convert(cp);
 
     // If the mouse is over halfway to the next vertex, move it there (both X & Y)
-    int grid = (int) (getZone().getGrid().getSize() * renderer.getScale());
+    int grid = (int) (getZone().getGrid().getSize() * zoneScale.getScale());
     if (mouse.x - working.x >= grid / 2) {
       working.x += getZone().getGrid().getSize();
     }
@@ -759,10 +760,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   private AffineTransform getPaintTransform(ZoneRenderer renderer) {
-    AffineTransform transform = new AffineTransform();
-    transform.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    transform.scale(renderer.getScale(), renderer.getScale());
-    return transform;
+    return renderer.getViewModel().getZoneScale().toScreenTransform();
   }
 
   /**
@@ -950,9 +948,10 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     var box = drawnElement.getDrawable().getBounds(getZone());
     var pen = drawnElement.getPen();
 
-    var scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    var scale = zoneScale.getScale();
 
-    var screenPoint = renderer.getViewModel().getZoneScale().toScreenSpace(box.x, box.y);
+    var screenPoint = zoneScale.toScreenSpace(box.x, box.y);
 
     var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
     var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);
