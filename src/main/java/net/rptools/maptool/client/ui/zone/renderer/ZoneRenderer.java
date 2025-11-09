@@ -1054,7 +1054,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       drawBackground = true;
     }
     Scale scale = viewModel.getZoneScale();
-    if (!lastZoneScale.equals(scale)) {
+    if (!Objects.equals(lastZoneScale, scale)) {
       drawBackground = true;
     }
     if (zone.isBoardChanged()) {
