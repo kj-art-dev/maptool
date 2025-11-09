@@ -440,10 +440,10 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
         // Derive a zone rectangle from the screen rectangle
         ZonePoint zpMin =
             new ScreenPoint(drawingSelectionBox.getMinX(), drawingSelectionBox.getMinY())
-                .convertToZone(renderer);
+                .convertToZone(renderer.getViewModel().getZoneScale());
         ZonePoint zpMax =
             new ScreenPoint(drawingSelectionBox.getMaxX(), drawingSelectionBox.getMaxY())
-                .convertToZone(renderer);
+                .convertToZone(renderer.getViewModel().getZoneScale());
         Rectangle zoneTemplateSelectionBox =
             new Rectangle(zpMin.x, zpMin.y, zpMax.x - zpMin.x, zpMax.y - zpMin.y);
 
@@ -650,13 +650,15 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @return The cell at the mouse point in screen coordinates.
    */
   private ZonePoint getCellAtMouse(MouseEvent e) {
+    var zoneScale = renderer.getViewModel().getZoneScale();
+
     // Find the cell that the mouse is in.
-    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(zoneScale);
     CellPoint cp = getZone().getGrid().convert(mouse);
     ZonePoint working = getZone().getGrid().convert(cp);
 
     // If the mouse is over halfway to the next vertex, move it there (both X & Y)
-    int grid = (int) (getZone().getGrid().getSize() * renderer.getScale());
+    int grid = (int) (getZone().getGrid().getSize() * zoneScale.getScale());
     if (mouse.x - working.x >= grid / 2) {
       working.x += getZone().getGrid().getSize();
     }
@@ -694,7 +696,9 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       if (selectedTool == TemplatePointerTool.class && isTemplate
           || selectedTool == DrawingPointerTool.class && !isTemplate) {
         Area area = de.getDrawable().getArea(zone);
-        ZonePoint zonePos = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+        ZonePoint zonePos =
+            new ScreenPoint(e.getX(), e.getY())
+                .convertToZone(renderer.getViewModel().getZoneScale());
         if (area.contains(new Point(zonePos.x, zonePos.y))) {
           drawingsAtMouseList.add(de);
           if (de.equals(drawnElementAtMouse)) {
@@ -756,10 +760,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   private AffineTransform getPaintTransform(ZoneRenderer renderer) {
-    AffineTransform transform = new AffineTransform();
-    transform.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    transform.scale(renderer.getScale(), renderer.getScale());
-    return transform;
+    return renderer.getViewModel().getZoneScale().toScreenTransform();
   }
 
   /**
@@ -924,7 +925,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
         Pen pen = drawnElement.getPen();
         int x = (int) (bounds.getMinX() + bounds.getMaxX()) / 2;
         int y = (int) (bounds.getMaxY() + pen.getThickness());
-        ScreenPoint centerText = ScreenPoint.fromZonePoint(renderer, x, y);
+        ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(x, y);
 
         FlatImageLabel fil = flatImageLabelCache.get(id);
         Dimension nameDimension = fil.getDimensions(g, drawingName);
@@ -947,9 +948,10 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     var box = drawnElement.getDrawable().getBounds(getZone());
     var pen = drawnElement.getPen();
 
-    var scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    var scale = zoneScale.getScale();
 
-    var screenPoint = ScreenPoint.fromZonePoint(renderer, box.x, box.y);
+    var screenPoint = zoneScale.toScreenSpace(box.x, box.y);
 
     var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
     var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);
@@ -1054,7 +1056,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       Rectangle bounds = at.getBounds(zone);
       int x = (int) (bounds.getMinX() + bounds.getMaxX()) / 2;
       int y = (int) (bounds.getMaxY());
-      ScreenPoint centerText = ScreenPoint.fromZonePoint(renderer, x, y);
+      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(x, y);
 
       ToolHelper.drawMeasurement(g, moveDistance, (int) centerText.x, (int) centerText.y);
     }
@@ -1124,7 +1126,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    */
   private void paintTemplateRadiusLabel(Graphics2D g, ZonePoint zp, AbstractTemplate at) {
     if (at.getRadius() > 0) {
-      ScreenPoint centerText = ScreenPoint.fromZonePoint(renderer, zp);
+      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(zp.x, zp.y);
       centerText.translate(CURSOR_WIDTH, -CURSOR_WIDTH);
       ToolHelper.drawMeasurement(
           g, at.getRadius() * getZone().getUnitsPerCell(), (int) centerText.x, (int) centerText.y);
@@ -1234,7 +1236,9 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
             .setControlCellRelative(workingCell.x - vertexCell.x, workingCell.y - vertexCell.y);
       }
       if (templateType.equals("ConeTemplate")) {
-        ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+        ZonePoint mouse =
+            new ScreenPoint(e.getX(), e.getY())
+                .convertToZone(renderer.getViewModel().getZoneScale());
         ((ConeTemplate) at)
             .setDirection(
                 RadiusTemplate.Direction.findDirection(mouse.x, mouse.y, vertex.x, vertex.y));

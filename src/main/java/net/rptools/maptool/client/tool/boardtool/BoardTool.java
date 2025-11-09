@@ -271,7 +271,8 @@ public class BoardTool extends DefaultTool {
   @Override
   public void mousePressed(java.awt.event.MouseEvent e) {
     if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
       Grid grid = renderer.getZone().getGrid();
       dragStart = new Point(zp.x - grid.getOffsetX(), zp.y - grid.getOffsetY());
       boardStart = new Point(boardPosition);
@@ -286,7 +287,8 @@ public class BoardTool extends DefaultTool {
   @Override
   public void mouseDragged(java.awt.event.MouseEvent e) {
     if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
 
       dragOffset.width = zp.x - dragStart.x;
       dragOffset.height = zp.y - dragStart.y;
@@ -307,7 +309,7 @@ public class BoardTool extends DefaultTool {
     Right,
     Up,
     Down
-  };
+  }
 
   /** Constructs actions to attach to key-presses. */
   @SuppressWarnings("serial")

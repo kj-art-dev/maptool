@@ -38,7 +38,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.swing.walls.WallConfigurationController;
 import net.rptools.maptool.client.tool.drawing.TopologyTool;
@@ -141,8 +140,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     maskOverlay.paintOverlay(renderer, g);
 
     Graphics2D g2 = (Graphics2D) g.create();
-    g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    g2.scale(renderer.getScale(), renderer.getScale());
+    g2.transform(renderer.getViewModel().getZoneScale().toScreenTransform());
     SwingUtil.useAntiAliasing(g2);
     g2.setComposite(AlphaComposite.SrcOver);
 
@@ -195,11 +193,11 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   }
 
   private double getHandleRadius() {
-    return 4. / Math.min(1., renderer.getScale());
+    return 4. / Math.min(1., renderer.getViewModel().getZoneScale().getScale());
   }
 
   private double getWallHalfWidth() {
-    return 1.5 / Math.min(1, renderer.getScale());
+    return 1.5 / Math.min(1, renderer.getViewModel().getZoneScale().getScale());
   }
 
   private double getHandleSelectDistance() {
@@ -238,7 +236,8 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   }
 
   private Point2D updateCurrentPosition(MouseEvent e) {
-    return currentPosition = ScreenPoint.convertToZone2d(renderer, e.getX(), e.getY());
+    return currentPosition =
+        renderer.getViewModel().getZoneScale().toWorldSpace(e.getX(), e.getY());
   }
 
   private Snap getSnapMode(MouseEvent e) {

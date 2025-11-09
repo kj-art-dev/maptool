@@ -18,6 +18,7 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
+import net.rptools.maptool.client.ui.Scale;
 import net.rptools.noiselib.PerlinNoise;
 
 /**
@@ -160,6 +161,10 @@ public class DrawableNoise {
             offsetY + OFFFSET_Y_TWEAK,
             (int) (WIDTH * scale),
             (int) (HEIGHT * scale)));
+  }
+
+  public Paint getPaint(Scale scale) {
+    return getPaint(scale.getOffsetX(), scale.getOffsetY(), scale.getScale());
   }
 
   /**

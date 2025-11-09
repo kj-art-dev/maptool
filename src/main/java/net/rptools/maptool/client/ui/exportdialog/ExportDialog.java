@@ -782,7 +782,7 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     // set up the renderer to encompass the whole extents of the map.
 
     origBounds = renderer.getBounds();
-    origScale = renderer.getZoneScale();
+    origScale = renderer.getViewModel().getZoneScale();
 
     setupZoneLayers();
     boolean viewAsPlayer = ExportRadioButtons.VIEW_PLAYER.isChecked();
@@ -844,15 +844,14 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     }
 
     // Rescale the bounds to match the view scale
-    double scale = renderer.getScale();
+    Scale originalZoneScale = renderer.getViewModel().getZoneScale();
+    double scale = originalZoneScale.getScale();
     extents.setLocation((int) (extents.x * scale), (int) (extents.y * scale));
     extents.setSize((int) (extents.width * scale), (int) (extents.height * scale));
 
     // Setup the renderer to use the new extents
-    Scale s = new Scale();
-    s.setOffset(-extents.x, -extents.y);
-    s.setScale(scale);
-    renderer.setZoneScale(s);
+    Scale s = originalZoneScale.withOffset(-extents.x, -extents.y);
+    renderer.getViewModel().setZoneScale(s);
     renderer.setBounds(extents);
 
     waitingForPostScreenshot = true;
@@ -974,7 +973,7 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     assert waitingForPostScreenshot : "postScrenshot called without preScreenshot";
 
     renderer.setBounds(origBounds);
-    renderer.setZoneScale(origScale);
+    renderer.getViewModel().setZoneScale(origScale);
     restoreZoneLayers();
     waitingForPostScreenshot = false;
   }

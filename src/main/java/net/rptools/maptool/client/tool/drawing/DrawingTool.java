@@ -169,8 +169,7 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     Graphics2D g2 = (Graphics2D) g.create();
-    g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    g2.scale(renderer.getScale(), renderer.getScale());
+    g2.transform(renderer.getViewModel().getZoneScale().toScreenTransform());
 
     if (state != null) {
       // Linear tools are not filled until completed.
