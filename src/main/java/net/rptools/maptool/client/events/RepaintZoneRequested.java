@@ -12,26 +12,8 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.maptool.model;
+package net.rptools.maptool.client.events;
 
-import static org.junit.jupiter.api.Assertions.*;
+import net.rptools.maptool.model.Zone;
 
-import net.rptools.maptool.client.ui.Scale;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-class TestScreenPoint {
-
-  @Test
-  @DisplayName("Test Conversion of Screen Points")
-  void testConversion() {
-    var scale = new Scale(0, -100, -100);
-
-    for (int i = -10; i < 10; i++) {
-      for (int j = -10; j < 10; j++) {
-        ZonePoint zp = new ZonePoint(i, j);
-        assertEquals(zp, scale.toScreenSpace(zp.x, zp.y).convertToZone(scale));
-      }
-    }
-  }
-}
+public record RepaintZoneRequested(Zone zone) {}

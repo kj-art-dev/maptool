@@ -124,15 +124,21 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
    * @return The cell at the mouse point in screen coordinates.
    */
   protected ZonePoint getCellAtMouse(MouseEvent e) {
+    var zoneScale = renderer.getViewModel().getZoneScale();
+
     // Find the cell that the mouse is in.
-    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    ZonePoint mouse = new ScreenPoint(e.getX(), e.getY()).convertToZone(zoneScale);
     CellPoint cp = renderer.getZone().getGrid().convert(mouse);
     ZonePoint working = renderer.getZone().getGrid().convert(cp);
 
     // If the mouse is over half way to the next vertex, move it there (both X & Y)
-    int grid = (int) (renderer.getZone().getGrid().getSize() * renderer.getScale());
-    if (mouse.x - working.x >= grid / 2) working.x += renderer.getZone().getGrid().getSize();
-    if (mouse.y - working.y >= grid / 2) working.y += renderer.getZone().getGrid().getSize();
+    int grid = (int) (renderer.getZone().getGrid().getSize() * zoneScale.getScale());
+    if (mouse.x - working.x >= grid / 2) {
+      working.x += renderer.getZone().getGrid().getSize();
+    }
+    if (mouse.y - working.y >= grid / 2) {
+      working.y += renderer.getZone().getGrid().getSize();
+    }
     return working;
   }
 
@@ -174,7 +180,7 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
    */
   protected void paintRadius(Graphics2D g, ZonePoint p) {
     if (template.getRadius() > 0 && anchorSet) {
-      ScreenPoint centerText = ScreenPoint.fromZonePoint(renderer, p);
+      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(p.x, p.y);
       centerText.translate(CURSOR_WIDTH, -CURSOR_WIDTH);
       ToolHelper.drawMeasurement(
           g,

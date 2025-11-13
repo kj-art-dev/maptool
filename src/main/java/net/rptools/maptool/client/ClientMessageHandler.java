@@ -923,8 +923,12 @@ public class ClientMessageHandler implements MessageHandler {
           if (AppPreferences.fitGmView.get()) {
             renderer.enforceView(x, y, scale, gmWidth, gmHeight);
           } else {
-            renderer.setScale(scale);
-            renderer.centerOn(new ZonePoint(x, y));
+            var viewModel = renderer.getViewModel();
+            viewModel.setZoneScale(
+                viewModel
+                    .getZoneScale()
+                    .withCenteredScale(scale, renderer.getSize())
+                    .centeredOn(x, y, renderer.getSize()));
           }
         });
   }
