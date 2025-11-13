@@ -276,7 +276,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       }
 
     } else if (isDraggingDrawings && selectedTool.equals(DrawingPointerTool.class)) {
-      ZonePoint dragTargetZonePoint = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+      ZonePoint dragTargetZonePoint =
+          new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
       if (e.isControlDown()) {
         dragTargetZonePoint = renderer.getZone().getGrid().getNearestVertex(dragTargetZonePoint);
       }
@@ -635,7 +636,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     isDraggingSelectionBox = false;
     dragStartPoint = new Point(e.getX(), e.getY());
     dragWorkingCell = getCellAtMouse(e);
-    dragWorkingZonePoint = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    dragWorkingZonePoint =
+        new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
     if (drawnElementAtMouse.getDrawable() instanceof AbstractTemplate at) {
       dragStartVertex = new ZonePoint(at.getVertex());
     } else {
@@ -1303,7 +1305,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       return;
     }
 
-    ZonePoint dragPointOffset = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    ZonePoint dragPointOffset =
+        new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
 
     if (e.isControlDown()) {
       // Snap to grid based on the drawing's original (i.e. pre-dragged) position.
@@ -1334,7 +1337,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       return;
     }
 
-    ZonePoint dragPointOffset = new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer);
+    ZonePoint dragPointOffset =
+        new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
 
     if (e.isControlDown()) {
       // Snap to grid based on the drawing's original (i.e. pre-dragged) position.
