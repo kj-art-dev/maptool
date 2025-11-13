@@ -1105,39 +1105,7 @@ public class HaloRenderer {
    * @param key6 the concentric offset adjustment
    */
   private record CompositeHaloMiniShapeKey(
-      TokenFootprint key1, HaloPart key2, Double key3, Double key4, Double key5, Double key6) {
-
-    @Override
-    public boolean equals(Object obj) {
-      if (!(obj
-          instanceof
-          CompositeHaloMiniShapeKey(
-              TokenFootprint akey1,
-              HaloPart akey2,
-              Double akey3,
-              Double akey4,
-              Double akey5,
-              Double akey6))) {
-        return false;
-      }
-      return this.key1.equals(akey1)
-          && this.key2.equals(akey2)
-          && this.key3.equals(akey3)
-          && this.key4.equals(akey4)
-          && this.key3.equals(akey5)
-          && this.key4.equals(akey6);
-    }
-
-    @Override
-    public int hashCode() {
-      return key1.hashCode()
-          ^ key2.hashCode()
-          ^ key3.hashCode()
-          ^ key4.hashCode()
-          ^ key5.hashCode()
-          ^ key6.hashCode();
-    }
-  }
+      TokenFootprint key1, HaloPart key2, Double key3, Double key4, Double key5, Double key6) {}
 
   /**
    * Keys for the polygon unit shape multikey map cache.
@@ -1145,22 +1113,7 @@ public class HaloRenderer {
    * @param key1 the halo shape type
    * @param key2 the number of halo vertices
    */
-  private record CompositeUnitPolygonShapeKey(HaloPart.HaloShapeType key1, Integer key2) {
-
-    @Override
-    public boolean equals(Object obj) {
-      if (!(obj
-          instanceof CompositeUnitPolygonShapeKey(HaloPart.HaloShapeType akey1, Integer akey2))) {
-        return false;
-      }
-      return this.key1.equals(akey1) && this.key2.equals(akey2);
-    }
-
-    @Override
-    public int hashCode() {
-      return key1.hashCode() ^ key2.hashCode();
-    }
-  }
+  private record CompositeUnitPolygonShapeKey(HaloPart.HaloShapeType key1, Integer key2) {}
 
   /**
    * Keys for the unit shape multikey map cache.
@@ -1169,21 +1122,5 @@ public class HaloRenderer {
    * @param key2 the number of halo vertices (will be 0 for non-polygonal shapes)
    * @param key3 the angle (will be 0 for non-angle based shapes)
    */
-  private record CompositeUnitShapeKey(HaloPart.HaloShapeType key1, Integer key2, Double key3) {
-
-    @Override
-    public boolean equals(Object obj) {
-      if (!(obj
-          instanceof
-          CompositeUnitShapeKey(HaloPart.HaloShapeType akey1, Integer akey2, Double akey3))) {
-        return false;
-      }
-      return this.key1.equals(akey1) && this.key2.equals(akey2) && this.key3.equals(akey3);
-    }
-
-    @Override
-    public int hashCode() {
-      return key1.hashCode() ^ key2.hashCode() ^ key3.hashCode();
-    }
-  }
+  private record CompositeUnitShapeKey(HaloPart.HaloShapeType key1, Integer key2, Double key3) {}
 }
