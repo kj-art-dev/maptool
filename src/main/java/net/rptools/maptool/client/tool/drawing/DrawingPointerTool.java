@@ -290,9 +290,9 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
         } else if (d instanceof LineSegment ls) {
           updateDraggedDrawnElements(e, ls);
         }
-        dragWorkingZonePoint = dragTargetZonePoint;
-        renderer.repaint();
       }
+      dragWorkingZonePoint = dragTargetZonePoint;
+      renderer.repaint();
 
     } else if (isDraggingSelectionBox) {
       int x1 = dragStartPoint.x;
