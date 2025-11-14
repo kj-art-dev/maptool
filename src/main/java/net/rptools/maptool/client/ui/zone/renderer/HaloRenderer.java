@@ -31,14 +31,11 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.zones.GridChanged;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class HaloRenderer {
   private final RenderHelper renderHelper;
+  private final Campaign campaign;
   private final Zone zone;
-
-  private static final Logger log = LogManager.getLogger(HaloRenderer.class);
 
   private final Map<CompositeUnitPolygonShapeKey, Shape> haloUnitPolygonShapeMap = new HashMap<>();
   private final Map<CompositeUnitShapeKey, Shape> haloUnitShapeMap = new HashMap<>();
@@ -55,12 +52,11 @@ public class HaloRenderer {
   private final Map<CompositeHaloMiniShapeKey, Area> haloMiniShapeMap = new HashMap<>();
   private final Map<MD5Key, Area> haloOutlineAreaMap = new HashMap<>();
 
-  private final Campaign campaign = MapTool.getCampaign();
-
   // endregion
 
-  public HaloRenderer(RenderHelper renderHelper, Zone zone) {
+  public HaloRenderer(RenderHelper renderHelper, Campaign campaign, Zone zone) {
     this.renderHelper = renderHelper.withTimerPrefix("HaloRenderer");
+    this.campaign = campaign;
     this.zone = zone;
 
     new MapToolEventBus().getMainEventBus().register(this);
@@ -211,12 +207,9 @@ public class HaloRenderer {
     // any filled outer-concentric halos do not graffiti over inner-concentric halos.
     timer.start("HaloRenderer-renderHalos:orderedRendering");
     List<Halo> halosToRender = new ArrayList<>(renderableHalos.keySet());
-    ListIterator<Halo> iterator = halosToRender.listIterator(halosToRender.size());
-    int offsetConcentricByInner = 0;
-
-    while (iterator.hasPrevious()) {
-      Halo previousHalo = iterator.previous();
-      if (previousHalo.isInner()) {
+    for (Halo halo : halosToRender.reversed()) {
+      int offsetConcentricByInner;
+      if (halo.isInner()) {
         offsetConcentricByInner = 0;
       } else {
         offsetConcentricByInner =
@@ -224,12 +217,12 @@ public class HaloRenderer {
                 ? 2 * (renderableInnerHaloMaxWidth + haloLineWidthPreference)
                 : 0;
       }
-      if (previousHalo.isFacingWithToken()) {
+      if (halo.isFacingWithToken()) {
         haloFacingAngle = token.getFacingInDegrees();
       } else {
         haloFacingAngle = 0;
       }
-      for (Map.Entry<HaloPart, Double> entry : renderableHalos.get(previousHalo).entrySet()) {
+      for (Map.Entry<HaloPart, Double> entry : renderableHalos.get(halo).entrySet()) {
         renderHaloPart(
             g2d, token, position, grid, entry.getKey(), entry.getValue() + offsetConcentricByInner);
       }
@@ -264,7 +257,7 @@ public class HaloRenderer {
           2d
               * (renderableHaloMaxWidths.stream().reduce(0, Integer::sum)
                   + renderableHaloMaxWidths.size() * haloLineWidthPreference);
-      offsetConcentricByInner =
+      int offsetConcentricByInner =
           renderableInnerHaloMaxWidth > 0
               ? 2 * (renderableInnerHaloMaxWidth + haloLineWidthPreference)
               : 0;
@@ -304,7 +297,6 @@ public class HaloRenderer {
         haloPart.getHaloShapeType() == null
             ? HaloPart.DEFAULT_HALO_SHAPE_TYPE
             : haloPart.getHaloShapeType();
-    ;
 
     // for TOKEN halo shape types, override the type according to the token's shape
     if (haloShapeType.equals(HaloPart.HaloShapeType.TOKEN)) {
@@ -333,30 +325,19 @@ public class HaloRenderer {
         haloPartShape = getHaloOutlineShape(token);
       }
       case HaloPart.HaloShapeType.MBL -> {
-        if (token.getMaskTopologyTypes().contains(Zone.TopologyType.MBL)) {
-          // only render a MBL haloPart shape if the token has MBL!
-          haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.MBL);
-        }
+        haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.MBL);
       }
       case HaloPart.HaloShapeType.VBLCOVER -> {
-        if (token.getMaskTopologyTypes().contains(Zone.TopologyType.COVER_VBL)) {
-          haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.COVER_VBL);
-        }
+        haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.COVER_VBL);
       }
       case HaloPart.HaloShapeType.VBLHILL -> {
-        if (token.getMaskTopologyTypes().contains(Zone.TopologyType.HILL_VBL)) {
-          haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.HILL_VBL);
-        }
+        haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.HILL_VBL);
       }
       case HaloPart.HaloShapeType.VBLPIT -> {
-        if (token.getMaskTopologyTypes().contains(Zone.TopologyType.PIT_VBL)) {
-          haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.PIT_VBL);
-        }
+        haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.PIT_VBL);
       }
       case HaloPart.HaloShapeType.VBLWALL -> {
-        if (token.getMaskTopologyTypes().contains(Zone.TopologyType.WALL_VBL)) {
-          haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.WALL_VBL);
-        }
+        haloPartShape = token.getTransformedMaskTopology(zone, Zone.TopologyType.WALL_VBL);
       }
       case HaloPart.HaloShapeType.GRID -> {
         haloPartShape = getHaloGridShape(position, grid, haloPart, concentricOffset);
@@ -376,7 +357,7 @@ public class HaloRenderer {
       renderHelper.render(
           g2d,
           worldG -> {
-            paintHaloPart(worldG, token, grid, finalHaloPartShape, haloPart);
+            paintHaloPart(worldG, finalHaloPartShape, haloPart);
           });
     }
 
@@ -967,13 +948,10 @@ public class HaloRenderer {
    * Paint the <code>haloPart</code> using the width, color, and dashed pattern where supplied.
    *
    * @param g2d where to paint
-   * @param token the token with the halos
-   * @param grid the map's grid
    * @param paintShape the shape to paint which has been scaled and positioned
    * @param haloPart the haloPart itself
    */
-  private void paintHaloPart(
-      Graphics2D g2d, Token token, Grid grid, Shape paintShape, HaloPart haloPart) {
+  private void paintHaloPart(Graphics2D g2d, Shape paintShape, HaloPart haloPart) {
 
     var timer = CodeTimer.get();
     timer.start("HaloRenderer-paintHaloPart");
@@ -1013,7 +991,7 @@ public class HaloRenderer {
       doClip = false;
     }
 
-    Stroke haloStroke = null;
+    Stroke haloStroke;
     if (doStroke) {
       // region 2. determine the haloPart stroke
       timer.start("HaloRenderer-paintHaloPart:basicStroke");
@@ -1055,7 +1033,7 @@ public class HaloRenderer {
       Shape originalClip = null;
       // region 3. clipping and drawing
       if (doClip) {
-        timer.start(String.format("HaloRenderer-paintHaloPart:clip-%s", haloShapeTypeName));
+        timer.start("HaloRenderer-paintHaloPart:clip-%s", haloShapeTypeName);
         originalClip = g2d.getClip();
         Area bounds = new Area(g2d.getClipBounds());
         if (haloShapeType.equals(HaloPart.HaloShapeType.ARC)) {
@@ -1065,29 +1043,29 @@ public class HaloRenderer {
           bounds.subtract(new Area(paintShape));
         }
         g2d.setClip(bounds);
-        timer.stop(String.format("HaloRenderer-paintHaloPart:clip-%s", haloShapeTypeName));
+        timer.stop("HaloRenderer-paintHaloPart:clip-%s", haloShapeTypeName);
       }
 
-      timer.start(String.format("HaloRenderer-paintHaloPart:draw-%s", haloShapeTypeName));
+      timer.start("HaloRenderer-paintHaloPart:draw-%s", haloShapeTypeName);
       g2d.setColor(color);
       g2d.setStroke(haloStroke);
       g2d.draw(paintShape);
-      timer.stop(String.format("HaloRenderer-paintHaloPart:draw-%s", haloShapeTypeName));
+      timer.stop("HaloRenderer-paintHaloPart:draw-%s", haloShapeTypeName);
 
       if (doClip) {
-        timer.start(String.format("HaloRenderer-paintHaloPart:resetClip-%s", haloShapeTypeName));
+        timer.start("HaloRenderer-paintHaloPart:resetClip-%s", haloShapeTypeName);
         g2d.setClip(originalClip);
-        timer.stop(String.format("HaloRenderer-paintHaloPart:resetClip-%s", haloShapeTypeName));
+        timer.stop("HaloRenderer-paintHaloPart:resetClip-%s", haloShapeTypeName);
       }
       // endregion
     }
 
     // region 4. filling
     if (doFill) {
-      timer.start(String.format("HaloRenderer-paintHaloPart:fill-%s", haloShapeTypeName));
+      timer.start("HaloRenderer-paintHaloPart:fill-%s", haloShapeTypeName);
       g2d.setColor(bgColor);
       g2d.fill(paintShape);
-      timer.stop(String.format("HaloRenderer-paintHaloPart:fill-%s", haloShapeTypeName));
+      timer.stop("HaloRenderer-paintHaloPart:fill-%s", haloShapeTypeName);
     }
     // endregion
 
