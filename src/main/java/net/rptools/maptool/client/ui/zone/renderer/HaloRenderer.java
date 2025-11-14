@@ -440,7 +440,7 @@ public class HaloRenderer {
             rotateBeforeScale);
 
     // To clip an arc based shape we use the circle on which the arc lies
-    if (haloPart.isAngleBasedShape(haloShapeType)) {
+    if (haloShapeType.isAngleBased()) {
       haloClipArcByCircleShape =
           transformHaloShape(
               getUnitShape(HaloPart.HaloShapeType.CIRCLE, 0, 0),
