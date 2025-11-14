@@ -36,7 +36,6 @@ public class HaloRenderer {
   private final Campaign campaign;
   private final Zone zone;
 
-  private final Map<CompositeUnitPolygonShapeKey, Shape> haloUnitPolygonShapeMap = new HashMap<>();
   private final Map<CompositeUnitShapeKey, Shape> haloUnitShapeMap = new HashMap<>();
 
   // region These fields need to be recalculated whenever the grid changes.
@@ -501,67 +500,57 @@ public class HaloRenderer {
    *   <li>regular polygon
    *   <li>star polygon with a polygon density of 2
    *
-   * @param haloShapeType the type of the polygon halo shape
+   * @param isStar {@code true} if the polygon should be a star polygon.
    * @param vertices the number of polygon vertices or star outer-vertices
    * @return the unit polygon shape
    */
-  private Shape getUnitPolygonShape(HaloPart.HaloShapeType haloShapeType, Integer vertices) {
-
+  private Shape getUnitPolygonShape(boolean isStar, Integer vertices) {
     var timer = CodeTimer.get();
     timer.start("HaloRenderer-getUnitPolygonShape");
-    CompositeUnitPolygonShapeKey key = new CompositeUnitPolygonShapeKey(haloShapeType, vertices);
 
-    Shape polygonShape =
-        haloUnitPolygonShapeMap.computeIfAbsent(
-            key,
-            key2 -> {
-              timer.increment("HaloRenderer-getUnitPolygonShape:computeIfAbsent");
-              double inRadius = 1 / 2d;
-              // a circumscribed circle passes through all polygon outer-vertices
-              double circumRadius = inRadius / Math.cos(Math.PI / vertices);
-              double radius = circumRadius;
+    timer.increment("HaloRenderer-getUnitPolygonShape:computeIfAbsent");
+    double inRadius = 1 / 2d;
+    // a circumscribed circle passes through all polygon outer-vertices
+    double circumRadius = inRadius / Math.cos(Math.PI / vertices);
+    double radius = circumRadius;
 
-              double orientationAngle = 0d;
-              // orientate regular polygons to have a flat top, otherwise a pointy top for stars
-              if (haloShapeType.equals(HaloPart.HaloShapeType.POLYGON)) {
-                orientationAngle = Math.PI / vertices;
-              }
+    double orientationAngle = 0d;
+    // orientate regular polygons to have a flat top, otherwise a pointy top for stars
+    if (!isStar) {
+      orientationAngle = Math.PI / vertices;
+    }
 
-              // create the shape by iterating around the number of points
-              Path2D.Double shapePath = new Path2D.Double();
-              for (int i = 0; i < vertices; i++) {
-                double theta; // the angle required move round to the next point
-                if (haloShapeType.equals(HaloPart.HaloShapeType.STAR)) {
-                  // with polygon density of 2 the next point will be the one after next, but...
-                  // ...even numbered stars need to be rotated when halfway to avoid repetition
-                  if (vertices % 2 == 0 && i == vertices / 2) {
-                    orientationAngle = orientationAngle + 2 * Math.PI / vertices;
-                  }
-                  theta = (4 * Math.PI * i / vertices) - orientationAngle;
-                } else {
-                  // for regular polygons the next point is adjacent clockwise
-                  theta = (2 * Math.PI * i / vertices) - orientationAngle;
-                }
-                double x = radius * Math.sin(theta);
-                double y = radius * -Math.cos(theta);
+    // create the shape by iterating around the number of points
+    Path2D.Double shapePath = new Path2D.Double();
+    for (int i = 0; i < vertices; i++) {
+      double theta; // the angle required move round to the next point
+      if (isStar) {
+        // with polygon density of 2 the next point will be the one after next, but...
+        // ...even numbered stars need to be rotated when halfway to avoid repetition
+        if (vertices % 2 == 0 && i == vertices / 2) {
+          orientationAngle = orientationAngle + 2 * Math.PI / vertices;
+        }
+        theta = (4 * Math.PI * i / vertices) - orientationAngle;
+      } else {
+        // for regular polygons the next point is adjacent clockwise
+        theta = (2 * Math.PI * i / vertices) - orientationAngle;
+      }
+      double x = radius * Math.sin(theta);
+      double y = radius * -Math.cos(theta);
 
-                if (i == 0) {
-                  shapePath.moveTo(x, y);
-                } else if (haloShapeType.equals(HaloPart.HaloShapeType.STAR)
-                    && (vertices % 2 == 0 && i == vertices / 2)) {
-                  shapePath.closePath();
-                  shapePath.moveTo(x, y);
-                } else {
-                  shapePath.lineTo(x, y);
-                }
-              }
-              shapePath.closePath();
-
-              return shapePath;
-            });
+      if (i == 0) {
+        shapePath.moveTo(x, y);
+      } else if (isStar && (vertices % 2 == 0 && i == vertices / 2)) {
+        shapePath.closePath();
+        shapePath.moveTo(x, y);
+      } else {
+        shapePath.lineTo(x, y);
+      }
+    }
+    shapePath.closePath();
 
     timer.stop("HaloRenderer-getUnitPolygonShape");
-    return polygonShape;
+    return shapePath;
   }
 
   /**
@@ -723,8 +712,8 @@ public class HaloRenderer {
             key2 -> {
               double r = 1d;
               return switch (haloShapeType) {
-                // rotated so the circle path starts at the 12 o'clock position
                 case HaloPart.HaloShapeType.CIRCLE ->
+                    // rotated so the circle path starts at the 12 o'clock position
                     AffineTransform.getRotateInstance(-Math.PI / 2, 0, 0)
                         .createTransformedShape(new Ellipse2D.Double(-r / 2, -r / 2, r, r));
 
@@ -736,22 +725,23 @@ public class HaloRenderer {
                     new Arc2D.Double(-r / 2, -r / 2, r, r, 90, -angle, Arc2D.CHORD);
                 case HaloPart.HaloShapeType.PIE ->
                     new Arc2D.Double(-r / 2, -r / 2, r, r, 90, -angle, Arc2D.PIE);
+
                 case HaloPart.HaloShapeType.TRIANGLE ->
                     AffineTransform.getRotateInstance(Math.PI, 0, 0)
-                        .createTransformedShape(
-                            getUnitPolygonShape(HaloPart.HaloShapeType.POLYGON, 3));
-                case HaloPart.HaloShapeType
-                        .SQUARE -> // this could also have been done as getUnitPolygonShape with
-                    // 4 vertices
+                        .createTransformedShape(getUnitPolygonShape(false, 3));
+
+                case HaloPart.HaloShapeType.SQUARE ->
+                    // this could also have been done as getUnitPolygonShape with 4 vertices
                     new Rectangle2D.Double(-r / 2, -r / 2, r, r);
-                case HaloPart.HaloShapeType.POLYGON ->
-                    getUnitPolygonShape(HaloPart.HaloShapeType.POLYGON, vertices);
-                case HaloPart.HaloShapeType.STAR ->
-                    getUnitPolygonShape(HaloPart.HaloShapeType.STAR, vertices);
+
+                case HaloPart.HaloShapeType.POLYGON -> getUnitPolygonShape(false, vertices);
+
+                case HaloPart.HaloShapeType.STAR -> getUnitPolygonShape(true, vertices);
+
                 // None of the following are a geometric type, so this method shouldn't even be
                 // used for them.
                 case FOOTPRINT, GRID, TOKEN, OUTLINE, MBL, VBLCOVER, VBLHILL, VBLPIT, VBLWALL ->
-                    null;
+                    new Area();
               };
             });
 
@@ -1034,14 +1024,6 @@ public class HaloRenderer {
    */
   private record CompositeHaloMiniShapeKey(
       TokenFootprint key1, HaloPart key2, Double key3, Double key4, Double key5, Double key6) {}
-
-  /**
-   * Keys for the polygon unit shape multikey map cache.
-   *
-   * @param key1 the halo shape type
-   * @param key2 the number of halo vertices
-   */
-  private record CompositeUnitPolygonShapeKey(HaloPart.HaloShapeType key1, Integer key2) {}
 
   /**
    * Keys for the unit shape multikey map cache.
