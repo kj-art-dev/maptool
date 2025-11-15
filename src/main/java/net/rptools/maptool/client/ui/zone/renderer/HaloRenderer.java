@@ -176,8 +176,8 @@ public class HaloRenderer {
                       halo,
                       hp,
                       shapeType,
-                      width,
                       haloFacingAngle,
+                      width,
                       concentricOffset,
                       haloScaleFactor));
 
