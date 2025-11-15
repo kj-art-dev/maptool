@@ -214,20 +214,11 @@ public class HaloSyntax {
 
         HaloPart.HaloShapeType haloShapeType = haloPart.getHaloShapeType();
         if (haloShapeType != null) {
-          if (!haloPart.getHaloShapeType().equals(HaloPart.DEFAULT_HALO_SHAPE_TYPE)) {
-            parameters.put("", haloPart.getHaloShapeType().name().toLowerCase());
+          if (!haloShapeType.equals(HaloPart.DEFAULT_HALO_SHAPE_TYPE)) {
+            parameters.put("", haloShapeType.name().toLowerCase());
           }
 
-          if (haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.OUTLINE)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.MBL)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLCOVER)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLHILL)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLPIT)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.VBLWALL)
-              || haloPart.getHaloShapeType().equals(HaloPart.HaloShapeType.FOOTPRINT)) {
-            // these type of haloPart shapes should not be rotated, scaled, or flipped or have
-            // mini-shapes
-          } else {
+          if (haloShapeType.isTransformable()) {
             if (haloPart.getFlipHorizontal()) {
               parameters.put("flipH", true);
             }
@@ -241,11 +232,11 @@ public class HaloSyntax {
             parameters.put("mini", haloPart.getMini());
           }
 
-          if (haloPart.isPolygonalShape(haloPart.getHaloShapeType())) {
+          if (haloShapeType.isPolygonal()) {
             parameters.put("vertices", haloPart.getVertices());
           }
 
-          if (haloPart.isAngleBasedShape(haloPart.getHaloShapeType())) {
+          if (haloShapeType.isAngleBased()) {
             parameters.put("angle", haloPart.getAngle());
           }
           if (haloPart.getMini() > 0) {

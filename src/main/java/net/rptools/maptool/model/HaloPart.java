@@ -18,9 +18,7 @@ import com.google.protobuf.Int32Value;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.Objects;
-import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.drawing.DrawablePaint;
@@ -75,6 +73,35 @@ public final class HaloPart implements Serializable {
     VBLHILL(), // derived from the token's Hill VBL mask
     VBLPIT(), // derived from the token's Pit VBL mask
     VBLWALL(), // derived from the token's Wall VBL mask
+    ;
+
+    public boolean isAngleBased() {
+      return switch (this) {
+        case ARC, CHORD, PIE -> true;
+        default -> false;
+      };
+    }
+
+    public boolean isPolygonal() {
+      return switch (this) {
+        case POLYGON, STAR -> true;
+        default -> false;
+      };
+    }
+
+    public boolean isGeometric() {
+      return switch (this) {
+        case CIRCLE, ARC, PIE, CHORD, TRIANGLE, SQUARE, POLYGON, STAR -> true;
+        default -> false;
+      };
+    }
+
+    public boolean isTransformable() {
+      return switch (this) {
+        case OUTLINE, MBL, VBLCOVER, VBLHILL, VBLPIT, VBLWALL, FOOTPRINT -> false;
+        default -> true;
+      };
+    }
   }
 
   public HaloPart(
@@ -108,8 +135,9 @@ public final class HaloPart implements Serializable {
     this.rotate = rotate % 360d;
     this.scaleX = scaleX;
     this.scaleY = scaleY;
-    this.vertices = isPolygonalShape(haloShapeType) ? Math.max(3, vertices) : 0;
-    this.mini = isGeometricShape(haloShapeType) ? mini : 0;
+    this.vertices =
+        haloShapeType != null && haloShapeType.isPolygonal() ? Math.max(3, vertices) : 0;
+    this.mini = haloShapeType != null && haloShapeType.isGeometric() ? mini : 0;
     this.miniStart = miniStart > 0 && miniStart != mini ? Math.min(miniStart, mini) : 0;
     this.miniStop = miniStop > 0 && miniStop != mini ? Math.min(miniStop, mini) : 0;
     this.miniRotate = miniRotate % 360d;
@@ -212,32 +240,6 @@ public final class HaloPart implements Serializable {
 
   public @Nullable ArrayList<Float> getDashedPattern() {
     return dashedPattern;
-  }
-
-  public boolean isPolygonalShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> polygonHaloShapeTypes =
-        EnumSet.of(HaloShapeType.POLYGON, HaloShapeType.STAR);
-    return polygonHaloShapeTypes.contains(haloShapeType);
-  }
-
-  public boolean isAngleBasedShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> angledBasedShapeTypes =
-        EnumSet.of(HaloShapeType.ARC, HaloShapeType.CHORD, HaloShapeType.PIE);
-    return angledBasedShapeTypes.contains(haloShapeType);
-  }
-
-  public boolean isGeometricShape(HaloShapeType haloShapeType) {
-    Set<HaloShapeType> isGeometricShapeTypes =
-        EnumSet.of(
-            HaloShapeType.CIRCLE,
-            HaloShapeType.ARC,
-            HaloShapeType.PIE,
-            HaloShapeType.CHORD,
-            HaloShapeType.TRIANGLE,
-            HaloShapeType.SQUARE,
-            HaloShapeType.POLYGON,
-            HaloShapeType.STAR);
-    return isGeometricShapeTypes.contains(haloShapeType);
   }
 
   public static @Nonnull HaloPart fromDto(@Nonnull HaloPartDto dto) {

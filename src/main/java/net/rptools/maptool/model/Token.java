@@ -1455,9 +1455,10 @@ public class Token implements Cloneable {
    * Return the area of the token for the requested type of topology.
    *
    * @param topologyType The type of topology to return.
-   * @return the current topology of the token.
+   * @return the current topology of the token, or {@code null} if the token does not have topology
+   *     of type {@code topologyType}.
    */
-  public Area getMaskTopology(Zone.TopologyType topologyType) {
+  public @Nullable Area getMaskTopology(Zone.TopologyType topologyType) {
     return switch (topologyType) {
       case WALL_VBL -> vbl;
       case HILL_VBL -> hillVbl;
@@ -1470,10 +1471,12 @@ public class Token implements Cloneable {
   /**
    * Transform the token's topology according to the token's scale, position, rotation and flipping.
    *
+   * @param zone The zone in which the token resides.
    * @param topologyType The type of topology to transform.
-   * @return the transformed topology for the token
+   * @return the transformed topology for the token, or {@code null} if the token does not have
+   *     topology of type {@code topologyType}.
    */
-  public Area getTransformedMaskTopology(Zone zone, Zone.TopologyType topologyType) {
+  public @Nullable Area getTransformedMaskTopology(Zone zone, Zone.TopologyType topologyType) {
     return getTransformedMaskTopology(zone, getMaskTopology(topologyType));
   }
 
