@@ -59,6 +59,11 @@ public class HexGridVertical extends HexGrid {
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
 
   @Override
+  public GridType getType() {
+    return GridType.HexVertical;
+  }
+
+  @Override
   protected List<TokenFootprint> createFootprints() {
     return List.of(
         new TokenFootprint(new GUID("C0A80F0E0CB9FB560100000040A8090C"), "1/6", false, .408),

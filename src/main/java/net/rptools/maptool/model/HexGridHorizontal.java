@@ -59,8 +59,8 @@ public class HexGridHorizontal extends HexGrid {
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
 
   @Override
-  public boolean isHexHorizontal() {
-    return true;
+  public GridType getType() {
+    return GridType.HexHorizontal;
   }
 
   @Override

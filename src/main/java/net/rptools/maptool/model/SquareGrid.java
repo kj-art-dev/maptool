@@ -79,6 +79,11 @@ public class SquareGrid extends Grid {
       };
 
   @Override
+  public GridType getType() {
+    return GridType.Square;
+  }
+
+  @Override
   protected List<TokenFootprint> createFootprints() {
     return List.of(
         new TokenFootprint(

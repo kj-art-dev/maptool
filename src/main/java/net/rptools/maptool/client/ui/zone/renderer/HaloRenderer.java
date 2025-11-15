@@ -324,9 +324,7 @@ public class HaloRenderer {
            * CIRCLE previously. */
           case TOKEN -> null;
           case HaloPart.HaloShapeType.FOOTPRINT -> // tokens on gridless maps do not have footprints
-              GridFactory.getGridType(grid).equals(GridFactory.NONE)
-                  ? null
-                  : getHaloFootprintShape(token, grid, concentricOffset);
+              grid.getType().isNone() ? null : getHaloFootprintShape(token, grid, concentricOffset);
           case HaloPart.HaloShapeType.OUTLINE -> getHaloOutlineShape(token);
           case HaloPart.HaloShapeType.MBL ->
               token.getTransformedMaskTopology(zone, Zone.TopologyType.MBL);
@@ -405,9 +403,7 @@ public class HaloRenderer {
     double scaleY;
     double footprintScaleX = position.footprintBounds().getWidth() + concentricAdjustment;
     double footprintScaleY = position.footprintBounds().getHeight() + concentricAdjustment;
-    if (GridFactory.getGridType(grid).equals(GridFactory.ISOMETRIC)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_HORI)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_VERT)) {
+    if (grid.getType().isIsometric() || grid.getType().isHex()) {
       scaleX = haloPart.getScaleX() * Math.min(footprintScaleX, footprintScaleY);
       scaleY = haloPart.getScaleY() * Math.min(footprintScaleX, footprintScaleY);
     } else {
@@ -599,9 +595,7 @@ public class HaloRenderer {
         (position.footprintBounds().getWidth() + concentricAdjustment) / grid.getSize();
     double footprintScaleY =
         (position.footprintBounds().getHeight() + concentricAdjustment) / grid.getSize();
-    if (GridFactory.getGridType(grid).equals(GridFactory.ISOMETRIC)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_HORI)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_VERT)) {
+    if (grid.getType().isIsometric() || grid.getType().isHex()) {
       scaleX = Math.min(footprintScaleX, footprintScaleY);
       scaleY = Math.min(footprintScaleX, footprintScaleY);
     } else {
@@ -817,7 +811,7 @@ public class HaloRenderer {
     timer.start("HaloRenderer-getHaloGridShape");
 
     if (haloGridShapeCache == null) {
-      if (GridFactory.getGridType(grid).equals(GridFactory.NONE)) {
+      if (grid.getType().isNone()) {
         double r = grid.getSize() / 2d;
         haloGridShapeCache = new Ellipse2D.Double(-r, -r, 2 * r, 2 * r);
       } else {
@@ -834,9 +828,7 @@ public class HaloRenderer {
     double scaleY =
         (position.footprintBounds().getHeight() + concentricAdjustment) / grid.getSize();
     double scale;
-    if (GridFactory.getGridType(grid).equals(GridFactory.ISOMETRIC)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_HORI)
-        || GridFactory.getGridType(grid).equals(GridFactory.HEX_VERT)) {
+    if (grid.getType().isIsometric() || grid.getType().isHex()) {
       scale = Math.min(scaleX, scaleY);
     } else {
       scale = Math.max(scaleX, scaleY);
