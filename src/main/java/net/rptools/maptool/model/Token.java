@@ -1573,7 +1573,7 @@ public class Token implements Cloneable {
     if (!isSnapToScale()) {
       w = getWidth() * scaleX;
       h = getHeight() * scaleY;
-      if (grid.isIsometric() && getShape() == Token.TokenShape.FIGURE) {
+      if (grid.getType().isIsometric() && getShape() == Token.TokenShape.FIGURE) {
         // Native size figure tokens need to follow iso rules
         h = (w / 2);
       }
@@ -1611,7 +1611,7 @@ public class Token implements Cloneable {
     if (!isSnapToScale()) {
       w = getWidth() * scaleX;
       h = getHeight() * scaleY;
-      if (grid.isIsometric() && getShape() == Token.TokenShape.FIGURE) {
+      if (grid.getType().isIsometric() && getShape() == Token.TokenShape.FIGURE) {
         // Native size figure tokens need to follow iso rules
         h = (w / 2);
       }
@@ -1751,7 +1751,7 @@ public class Token implements Cloneable {
 
         offsetX = footprintOffsetX / 2.0 - cellOffset.width * cellsX;
         offsetY = footprintOffsetY / 2.0 - cellOffset.height * cellsY;
-        if (grid.isHex() && "large".equalsIgnoreCase(footprint.getName())) {
+        if (grid.getType().isHex() && "large".equalsIgnoreCase(footprint.getName())) {
           // Merudo: not sure why this special case is needed.
           offsetX = offsetX - Math.min(grid.getCellWidth(), grid.getCellHeight()) / 2;
           offsetY = offsetY - Math.min(grid.getCellWidth(), grid.getCellHeight()) / 2;

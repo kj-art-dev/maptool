@@ -120,13 +120,8 @@ public abstract class HexGrid extends Grid {
     return edgeLength;
   }
 
-  @Override
-  public boolean isHex() {
-    return true;
-  }
-
-  public boolean isHexHorizontal() {
-    return false;
+  private boolean isHexHorizontal() {
+    return getType() == GridType.HexHorizontal;
   }
 
   @Override

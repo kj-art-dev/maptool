@@ -159,7 +159,7 @@ public class getInfoFunction extends AbstractFunction {
 
     JsonObject ginfo = new JsonObject();
     Grid grid = zone.getGrid();
-    ginfo.addProperty("type", GridFactory.getGridType(grid));
+    ginfo.addProperty("type", grid.getType().toString());
     ginfo.addProperty("color", String.format("%h", zone.getGridColor()));
     ginfo.addProperty("units per cell", zone.getUnitsPerCell());
     ginfo.addProperty("cell height", zone.getGrid().getCellHeight());

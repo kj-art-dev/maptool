@@ -23,7 +23,6 @@ import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.image.RenderQuality;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Grid;
-import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
@@ -102,7 +101,7 @@ public class ImageSupport {
       double fpW, fpH;
       // size:  multiply by zoom level to prevent multiple scaling ops which lose definition, i.e.
       // scale once
-      if (GridFactory.getGridType(grid).equals(GridFactory.NONE)) {
+      if (grid.getType().isNone()) {
         fpW = fpH = grid.getSize() * fpS * zoom; // all gridless are relative to the grid size
       } else {
         fpW = footprintBounds.getWidth() * fpS * zoom;
@@ -114,7 +113,7 @@ public class ImageSupport {
       // scale to fit image inside footprint bounds using the dimension that needs the most scaling,
       // i.e. lowest ratio
       double imageFootprintRatio;
-      if (token.getShape() == Token.TokenShape.FIGURE && grid.isIsometric()) {
+      if (token.getShape() == Token.TokenShape.FIGURE && grid.getType().isIsometric()) {
         imageFootprintRatio = fpW / imgW;
       } else {
         imageFootprintRatio = Math.min(fpW / imgW, fpH / imgH);

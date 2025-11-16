@@ -55,7 +55,7 @@ import net.rptools.maptool.client.ui.theme.ThemeSupport.ThemeDetails;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.GridFactory;
+import net.rptools.maptool.model.Grid.GridType;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.UserJvmOptions;
@@ -534,11 +534,12 @@ public class PreferencesDialog extends AbeillePanel {
    * Each item in the array consists of a grid type and its corresponding localized display name.
    */
   private static final LocalizedComboItem[] defaultGridTypeComboItems = {
-    new LocalizedComboItem(GridFactory.SQUARE, "Preferences.combo.maps.grid.square"),
-    new LocalizedComboItem(GridFactory.HEX_HORI, "Preferences.combo.maps.grid.hexHori"),
-    new LocalizedComboItem(GridFactory.HEX_VERT, "Preferences.combo.maps.grid.hexVert"),
-    new LocalizedComboItem(GridFactory.ISOMETRIC, "Preferences.combo.maps.grid.isometric"),
-    new LocalizedComboItem(GridFactory.NONE, "MapPropertiesDialog.image.nogrid")
+    new LocalizedComboItem(GridType.Square.toString(), "Preferences.combo.maps.grid.square"),
+    new LocalizedComboItem(
+        GridType.HexHorizontal.toString(), "Preferences.combo.maps.grid.hexHori"),
+    new LocalizedComboItem(GridType.HexVertical.toString(), "Preferences.combo.maps.grid.hexVert"),
+    new LocalizedComboItem(GridType.Isometric.toString(), "Preferences.combo.maps.grid.isometric"),
+    new LocalizedComboItem(GridType.None.toString(), "MapPropertiesDialog.image.nogrid")
   };
 
   /**

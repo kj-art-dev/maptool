@@ -106,7 +106,7 @@ public class FacingArrowRenderer {
     var timer = CodeTimer.get();
     timer.start("FacingArrowRenderer-paintArrow");
     try {
-      final var isIsometric = zone.getGrid().isIsometric();
+      final var isIsometric = zone.getGrid().getType().isIsometric();
 
       timer.start("FacingArrowRenderer-calculateTransform");
       int angle = Math.floorMod(facing + (isIsometric ? 45 : 0), 360);

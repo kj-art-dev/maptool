@@ -1340,7 +1340,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         highlightCell(g, zp, grid.getCellHighlight(), 1.0f);
       }
       if (AppState.getShowMovementMeasurements()) {
-        double cellAdj = grid.isHex() ? 2.5 : 2;
+        double cellAdj = grid.getType().isHex() ? 2.5 : 2;
         for (CellPoint p : cellPath) {
           ZonePoint zp = grid.convert(p);
           zp.x += (int) (grid.getCellWidth() / cellAdj + cellOffset.width);
@@ -1358,7 +1358,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Line path
       if (grid.getCapabilities().isPathLineSupported()) {
         ZonePoint lineOffset;
-        if (grid.isHex()) {
+        if (grid.getType().isHex()) {
           lineOffset = new ZonePoint(0, 0);
         } else {
           lineOffset =
@@ -1743,7 +1743,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("token-list-1b");
 
       timer.start("token-list-5a");
-      if (token.getIsFlippedIso() && getZone().getGrid().isIsometric()) {
+      if (token.getIsFlippedIso() && getZone().getGrid().getType().isIsometric()) {
         int newSize = (image.getWidth() + image.getHeight());
         token.setWidth(newSize);
         token.setHeight(newSize / 2);

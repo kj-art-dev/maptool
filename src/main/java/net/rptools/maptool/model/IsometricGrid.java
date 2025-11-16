@@ -43,8 +43,9 @@ public class IsometricGrid extends Grid {
   private static final BufferedImage pathHighlight =
       RessourceManager.getImage(Images.GRID_BORDER_ISOMETRIC);
 
-  public boolean isIsometric() {
-    return true;
+  @Override
+  public GridType getType() {
+    return GridType.Isometric;
   }
 
   @Override
