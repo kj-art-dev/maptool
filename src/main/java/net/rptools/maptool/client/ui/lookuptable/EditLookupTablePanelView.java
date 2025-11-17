@@ -25,6 +25,8 @@ public class EditLookupTablePanelView {
   private JCheckBox allowLookup;
   private JTable definitionTable;
   private JLabel tableImagePlaceholder;
+  private JCheckBox pickOnce;
+  private JButton resetPicks;
 
   public JComponent getRootComponent() {
     return mainPanel;
@@ -52,5 +54,13 @@ public class EditLookupTablePanelView {
 
   public JLabel getTableImagePlaceholder() {
     return tableImagePlaceholder;
+  }
+
+  public JCheckBox getPickOnce() {
+    return pickOnce;
+  }
+
+  public JButton getResetPicks() {
+    return resetPicks;
   }
 }

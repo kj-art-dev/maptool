@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.table.AbstractTableModel;
@@ -43,9 +45,10 @@ import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.LookupTable.LookupEntry;
 
 public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
-  private static final int RANGE_COLUMN_INDEX = 0;
-  private static final int VALUE_COLUMN_INDEX = 1;
-  private static final int IMAGE_COLUMN_INDEX = 2;
+  private static final int PICKED_COLUMN_INDEX = 0;
+  private static final int RANGE_COLUMN_INDEX = 1;
+  private static final int VALUE_COLUMN_INDEX = 2;
+  private static final int IMAGE_COLUMN_INDEX = 3;
 
   private final GenericDialogFactory dialogFactory;
 
@@ -86,6 +89,27 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     bind(lookupTable);
 
     dialogFactory.display();
+  }
+
+  public void initPickOnce() {
+    JCheckBox pickOnce = view.getPickOnce();
+    JButton resetPicks = view.getResetPicks();
+
+    pickOnce.addActionListener(
+        event -> {
+          var isPickOnce = pickOnce.isSelected();
+          view.getDefaultTableRoll().setEnabled(!isPickOnce);
+          resetPicks.setEnabled(isPickOnce);
+
+          var model = (LookupTableTableModel) view.getDefinitionTable().getModel();
+          model.showPicks(isPickOnce);
+        });
+
+    resetPicks.addActionListener(
+        e -> {
+          var model = (LookupTableTableModel) view.getDefinitionTable().getModel();
+          model.clearAllPicks();
+        });
   }
 
   public void initTableDefinitionTable() {
@@ -154,10 +178,15 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     super.bind(lookupTable);
 
     view.getTableName().setText(lookupTable.getName());
-    view.getDefaultTableRoll().setText(lookupTable.calculateRoll());
+    view.getDefaultTableRoll()
+        .setText(lookupTable.getPickOnce() ? "" : lookupTable.calculateRoll());
     tableImageAssetPanel.setImageId(lookupTable.getTableImage());
     view.getIsVisible().setSelected(lookupTable.getVisible());
     view.getAllowLookup().setSelected(lookupTable.getAllowLookup());
+
+    view.getPickOnce().setSelected(lookupTable.getPickOnce());
+    view.getDefaultTableRoll().setEnabled(!lookupTable.getPickOnce());
+    view.getResetPicks().setEnabled(lookupTable.getPickOnce());
 
     view.getTableName().requestFocusInWindow();
 
@@ -197,7 +226,8 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     // save existing name for later removal from LookupTableMap
     String origname = lookupTable.getName();
     lookupTable.setName(name);
-    lookupTable.setRoll(view.getDefaultTableRoll().getText());
+    lookupTable.setPickOnce(view.getPickOnce().isSelected());
+    lookupTable.setRoll(lookupTable.getPickOnce() ? null : view.getDefaultTableRoll().getText());
     lookupTable.setTableImage(tableImageAssetPanel.getImageId());
     lookupTable.setVisible(view.getIsVisible().isSelected());
     lookupTable.setAllowLookup(view.getAllowLookup().isSelected());
@@ -211,6 +241,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       }
       String value = row.value;
       String imageId = row.imageId;
+      boolean picked = row.picked;
 
       int min;
       int max;
@@ -232,7 +263,10 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
         image = new MD5Key(imageId);
         MapToolUtil.uploadAsset(AssetManager.getAsset(image));
       }
-      lookupTable.addEntry(min, max, value, image);
+      var entry = lookupTable.addEntry(min, max, value, image);
+      if (lookupTable.getPickOnce()) {
+        entry.setPicked(picked);
+      }
     }
     if (!name.equals(origname)) {
       // New name is not the same as the existing name
@@ -256,6 +290,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
   private LookupTableTableModel createLookupTableModel(LookupTable lookupTable) {
     var rows = new ArrayList<LookupTableRow>();
     for (LookupEntry entry : lookupTable.getEntryList()) {
+      boolean picked = entry.getPicked();
       String range =
           entry.getMax() != entry.getMin()
               ? entry.getMin() + "-" + entry.getMax()
@@ -263,9 +298,12 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       String value = entry.getValue();
       MD5Key imageId = entry.getImageId();
 
-      rows.add(new LookupTableRow(range, value, imageId != null ? imageId.toString() : null));
+      rows.add(
+          new LookupTableRow(picked, range, value, imageId != null ? imageId.toString() : null));
     }
-    return new LookupTableTableModel(rows);
+    var model = new LookupTableTableModel(rows);
+    model.showPicks(lookupTable.getPickOnce());
+    return model;
   }
 
   private class ImageCellRenderer extends ImageAssetPanel implements TableCellRenderer {
@@ -278,15 +316,17 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
   }
 
   private static final class LookupTableRow {
+    public boolean picked;
     public String range;
     public String value;
     public @Nullable String imageId;
 
     public LookupTableRow() {
-      this("", "", null);
+      this(false, "", "", null);
     }
 
-    public LookupTableRow(String range, String value, @Nullable String imageId) {
+    public LookupTableRow(boolean picked, String range, String value, @Nullable String imageId) {
+      this.picked = picked;
       this.range = range;
       this.value = value;
       this.imageId = imageId;
@@ -299,10 +339,35 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
     private final List<String> columnNames =
         List.of(
-            I18N.getText("Label.range"), I18N.getText("Label.value"), I18N.getText("Label.image"));
+            I18N.getText("Label.isPicked"),
+            I18N.getText("Label.range"),
+            I18N.getText("Label.value"),
+            I18N.getText("Label.image"));
+    private boolean showPicks = false;
 
     public LookupTableTableModel(List<LookupTableRow> rowList) {
       this.rowList = rowList;
+    }
+
+    private int getCanonicalColumn(int columnIndex) {
+      // When the "Picked?" column is not present, the column indices don't line up with our
+      // predefined constants. So increment the index to match those.
+      return columnIndex + (showPicks ? 0 : 1);
+    }
+
+    public void showPicks(boolean show) {
+      this.showPicks = show;
+      fireTableStructureChanged();
+      // This one is needed to make sure the rows all update immediately as well.
+      fireTableDataChanged();
+    }
+
+    public void clearAllPicks() {
+      for (var row : rowList) {
+        row.picked = false;
+      }
+      newRow.picked = false;
+      fireTableRowsUpdated(0, getRowCount());
     }
 
     public LookupTableRow getRowAt(int rowIndex) {
@@ -316,7 +381,11 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     }
 
     public int getColumnCount() {
-      return columnNames.size();
+      var columnCount = columnNames.size();
+      if (!showPicks) {
+        --columnCount;
+      }
+      return columnCount;
     }
 
     public int getRowCount() {
@@ -324,9 +393,12 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     }
 
     public Object getValueAt(int rowIndex, int columnIndex) {
+      columnIndex = getCanonicalColumn(columnIndex);
+
       LookupTableRow row = rowIndex < rowList.size() ? rowList.get(rowIndex) : newRow;
 
       return switch (columnIndex) {
+        case PICKED_COLUMN_INDEX -> row.picked;
         case RANGE_COLUMN_INDEX -> row.range;
         case VALUE_COLUMN_INDEX -> row.value;
         case IMAGE_COLUMN_INDEX -> row.imageId;
@@ -336,9 +408,12 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+      columnIndex = getCanonicalColumn(columnIndex);
+
       LookupTableRow row = rowIndex < rowList.size() ? rowList.get(rowIndex) : newRow;
 
       switch (columnIndex) {
+        case PICKED_COLUMN_INDEX -> row.picked = (boolean) aValue;
         case RANGE_COLUMN_INDEX -> row.range = (String) aValue;
         case VALUE_COLUMN_INDEX -> row.value = (String) aValue;
         case IMAGE_COLUMN_INDEX -> row.imageId = (String) aValue;
@@ -354,7 +429,11 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-      if (columnIndex == IMAGE_COLUMN_INDEX) {
+      columnIndex = getCanonicalColumn(columnIndex);
+
+      if (columnIndex == PICKED_COLUMN_INDEX) {
+        return Boolean.class;
+      } else if (columnIndex == IMAGE_COLUMN_INDEX) {
         return ImageAssetPanel.class;
       } else {
         return String.class;
@@ -362,12 +441,16 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     }
 
     @Override
-    public String getColumnName(int column) {
-      return columnNames.get(column);
+    public String getColumnName(int columnIndex) {
+      columnIndex = getCanonicalColumn(columnIndex);
+
+      return columnNames.get(columnIndex);
     }
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
+      columnIndex = getCanonicalColumn(columnIndex);
+
       return columnIndex != IMAGE_COLUMN_INDEX;
     }
   }
