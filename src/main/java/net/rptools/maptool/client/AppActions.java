@@ -3227,23 +3227,20 @@ public class AppActions {
 
   /** This class provides an action that displays a url from I18N */
   public static class OpenUrlAction extends TranslatedClientAction {
+    private final String url;
 
-    public OpenUrlAction(String key) {
+    public OpenUrlAction(String key, String url, Icons icon) {
       super(key);
+      this.url = url;
 
-      // The constructor method will load the "key", "key.accel", and "key.description".
-      // The value of "key" will be used as the menu text, the accelerator is not
-      // used,
-      // and the description will be the destination URL. Only the Help menu uses
-      // these objects and
-      // only the Help menu expects that field to be set...
+      // Show the URL as hover text.
+      putValue(Action.SHORT_DESCRIPTION, url);
+      putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(icon));
     }
 
     @Override
     protected void executeAction() {
-      if (getValue(Action.SHORT_DESCRIPTION) != null) {
-        MapTool.showDocument((String) getValue(Action.SHORT_DESCRIPTION));
-      }
+      MapTool.showDocument(url);
     }
   }
 
