@@ -364,7 +364,7 @@ public class CampaignProperties implements Serializable {
                 radius * 2,
                 0,
                 360,
-                new DrawableColorPaint(new Color(0, 0, 0, 100)),
+                new DrawableColorPaint(Color.black),
                 100,
                 false,
                 false)));
