@@ -17,8 +17,6 @@ package net.rptools.maptool.client.ui.theme;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.TreeSet;
 import javax.swing.*;
@@ -617,44 +615,6 @@ public class RessourceManager {
     System.out.println("Missing icons:");
     for (var key : missing) {
       System.out.println(key + " classic: " + classicIcons.get(key));
-    }
-  }
-
-  public static void checkMissingFiles() {
-    String basedir = "C:\\Users\\tkunze\\Source\\maptool\\src\\main\\resources\\";
-    for (String value : images.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-      var target = Path.of(basedir, IMAGE_DIR, "images", source.getFileName().toString());
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
-    }
-    for (String value : classicIcons.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
-    }
-    for (String value : rodIcons.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
     }
   }
 }
