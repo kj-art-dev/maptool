@@ -21,9 +21,9 @@ import java.awt.EventQueue;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -32,7 +32,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -169,8 +168,9 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     button.addActionListener(
         e -> {
           // Commit any in-process edits
-          if (getTableDefinitionTable().isEditing()) {
-            getTableDefinitionTable().getCellEditor().stopCellEditing();
+          var tableDefinitionTable = getTableDefinitionTable();
+          if (tableDefinitionTable.isEditing()) {
+            tableDefinitionTable.getCellEditor().stopCellEditing();
           }
           String name = getTableNameTextField().getText().trim();
           if (name.isEmpty()) {
@@ -182,7 +182,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
             MapTool.showError(I18N.getText("EditLookupTablePanel.error.sameName", name));
             return;
           }
-          TableModel tableModel = getTableDefinitionTable().getModel();
+          var tableModel = (LookupTableTableModel) tableDefinitionTable.getModel();
           if (tableModel.getRowCount() < 1) {
             MapTool.showError(I18N.getText("EditLookupTablePanel.error.invalidSize", name));
             return;
@@ -196,12 +196,14 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
           lookupTable.setAllowLookup(getAllowLookupCheckbox().isSelected());
           lookupTable.clearEntries();
           for (int i = 0; i < tableModel.getRowCount(); i++) {
-            String range = ((String) tableModel.getValueAt(i, RANGE_COLUMN_INDEX)).trim();
+            var row = tableModel.getRowAt(i);
+
+            String range = row.range;
             if (range.isEmpty()) {
               continue;
             }
-            String value = ((String) tableModel.getValueAt(i, VALUE_COLUMN_INDEX)).trim();
-            String imageId = (String) tableModel.getValueAt(i, IMAGE_COLUMN_INDEX);
+            String value = row.value;
+            String imageId = row.imageId;
 
             int min;
             int max;
@@ -251,7 +253,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
   }
 
   private LookupTableTableModel createLookupTableModel(LookupTable lookupTable) {
-    List<List<String>> rows = new ArrayList<List<String>>();
+    var rows = new ArrayList<LookupTableRow>();
     for (LookupEntry entry : lookupTable.getEntryList()) {
       String range =
           entry.getMax() != entry.getMin()
@@ -260,13 +262,9 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       String value = entry.getValue();
       MD5Key imageId = entry.getImageId();
 
-      rows.add(Arrays.asList("false", range, value, imageId != null ? imageId.toString() : null));
+      rows.add(new LookupTableRow(range, value, imageId != null ? imageId.toString() : null));
     }
-    return new LookupTableTableModel(
-        rows,
-        I18N.getText("Label.range"),
-        I18N.getText("Label.value"),
-        I18N.getText("Label.image"));
+    return new LookupTableTableModel(rows);
   }
 
   private class ImageCellRenderer extends ImageAssetPanel implements TableCellRenderer {
@@ -278,18 +276,46 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     }
   }
 
-  static final class LookupTableTableModel extends AbstractTableModel {
-    private List<String> newRow = new ArrayList<String>();
-    private final List<List<String>> rowList;
-    private final String[] cols;
+  private static final class LookupTableRow {
+    public String range;
+    public String value;
+    public @Nullable String imageId;
 
-    public LookupTableTableModel(List<List<String>> rowList, String... cols) {
+    public LookupTableRow() {
+      this("", "", null);
+    }
+
+    public LookupTableRow(String range, String value, @Nullable String imageId) {
+      this.range = range;
+      this.value = value;
+      this.imageId = imageId;
+    }
+  }
+
+  private static final class LookupTableTableModel extends AbstractTableModel {
+    private LookupTableRow newRow = new LookupTableRow();
+    private final List<LookupTableRow> rowList;
+
+    private final List<String> columnNames =
+        List.of(
+            I18N.getText("Label.range"), I18N.getText("Label.value"), I18N.getText("Label.image"));
+
+    public LookupTableTableModel(List<LookupTableRow> rowList) {
       this.rowList = rowList;
-      this.cols = cols;
+    }
+
+    public LookupTableRow getRowAt(int rowIndex) {
+      if (rowIndex < 0 || rowIndex > rowList.size()) {
+        throw new IndexOutOfBoundsException(rowIndex);
+      }
+      if (rowIndex == rowList.size()) {
+        return newRow;
+      }
+      return rowList.get(rowIndex);
     }
 
     public int getColumnCount() {
-      return cols.length;
+      return columnNames.size();
     }
 
     public int getRowCount() {
@@ -297,46 +323,46 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     }
 
     public Object getValueAt(int rowIndex, int columnIndex) {
-      List<String> row = null;
+      LookupTableRow row = rowIndex < rowList.size() ? rowList.get(rowIndex) : newRow;
 
-      // Existing value
-      if (rowIndex < rowList.size()) {
-        row = rowList.get(rowIndex);
-      } else {
-        row = newRow;
-      }
-      return columnIndex < row.size() ? row.get(columnIndex) : "";
+      return switch (columnIndex) {
+        case RANGE_COLUMN_INDEX -> row.range;
+        case VALUE_COLUMN_INDEX -> row.value;
+        case IMAGE_COLUMN_INDEX -> row.imageId;
+        default -> "";
+      };
     }
 
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-      boolean hasNewRow = false;
-      List<String> row = null;
-      if (rowIndex < rowList.size()) {
-        row = rowList.get(rowIndex);
-      } else {
-        row = newRow;
+      LookupTableRow row = rowIndex < rowList.size() ? rowList.get(rowIndex) : newRow;
+
+      switch (columnIndex) {
+        case RANGE_COLUMN_INDEX -> row.range = (String) aValue;
+        case VALUE_COLUMN_INDEX -> row.value = (String) aValue;
+        case IMAGE_COLUMN_INDEX -> row.imageId = (String) aValue;
+      }
+
+      if (row == newRow) {
+        // Need to make the row permanent, and add a new placeholder.
         rowList.add(newRow);
-        newRow = new ArrayList<String>();
-        hasNewRow = true;
-      }
-      while (columnIndex >= row.size()) {
-        row.add("");
-      }
-      row.set(columnIndex, (String) aValue);
-      if (hasNewRow) {
+        newRow = new LookupTableRow();
         fireTableRowsInserted(rowList.size(), rowList.size());
       }
     }
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-      return columnIndex < IMAGE_COLUMN_INDEX ? String.class : ImageAssetPanel.class;
+      if (columnIndex == IMAGE_COLUMN_INDEX) {
+        return ImageAssetPanel.class;
+      } else {
+        return String.class;
+      }
     }
 
     @Override
     public String getColumnName(int column) {
-      return cols[column];
+      return columnNames.get(column);
     }
 
     @Override
