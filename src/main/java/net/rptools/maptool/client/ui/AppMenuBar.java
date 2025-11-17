@@ -369,6 +369,10 @@ public class AppMenuBar extends JMenuBar {
     menu.add(
         new JMenuItem(
             new OpenUrlAction(
+                "action.helpurl.discord", "https://rptools.net/discord", Icons.MENU_DISCORD)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
                 "action.helpurl.01",
                 "https://www.rptools.net/toolbox/maptool/",
                 Icons.MENU_DOCUMENTATION)));

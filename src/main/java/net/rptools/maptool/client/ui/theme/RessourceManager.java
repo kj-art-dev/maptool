@@ -127,6 +127,7 @@ public class RessourceManager {
           put(Icons.GRID_SQUARE, IMAGE_DIR + "gridSquare.png");
           put(Icons.INITIATIVE_CURRENT_INDICATOR, IMAGE_DIR + "currentIndicator.png");
           put(Icons.MAPTOOL, IMAGE_DIR + "maptool_icon.png");
+          put(Icons.MENU_DISCORD, IMAGE_DIR + "discord.svg");
           put(Icons.MENU_DOCUMENTATION, IMAGE_DIR + "book_open.png");
           put(Icons.MENU_FORUMS, IMAGE_DIR + "marker.png");
           put(Icons.MENU_FRAMEWORKS, IMAGE_DIR + "minilogo.png");
@@ -361,6 +362,7 @@ public class RessourceManager {
           put(Icons.GRID_NONE, ROD_ICONS + "cross.svg");
           put(Icons.GRID_SQUARE, ROD_ICONS + "gridSquare.svg");
           put(Icons.MAPTOOL, ROD_ICONS + "maptool_icon.svg");
+          put(Icons.MENU_DISCORD, ROD_ICONS + "menu/Discord.svg");
           put(Icons.MENU_DOCUMENTATION, ROD_ICONS + "menu/Documentation.svg");
           put(Icons.MENU_FORUMS, ROD_ICONS + "menu/Forums.svg");
           put(Icons.MENU_FRAMEWORKS, ROD_ICONS + "menu/Frameworks.svg");
