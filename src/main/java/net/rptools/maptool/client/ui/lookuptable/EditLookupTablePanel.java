@@ -17,7 +17,6 @@ package net.rptools.maptool.client.ui.lookuptable;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -25,17 +24,19 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.AbeillePanel;
+import net.rptools.maptool.client.swing.ButtonKind;
+import net.rptools.maptool.client.swing.GenericDialog;
+import net.rptools.maptool.client.swing.GenericDialogFactory;
 import net.rptools.maptool.client.swing.ImageChooserDialog;
 import net.rptools.maptool.client.ui.ImageAssetPanel;
 import net.rptools.maptool.language.I18N;
@@ -48,13 +49,39 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
   private static final int VALUE_COLUMN_INDEX = 1;
   private static final int IMAGE_COLUMN_INDEX = 2;
 
-  private LookupTable lookupTable;
+  private final GenericDialogFactory dialogFactory;
+
   private ImageAssetPanel tableImageAssetPanel;
   private int defaultRowHeight;
 
   public EditLookupTablePanel() {
     super(new EditLookupTablePanelView().getRootComponent());
     panelInit();
+
+    dialogFactory =
+        GenericDialog.getFactory()
+            .setContent(this)
+            .makeModal(true)
+            .addButton(ButtonKind.ACCEPT)
+            .addButton(ButtonKind.CANCEL)
+            .setDefaultButton(ButtonKind.ACCEPT)
+            .setCloseOperation(WindowConstants.HIDE_ON_CLOSE)
+            .onBeforeClose(
+                e -> {
+                  unbind();
+                });
+  }
+
+  public void showDialog(@Nullable LookupTable lookupTable, boolean isNew) {
+    var title =
+        isNew || lookupTable == null
+            ? I18N.getString("LookupTablePanel.msg.titleNew")
+            : I18N.getString("LookupTablePanel.msg.titleEdit");
+    dialogFactory.setDialogTitle(title);
+
+    bind(lookupTable);
+
+    dialogFactory.display();
   }
 
   public void initTableDefinitionTable() {
@@ -117,8 +144,9 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     replaceComponent("mainForm", "tableImage", tableImageAssetPanel);
   }
 
-  public void attach(LookupTable luTable) {
-    lookupTable = Objects.requireNonNullElseGet(luTable, LookupTable::new);
+  @Override
+  public void bind(LookupTable lookupTable) {
+    super.bind(lookupTable);
 
     getTableNameTextField().setText(lookupTable.getName());
     getTableRollTextField().setText(lookupTable.calculateRoll());
@@ -128,11 +156,88 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
     getTableNameTextField().requestFocusInWindow();
 
-    EventQueue.invokeLater(
-        () -> {
-          getTableDefinitionTable().setModel(createLookupTableModel(lookupTable));
-          updateDefinitionTableRowHeights();
-        });
+    getTableDefinitionTable().setModel(createLookupTableModel(lookupTable));
+    updateDefinitionTableRowHeights();
+  }
+
+  @Override
+  public boolean commit() {
+    if (!super.commit()) {
+      return false;
+    }
+
+    var lookupTable = getModel();
+
+    // Commit any in-process edits
+    var tableDefinitionTable = getTableDefinitionTable();
+    if (tableDefinitionTable.isEditing()) {
+      tableDefinitionTable.getCellEditor().stopCellEditing();
+    }
+    String name = getTableNameTextField().getText().trim();
+    if (name.isEmpty()) {
+      MapTool.showError("EditLookupTablePanel.error.noName");
+      return false;
+    }
+    LookupTable existingTable = MapTool.getCampaign().getLookupTableMap().get(name);
+    if (existingTable != null && existingTable != lookupTable) {
+      MapTool.showError(I18N.getText("EditLookupTablePanel.error.sameName", name));
+      return false;
+    }
+    var tableModel = (LookupTableTableModel) tableDefinitionTable.getModel();
+    if (tableModel.getRowCount() < 1) {
+      MapTool.showError(I18N.getText("EditLookupTablePanel.error.invalidSize", name));
+      return false;
+    }
+
+    // save existing name for later removal from LookupTableMap
+    String origname = lookupTable.getName();
+    lookupTable.setName(name);
+    lookupTable.setRoll(getTableRollTextField().getText());
+    lookupTable.setTableImage(tableImageAssetPanel.getImageId());
+    lookupTable.setVisible(getVisibleCheckbox().isSelected());
+    lookupTable.setAllowLookup(getAllowLookupCheckbox().isSelected());
+    lookupTable.clearEntries();
+    for (int i = 0; i < tableModel.getRowCount(); i++) {
+      var row = tableModel.getRowAt(i);
+
+      String range = row.range;
+      if (range.isEmpty()) {
+        continue;
+      }
+      String value = row.value;
+      String imageId = row.imageId;
+
+      int min;
+      int max;
+      int split = range.indexOf('-', range.charAt(0) == '-' ? 1 : 0); // Allow negative numbers
+      try {
+        if (split < 0) {
+          min = Integer.parseInt(range);
+          max = min;
+        } else {
+          min = Integer.parseInt(range.substring(0, split).trim());
+          max = Integer.parseInt(range.substring(split + 1).trim());
+        }
+      } catch (NumberFormatException nfe) {
+        MapTool.showError(I18N.getText("EditLookupTablePanel.error.badRange", name, range, i));
+        return false;
+      }
+      MD5Key image = null;
+      if (imageId != null && !imageId.isEmpty()) {
+        image = new MD5Key(imageId);
+        MapToolUtil.uploadAsset(AssetManager.getAsset(image));
+      }
+      lookupTable.addEntry(min, max, value, image);
+    }
+    if (!name.equals(origname)) {
+      // New name is not the same as the existing name
+      MapTool.getCampaign().getLookupTableMap().remove(origname);
+    }
+    // This will add it if it is new
+    MapToolUtil.uploadAsset(AssetManager.getAsset(tableImageAssetPanel.getImageId()));
+    MapTool.serverCommand().putLookupTable(lookupTable);
+
+    return true;
   }
 
   public JTextField getTableNameTextField() {
@@ -153,95 +258,6 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
   public JCheckBox getAllowLookupCheckbox() {
     return (JCheckBox) getComponent("allowLookupCheckbox");
-  }
-
-  public void initCancelButton() {
-    JButton button = (JButton) getComponent("cancelButton");
-    button.addActionListener(
-        e -> {
-          close();
-        });
-  }
-
-  public void initAcceptButton() {
-    JButton button = (JButton) getComponent("acceptButton");
-    button.addActionListener(
-        e -> {
-          // Commit any in-process edits
-          var tableDefinitionTable = getTableDefinitionTable();
-          if (tableDefinitionTable.isEditing()) {
-            tableDefinitionTable.getCellEditor().stopCellEditing();
-          }
-          String name = getTableNameTextField().getText().trim();
-          if (name.isEmpty()) {
-            MapTool.showError("EditLookupTablePanel.error.noName");
-            return;
-          }
-          LookupTable existingTable = MapTool.getCampaign().getLookupTableMap().get(name);
-          if (existingTable != null && existingTable != lookupTable) {
-            MapTool.showError(I18N.getText("EditLookupTablePanel.error.sameName", name));
-            return;
-          }
-          var tableModel = (LookupTableTableModel) tableDefinitionTable.getModel();
-          if (tableModel.getRowCount() < 1) {
-            MapTool.showError(I18N.getText("EditLookupTablePanel.error.invalidSize", name));
-            return;
-          }
-          String origname =
-              lookupTable.getName(); // save existing name for later removal from LookupTableMap
-          lookupTable.setName(name);
-          lookupTable.setRoll(getTableRollTextField().getText());
-          lookupTable.setTableImage(tableImageAssetPanel.getImageId());
-          lookupTable.setVisible(getVisibleCheckbox().isSelected());
-          lookupTable.setAllowLookup(getAllowLookupCheckbox().isSelected());
-          lookupTable.clearEntries();
-          for (int i = 0; i < tableModel.getRowCount(); i++) {
-            var row = tableModel.getRowAt(i);
-
-            String range = row.range;
-            if (range.isEmpty()) {
-              continue;
-            }
-            String value = row.value;
-            String imageId = row.imageId;
-
-            int min;
-            int max;
-            int split =
-                range.indexOf('-', range.charAt(0) == '-' ? 1 : 0); // Allow negative numbers
-            try {
-              if (split < 0) {
-                min = Integer.parseInt(range);
-                max = min;
-              } else {
-                min = Integer.parseInt(range.substring(0, split).trim());
-                max = Integer.parseInt(range.substring(split + 1).trim());
-              }
-            } catch (NumberFormatException nfe) {
-              MapTool.showError(
-                  I18N.getText("EditLookupTablePanel.error.badRange", name, range, i));
-              return;
-            }
-            MD5Key image = null;
-            if (imageId != null && !imageId.isEmpty()) {
-              image = new MD5Key(imageId);
-              MapToolUtil.uploadAsset(AssetManager.getAsset(image));
-            }
-            lookupTable.addEntry(min, max, value, image);
-          }
-          if (!name.equals(origname)) {
-            // New name is not the same as the existing name
-            MapTool.getCampaign().getLookupTableMap().remove(origname);
-          }
-          // This will add it if it is new
-          MapToolUtil.uploadAsset(AssetManager.getAsset(tableImageAssetPanel.getImageId()));
-          MapTool.serverCommand().putLookupTable(lookupTable);
-          close();
-        });
-  }
-
-  private void close() {
-    SwingUtilities.getWindowAncestor(this).setVisible(false);
   }
 
   private void updateDefinitionTableRowHeights() {
