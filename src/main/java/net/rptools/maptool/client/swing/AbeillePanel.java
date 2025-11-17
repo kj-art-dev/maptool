@@ -169,10 +169,8 @@ public class AbeillePanel<T> extends JPanel {
    */
   public void bind(T model) {
     if (this.model != null) {
-      // Jamz: Don't like this; the bind/unbind on open/close tracking. Binding can get locked on an
-      // exception rendering the dialog in a broken state.
+      log.error("Panel is already bound. Unbinding the old model.");
       unbind();
-      throw new IllegalStateException("Already bound exception");
     }
     this.model = model;
     Binder.bindContainer(model.getClass(), panel, UpdateTime.NEVER);
