@@ -23,10 +23,10 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JList;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -39,21 +39,19 @@ import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.ImageChooserDialog;
 import net.rptools.maptool.client.ui.ImageAssetPanel;
-import net.rptools.maptool.client.ui.lookuptable.EditLookupTablePanel.LookupTableTableModel;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.LookupTable.LookupEntry;
 
-public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
-  private static final long serialVersionUID = 2341539768448195059L;
+public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
+  private static final int RANGE_COLUMN_INDEX = 0;
+  private static final int VALUE_COLUMN_INDEX = 1;
+  private static final int IMAGE_COLUMN_INDEX = 2;
 
   private LookupTable lookupTable;
   private ImageAssetPanel tableImageAssetPanel;
   private int defaultRowHeight;
-
-  private boolean accepted = false;
-  private boolean newTable = false;
 
   public EditLookupTablePanel() {
     super(new EditLookupTablePanelView().getRootComponent());
@@ -71,7 +69,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
               @Override
               public void mousePressed(MouseEvent e) {
                 int column = getTableDefinitionTable().columnAtPoint(e.getPoint());
-                if (column < 2) {
+                if (column != IMAGE_COLUMN_INDEX) {
                   return;
                 }
                 int row = getTableDefinitionTable().rowAtPoint(e.getPoint());
@@ -80,7 +78,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
 
                 // HACK: this is a hacky way to figure out if the button was pushed :P
                 if (e.getPoint().x > getTableDefinitionTable().getSize().width - 15) {
-                  if (imageIdStr == null || imageIdStr.length() == 0) {
+                  if (imageIdStr == null || imageIdStr.isEmpty()) {
                     // Add
                     ImageChooserDialog chooserDialog = MapTool.getFrame().getImageChooserDialog();
                     chooserDialog.setVisible(true);
@@ -121,28 +119,21 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
   }
 
   public void attach(LookupTable luTable) {
-    newTable = luTable == null;
-    lookupTable = newTable ? new LookupTable() : luTable;
-    accepted = false;
+    lookupTable = Objects.requireNonNullElseGet(luTable, LookupTable::new);
 
-    getTableNameTextField().setText(this.lookupTable.getName());
-    getTableRollTextField().setText(this.lookupTable.calculateRoll());
-    tableImageAssetPanel.setImageId(this.lookupTable.getTableImage());
-    getVisibleCheckbox().setSelected(this.lookupTable.getVisible());
-    getAllowLookupCheckbox().setSelected(this.lookupTable.getAllowLookup());
+    getTableNameTextField().setText(lookupTable.getName());
+    getTableRollTextField().setText(lookupTable.calculateRoll());
+    tableImageAssetPanel.setImageId(lookupTable.getTableImage());
+    getVisibleCheckbox().setSelected(lookupTable.getVisible());
+    getAllowLookupCheckbox().setSelected(lookupTable.getAllowLookup());
 
     getTableNameTextField().requestFocusInWindow();
 
     EventQueue.invokeLater(
         () -> {
-          getTableDefinitionTable()
-              .setModel(createLookupTableModel(EditLookupTablePanel.this.lookupTable));
+          getTableDefinitionTable().setModel(createLookupTableModel(lookupTable));
           updateDefinitionTableRowHeights();
         });
-  }
-
-  public boolean accepted() {
-    return accepted;
   }
 
   public JTextField getTableNameTextField() {
@@ -157,10 +148,6 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
     return (JTable) getComponent("definitionTable");
   }
 
-  public JList getTableList() {
-    return (JList) getComponent("tableList");
-  }
-
   public JCheckBox getVisibleCheckbox() {
     return (JCheckBox) getComponent("visibleCheckbox");
   }
@@ -173,7 +160,6 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
     JButton button = (JButton) getComponent("cancelButton");
     button.addActionListener(
         e -> {
-          accepted = false;
           close();
         });
   }
@@ -187,7 +173,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
             getTableDefinitionTable().getCellEditor().stopCellEditing();
           }
           String name = getTableNameTextField().getText().trim();
-          if (name.length() == 0) {
+          if (name.isEmpty()) {
             MapTool.showError("EditLookupTablePanel.error.noName");
             return;
           }
@@ -210,16 +196,15 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
           lookupTable.setAllowLookup(getAllowLookupCheckbox().isSelected());
           lookupTable.clearEntries();
           for (int i = 0; i < tableModel.getRowCount(); i++) {
-            String range = ((String) tableModel.getValueAt(i, 0)).trim();
-            if (range.length() == 0) {
+            String range = ((String) tableModel.getValueAt(i, RANGE_COLUMN_INDEX)).trim();
+            if (range.isEmpty()) {
               continue;
             }
-            String value = ((String) tableModel.getValueAt(i, 1)).trim();
-            String imageId = (String) tableModel.getValueAt(i, 2);
+            String value = ((String) tableModel.getValueAt(i, VALUE_COLUMN_INDEX)).trim();
+            String imageId = (String) tableModel.getValueAt(i, IMAGE_COLUMN_INDEX);
 
-            int min = 0;
-            int max = 0;
-
+            int min;
+            int max;
             int split =
                 range.indexOf('-', range.charAt(0) == '-' ? 1 : 0); // Allow negative numbers
             try {
@@ -236,7 +221,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
               return;
             }
             MD5Key image = null;
-            if (imageId != null && imageId.length() > 0) {
+            if (imageId != null && !imageId.isEmpty()) {
               image = new MD5Key(imageId);
               MapToolUtil.uploadAsset(AssetManager.getAsset(image));
             }
@@ -248,9 +233,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
           }
           // This will add it if it is new
           MapToolUtil.uploadAsset(AssetManager.getAsset(tableImageAssetPanel.getImageId()));
-          MapTool.getCampaign().getLookupTableMap().put(name, lookupTable);
-          MapTool.serverCommand().updateCampaign(MapTool.getCampaign().getCampaignProperties());
-          accepted = true;
+          MapTool.serverCommand().putLookupTable(lookupTable);
           close();
         });
   }
@@ -262,24 +245,22 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
   private void updateDefinitionTableRowHeights() {
     JTable table = getTableDefinitionTable();
     for (int row = 0; row < table.getRowCount(); row++) {
-      String imageId = (String) table.getModel().getValueAt(row, 2);
-      table.setRowHeight(row, imageId != null && imageId.length() > 0 ? 100 : defaultRowHeight);
+      String imageId = (String) table.getModel().getValueAt(row, IMAGE_COLUMN_INDEX);
+      table.setRowHeight(row, imageId != null && !imageId.isEmpty() ? 100 : defaultRowHeight);
     }
   }
 
   private LookupTableTableModel createLookupTableModel(LookupTable lookupTable) {
     List<List<String>> rows = new ArrayList<List<String>>();
-    if (lookupTable != null) {
-      for (LookupEntry entry : lookupTable.getEntryList()) {
-        String range =
-            entry.getMax() != entry.getMin()
-                ? entry.getMin() + "-" + entry.getMax()
-                : "" + entry.getMin();
-        String value = entry.getValue();
-        MD5Key imageId = entry.getImageId();
+    for (LookupEntry entry : lookupTable.getEntryList()) {
+      String range =
+          entry.getMax() != entry.getMin()
+              ? entry.getMin() + "-" + entry.getMax()
+              : "" + entry.getMin();
+      String value = entry.getValue();
+      MD5Key imageId = entry.getImageId();
 
-        rows.add(Arrays.asList(range, value, imageId != null ? imageId.toString() : null));
-      }
+      rows.add(Arrays.asList("false", range, value, imageId != null ? imageId.toString() : null));
     }
     return new LookupTableTableModel(
         rows,
@@ -289,20 +270,15 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
   }
 
   private class ImageCellRenderer extends ImageAssetPanel implements TableCellRenderer {
-    private static final long serialVersionUID = 183503471819640825L;
-
     public Component getTableCellRendererComponent(
         JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-      setImageId(
-          value != null && ((String) value).length() > 0 ? new MD5Key((String) value) : null,
-          EditLookupTablePanel.this);
+      String s = value == null ? "" : Objects.requireNonNullElse(value.toString(), "");
+      setImageId(!s.isEmpty() ? new MD5Key(s) : null, EditLookupTablePanel.this);
       return this;
     }
   }
 
-  static class LookupTableTableModel extends AbstractTableModel {
-    private static final long serialVersionUID = -6310344745803084970L;
-
+  static final class LookupTableTableModel extends AbstractTableModel {
     private List<String> newRow = new ArrayList<String>();
     private final List<List<String>> rowList;
     private final String[] cols;
@@ -355,7 +331,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-      return columnIndex < 2 ? String.class : ImageAssetPanel.class;
+      return columnIndex < IMAGE_COLUMN_INDEX ? String.class : ImageAssetPanel.class;
     }
 
     @Override
@@ -365,13 +341,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTableTableModel> {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-      return columnIndex != 2;
+      return columnIndex != IMAGE_COLUMN_INDEX;
     }
-  }
-
-  public void initToolTips() {
-    getVisibleCheckbox().setToolTipText(I18N.getString("EditLookupTablePanel.tooltip.visible"));
-    getAllowLookupCheckbox()
-        .setToolTipText(I18N.getString("EditLookupTablePanel.tooltip.allowLookup"));
   }
 }

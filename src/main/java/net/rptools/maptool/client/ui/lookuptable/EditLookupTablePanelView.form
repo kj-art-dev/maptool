@@ -128,6 +128,7 @@
           <actionCommand value="Hide Table from Players"/>
           <name value="visibleCheckbox"/>
           <text resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.showplayer"/>
+          <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.tooltip.visible"/>
         </properties>
       </component>
       <component id="b08ff" class="javax.swing.JCheckBox">
@@ -138,6 +139,7 @@
           <actionCommand value="Hide Table from Players"/>
           <name value="allowLookupCheckbox"/>
           <text resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.lookup"/>
+          <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.tooltip.allowLookup"/>
         </properties>
       </component>
       <hspacer id="916d2">
