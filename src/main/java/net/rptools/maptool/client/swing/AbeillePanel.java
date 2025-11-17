@@ -57,7 +57,7 @@ import yasb.swing.BindingResolver;
 public class AbeillePanel<T> extends JPanel {
   private static final Logger log = LogManager.getLogger(AbeillePanel.class);
   private final Container panel;
-  private HashMap<String, Component> componentMap;
+  private HashMap<String, Component> componentMap = new HashMap<>();
   private T model;
 
   static {
@@ -84,6 +84,7 @@ public class AbeillePanel<T> extends JPanel {
     panel = mainPanel;
     setLayout(new BorderLayout());
     add(panel, "Center");
+    collectComponents(panel);
   }
 
   public T getModel() {
@@ -103,10 +104,8 @@ public class AbeillePanel<T> extends JPanel {
     }
   }
 
-  public void replaceComponent(String panelName, String name, Component replacement) {
-    var placeHolder = getComponent(name);
-    var container = (Container) getComponent(panelName);
-    Object constraints = null;
+  public void replaceComponent(Container container, Component placeHolder, Component replacement) {
+    Object constraints;
     var layout = container.getLayout();
     switch (layout) {
       case GridLayoutManager gridLayoutManager -> {
@@ -122,13 +121,18 @@ public class AbeillePanel<T> extends JPanel {
     container.add(replacement, constraints);
     container.revalidate();
     container.repaint();
-    componentMap.remove(name);
+    componentMap.remove(placeHolder.getName());
     collectComponents(replacement);
   }
 
-  private void createComponentMap() {
-    componentMap = new HashMap<>();
-    collectComponents(panel);
+  public void replaceComponent(Component component, Component replacement) {
+    replaceComponent(component.getParent(), component, replacement);
+  }
+
+  public void replaceComponent(String panelName, String name, Component replacement) {
+    var placeHolder = getComponent(name);
+    var container = (Container) getComponent(panelName);
+    replaceComponent(container, placeHolder, replacement);
   }
 
   private void collectComponents(Component component) {
@@ -146,9 +150,6 @@ public class AbeillePanel<T> extends JPanel {
   }
 
   public Component getComponent(String name) {
-    if (componentMap == null) {
-      createComponentMap();
-    }
     if (componentMap.containsKey(name)) {
       return (Component) componentMap.get(name);
     }
@@ -230,9 +231,6 @@ public class AbeillePanel<T> extends JPanel {
   }
 
   public Collection<Component> getAllComponents() {
-    if (componentMap == null) {
-      createComponentMap();
-    }
     return componentMap.values();
   }
 
