@@ -69,7 +69,7 @@ public class StartServerDialog extends AbeillePanel<StartServerDialogPreferences
               // We don't have a good, server-side way of testing anymore.
               boolean ok = MapTool.confirm("msg.info.server.networkingHelp");
               if (ok) {
-                MapTool.showDocument(I18N.getString("msg.info.server.forumNFAQ_URL"));
+                MapTool.showDocument("https://forums.rptools.net/viewtopic.php?f=22&t=3370");
               }
             })
         .addButton(

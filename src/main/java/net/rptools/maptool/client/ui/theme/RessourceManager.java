@@ -17,8 +17,6 @@ package net.rptools.maptool.client.ui.theme;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.TreeSet;
 import javax.swing.*;
@@ -129,6 +127,7 @@ public class RessourceManager {
           put(Icons.GRID_SQUARE, IMAGE_DIR + "gridSquare.png");
           put(Icons.INITIATIVE_CURRENT_INDICATOR, IMAGE_DIR + "currentIndicator.png");
           put(Icons.MAPTOOL, IMAGE_DIR + "maptool_icon.png");
+          put(Icons.MENU_DISCORD, IMAGE_DIR + "discord.svg");
           put(Icons.MENU_DOCUMENTATION, IMAGE_DIR + "book_open.png");
           put(Icons.MENU_FORUMS, IMAGE_DIR + "marker.png");
           put(Icons.MENU_FRAMEWORKS, IMAGE_DIR + "minilogo.png");
@@ -363,6 +362,7 @@ public class RessourceManager {
           put(Icons.GRID_NONE, ROD_ICONS + "cross.svg");
           put(Icons.GRID_SQUARE, ROD_ICONS + "gridSquare.svg");
           put(Icons.MAPTOOL, ROD_ICONS + "maptool_icon.svg");
+          put(Icons.MENU_DISCORD, ROD_ICONS + "menu/Discord.svg");
           put(Icons.MENU_DOCUMENTATION, ROD_ICONS + "menu/Documentation.svg");
           put(Icons.MENU_FORUMS, ROD_ICONS + "menu/Forums.svg");
           put(Icons.MENU_FRAMEWORKS, ROD_ICONS + "menu/Frameworks.svg");
@@ -617,44 +617,6 @@ public class RessourceManager {
     System.out.println("Missing icons:");
     for (var key : missing) {
       System.out.println(key + " classic: " + classicIcons.get(key));
-    }
-  }
-
-  public static void checkMissingFiles() {
-    String basedir = "C:\\Users\\tkunze\\Source\\maptool\\src\\main\\resources\\";
-    for (String value : images.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-      var target = Path.of(basedir, IMAGE_DIR, "images", source.getFileName().toString());
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
-    }
-    for (String value : classicIcons.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
-    }
-    for (String value : rodIcons.values()) {
-      if (value == null) {
-        continue;
-      }
-
-      var source = Path.of(basedir, value);
-
-      if (Files.notExists(source)) {
-        System.out.println(value + " is missing!");
-      }
     }
   }
 }
