@@ -24,9 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
-import javax.swing.JCheckBox;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -51,11 +49,13 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
 
   private final GenericDialogFactory dialogFactory;
 
+  private final EditLookupTablePanelView view;
   private ImageAssetPanel tableImageAssetPanel;
   private int defaultRowHeight;
 
-  public EditLookupTablePanel() {
-    super(new EditLookupTablePanelView().getRootComponent());
+  private EditLookupTablePanel(EditLookupTablePanelView view) {
+    super(view.getRootComponent());
+    this.view = view;
     panelInit();
 
     dialogFactory =
@@ -72,6 +72,10 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
                 });
   }
 
+  public EditLookupTablePanel() {
+    this(new EditLookupTablePanelView());
+  }
+
   public void showDialog(@Nullable LookupTable lookupTable, boolean isNew) {
     var title =
         isNew || lookupTable == null
@@ -85,78 +89,79 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
   }
 
   public void initTableDefinitionTable() {
-    defaultRowHeight = getTableDefinitionTable().getRowHeight();
+    JTable definitionTable = view.getDefinitionTable();
 
-    getTableDefinitionTable().setDefaultRenderer(ImageAssetPanel.class, new ImageCellRenderer());
-    getTableDefinitionTable().setModel(createLookupTableModel(new LookupTable()));
-    getTableDefinitionTable()
-        .addMouseListener(
-            new MouseAdapter() {
-              @Override
-              public void mousePressed(MouseEvent e) {
-                int column = getTableDefinitionTable().columnAtPoint(e.getPoint());
-                if (column != IMAGE_COLUMN_INDEX) {
+    defaultRowHeight = definitionTable.getRowHeight();
+
+    definitionTable.setDefaultRenderer(ImageAssetPanel.class, new ImageCellRenderer());
+    definitionTable.setModel(createLookupTableModel(new LookupTable()));
+    definitionTable.addMouseListener(
+        new MouseAdapter() {
+          @Override
+          public void mousePressed(MouseEvent e) {
+            int column = definitionTable.columnAtPoint(e.getPoint());
+            if (column != IMAGE_COLUMN_INDEX) {
+              return;
+            }
+            int row = definitionTable.rowAtPoint(e.getPoint());
+            String imageIdStr = (String) definitionTable.getModel().getValueAt(row, column);
+
+            // HACK: this is a hacky way to figure out if the button was pushed :P
+            if (e.getPoint().x > definitionTable.getSize().width - 15) {
+              if (imageIdStr == null || imageIdStr.isEmpty()) {
+                // Add
+                ImageChooserDialog chooserDialog = MapTool.getFrame().getImageChooserDialog();
+                chooserDialog.setVisible(true);
+
+                MD5Key imageId = chooserDialog.getImageId();
+                if (imageId == null) {
                   return;
                 }
-                int row = getTableDefinitionTable().rowAtPoint(e.getPoint());
-                String imageIdStr =
-                    (String) getTableDefinitionTable().getModel().getValueAt(row, column);
-
-                // HACK: this is a hacky way to figure out if the button was pushed :P
-                if (e.getPoint().x > getTableDefinitionTable().getSize().width - 15) {
-                  if (imageIdStr == null || imageIdStr.isEmpty()) {
-                    // Add
-                    ImageChooserDialog chooserDialog = MapTool.getFrame().getImageChooserDialog();
-                    chooserDialog.setVisible(true);
-
-                    MD5Key imageId = chooserDialog.getImageId();
-                    if (imageId == null) {
-                      return;
-                    }
-                    imageIdStr = imageId.toString();
-                  } else {
-                    // Cancel
-                    imageIdStr = null;
-                  }
-                } else if (e.getPoint().x > getTableDefinitionTable().getSize().width - 30) {
-                  // Add
-                  ImageChooserDialog chooserDialog = MapTool.getFrame().getImageChooserDialog();
-
-                  chooserDialog.setVisible(true);
-
-                  MD5Key imageId = chooserDialog.getImageId();
-                  if (imageId == null) {
-                    return;
-                  }
-                  imageIdStr = imageId.toString();
-                }
-                getTableDefinitionTable().getModel().setValueAt(imageIdStr, row, column);
-                updateDefinitionTableRowHeights();
-                getTableDefinitionTable().repaint();
+                imageIdStr = imageId.toString();
+              } else {
+                // Cancel
+                imageIdStr = null;
               }
-            });
+            } else if (e.getPoint().x > definitionTable.getSize().width - 30) {
+              // Add
+              ImageChooserDialog chooserDialog = MapTool.getFrame().getImageChooserDialog();
+
+              chooserDialog.setVisible(true);
+
+              MD5Key imageId = chooserDialog.getImageId();
+              if (imageId == null) {
+                return;
+              }
+              imageIdStr = imageId.toString();
+            }
+            definitionTable.getModel().setValueAt(imageIdStr, row, column);
+            updateDefinitionTableRowHeights();
+            definitionTable.repaint();
+          }
+        });
   }
 
   public void initTableImage() {
     tableImageAssetPanel = new ImageAssetPanel();
     tableImageAssetPanel.setPreferredSize(new Dimension(150, 150));
     tableImageAssetPanel.setBorder(BorderFactory.createLineBorder(Color.black));
-    replaceComponent("tableImagePanel", "tableImage", tableImageAssetPanel);
+
+    replaceComponent(view.getTableImagePlaceholder(), tableImageAssetPanel);
   }
 
   @Override
   public void bind(LookupTable lookupTable) {
     super.bind(lookupTable);
 
-    getTableNameTextField().setText(lookupTable.getName());
-    getTableRollTextField().setText(lookupTable.calculateRoll());
+    view.getTableName().setText(lookupTable.getName());
+    view.getDefaultTableRoll().setText(lookupTable.calculateRoll());
     tableImageAssetPanel.setImageId(lookupTable.getTableImage());
-    getVisibleCheckbox().setSelected(lookupTable.getVisible());
-    getAllowLookupCheckbox().setSelected(lookupTable.getAllowLookup());
+    view.getIsVisible().setSelected(lookupTable.getVisible());
+    view.getAllowLookup().setSelected(lookupTable.getAllowLookup());
 
-    getTableNameTextField().requestFocusInWindow();
+    view.getTableName().requestFocusInWindow();
 
-    getTableDefinitionTable().setModel(createLookupTableModel(lookupTable));
+    view.getDefinitionTable().setModel(createLookupTableModel(lookupTable));
     updateDefinitionTableRowHeights();
   }
 
@@ -169,11 +174,11 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     var lookupTable = getModel();
 
     // Commit any in-process edits
-    var tableDefinitionTable = getTableDefinitionTable();
-    if (tableDefinitionTable.isEditing()) {
-      tableDefinitionTable.getCellEditor().stopCellEditing();
+    var definitionTable = view.getDefinitionTable();
+    if (definitionTable.isEditing()) {
+      definitionTable.getCellEditor().stopCellEditing();
     }
-    String name = getTableNameTextField().getText().trim();
+    String name = view.getTableName().getText().trim();
     if (name.isEmpty()) {
       MapTool.showError("EditLookupTablePanel.error.noName");
       return false;
@@ -183,7 +188,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       MapTool.showError(I18N.getText("EditLookupTablePanel.error.sameName", name));
       return false;
     }
-    var tableModel = (LookupTableTableModel) tableDefinitionTable.getModel();
+    var tableModel = (LookupTableTableModel) definitionTable.getModel();
     if (tableModel.getRowCount() < 1) {
       MapTool.showError(I18N.getText("EditLookupTablePanel.error.invalidSize", name));
       return false;
@@ -192,10 +197,10 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     // save existing name for later removal from LookupTableMap
     String origname = lookupTable.getName();
     lookupTable.setName(name);
-    lookupTable.setRoll(getTableRollTextField().getText());
+    lookupTable.setRoll(view.getDefaultTableRoll().getText());
     lookupTable.setTableImage(tableImageAssetPanel.getImageId());
-    lookupTable.setVisible(getVisibleCheckbox().isSelected());
-    lookupTable.setAllowLookup(getAllowLookupCheckbox().isSelected());
+    lookupTable.setVisible(view.getIsVisible().isSelected());
+    lookupTable.setAllowLookup(view.getAllowLookup().isSelected());
     lookupTable.clearEntries();
     for (int i = 0; i < tableModel.getRowCount(); i++) {
       var row = tableModel.getRowAt(i);
@@ -240,28 +245,8 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     return true;
   }
 
-  public JTextField getTableNameTextField() {
-    return (JTextField) getComponent("tableName");
-  }
-
-  public JTextField getTableRollTextField() {
-    return (JTextField) getComponent("defaultTableRoll");
-  }
-
-  public JTable getTableDefinitionTable() {
-    return (JTable) getComponent("definitionTable");
-  }
-
-  public JCheckBox getVisibleCheckbox() {
-    return (JCheckBox) getComponent("visibleCheckbox");
-  }
-
-  public JCheckBox getAllowLookupCheckbox() {
-    return (JCheckBox) getComponent("allowLookupCheckbox");
-  }
-
   private void updateDefinitionTableRowHeights() {
-    JTable table = getTableDefinitionTable();
+    JTable table = view.getDefinitionTable();
     for (int row = 0; row < table.getRowCount(); row++) {
       String imageId = (String) table.getModel().getValueAt(row, IMAGE_COLUMN_INDEX);
       table.setRowHeight(row, imageId != null && !imageId.isEmpty() ? 100 : defaultRowHeight);

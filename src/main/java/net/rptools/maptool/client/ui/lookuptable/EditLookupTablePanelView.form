@@ -17,10 +17,9 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="6ecc8" class="javax.swing.JTable">
+          <component id="6ecc8" class="javax.swing.JTable" binding="definitionTable">
             <constraints/>
             <properties>
-              <name value="definitionTable"/>
               <preferredScrollableViewportSize width="450" height="150"/>
             </properties>
           </component>
@@ -42,12 +41,11 @@
               <text resource-bundle="net/rptools/maptool/language/i18n" key="Label.name"/>
             </properties>
           </component>
-          <component id="7dcb2" class="javax.swing.JTextField">
+          <component id="7dcb2" class="javax.swing.JTextField" binding="tableName">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <name value="tableName"/>
               <text value=""/>
             </properties>
           </component>
@@ -59,12 +57,11 @@
               <text resource-bundle="net/rptools/maptool/language/i18n" key="Label.roll"/>
             </properties>
           </component>
-          <component id="3f336" class="javax.swing.JTextField">
+          <component id="3f336" class="javax.swing.JTextField" binding="defaultTableRoll">
             <constraints>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <name value="defaultTableRoll"/>
               <text value=""/>
             </properties>
           </component>
@@ -77,24 +74,22 @@
               <text resource-bundle="net/rptools/maptool/language/i18n" key="Label.blankdefault"/>
             </properties>
           </component>
-          <component id="a72c8" class="javax.swing.JCheckBox">
+          <component id="a72c8" class="javax.swing.JCheckBox" binding="isVisible">
             <constraints>
               <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <actionCommand value="Hide Table from Players"/>
-              <name value="visibleCheckbox"/>
               <text resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.showplayer"/>
               <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.tooltip.visible"/>
             </properties>
           </component>
-          <component id="b08ff" class="javax.swing.JCheckBox">
+          <component id="b08ff" class="javax.swing.JCheckBox" binding="allowLookup">
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <actionCommand value="Hide Table from Players"/>
-              <name value="allowLookupCheckbox"/>
               <text resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.lookup"/>
               <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="EditLookupTablePanel.tooltip.allowLookup"/>
             </properties>
@@ -114,17 +109,14 @@
             <constraints>
               <grid row="0" column="3" row-span="5" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <name value="tableImagePanel"/>
-            </properties>
+            <properties/>
             <border type="empty" title-resource-bundle="net/rptools/maptool/language/i18n" title-key="Label.table.image"/>
             <children>
-              <component id="4c3ba" class="javax.swing.JLabel">
+              <component id="4c3ba" class="javax.swing.JLabel" binding="tableImagePlaceholder">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <name value="tableImage"/>
                   <text resource-bundle="net/rptools/maptool/language/i18n" key="Label.table.image"/>
                 </properties>
               </component>
