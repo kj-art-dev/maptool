@@ -141,7 +141,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
     tableImageAssetPanel = new ImageAssetPanel();
     tableImageAssetPanel.setPreferredSize(new Dimension(150, 150));
     tableImageAssetPanel.setBorder(BorderFactory.createLineBorder(Color.black));
-    replaceComponent("mainForm", "tableImage", tableImageAssetPanel);
+    replaceComponent("tableImagePanel", "tableImage", tableImageAssetPanel);
   }
 
   @Override
