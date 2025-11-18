@@ -60,7 +60,7 @@ public class LookupTable {
     return defaultRoll;
   }
 
-  public void setRoll(String roll) {
+  public void setRoll(@Nullable String roll) {
     defaultRoll = roll;
   }
 
@@ -68,8 +68,10 @@ public class LookupTable {
     entryList.clear();
   }
 
-  public void addEntry(int min, int max, String result, MD5Key imageId) {
-    entryList.add(new LookupEntry(min, max, result, imageId));
+  public LookupEntry addEntry(int min, int max, String result, MD5Key imageId) {
+    var newEntry = new LookupEntry(min, max, result, imageId);
+    entryList.add(newEntry);
+    return newEntry;
   }
 
   public String calculateRoll() {
