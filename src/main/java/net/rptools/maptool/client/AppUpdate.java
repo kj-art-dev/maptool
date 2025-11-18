@@ -44,7 +44,7 @@ public class AppUpdate {
    * @return has an update been made
    */
   public static boolean gitHubReleases() {
-    if (AppPreferences.skipAutoUpdate.get()) {
+    if (MapTool.isDevelopment() || AppPreferences.skipAutoUpdate.get()) {
       return false;
     }
 

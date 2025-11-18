@@ -56,9 +56,7 @@ public class LaunchInstructions {
 
       MapTool.main(args);
 
-      if (!MapTool.isDevelopment()) {
-        AppUpdate.gitHubReleases();
-      }
+      AppUpdate.gitHubReleases();
     } catch (Throwable e) {
       // IMPORTANT: don't move this logger init to class-level because we need AppUtil.initLogging()
       // to run before any loggers are initialized. Yes, it's brittle, but c'est la vie.
