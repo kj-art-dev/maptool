@@ -1268,26 +1268,16 @@ public class MapTool {
           ThemePainter painter = (ThemePainter) UIDefaultsLookup.get("Theme.painter");
           defaults.put("OptionPaneUI", "com.jidesoft.plaf.basic.BasicJideOptionPaneUI");
 
-          defaults.put("OptionPane.showBanner", Boolean.TRUE); // show banner or not. default
-          // is true
+          // show banner or not. default is true
+          defaults.put("OptionPane.showBanner", Boolean.FALSE);
           defaults.put("OptionPane.bannerIcon", RessourceManager.getSmallIcon(Icons.MAPTOOL));
           defaults.put("OptionPane.bannerFontSize", 13);
           defaults.put("OptionPane.bannerFontStyle", Font.BOLD);
           defaults.put("OptionPane.bannerMaxCharsPerLine", 60);
+          // you should adjust this if banner background is not the default gradient paint
           defaults.put(
               "OptionPane.bannerForeground",
-              painter != null ? painter.getOptionPaneBannerForeground() : null); // you
-          // should
-          // adjust
-          // this
-          // if
-          // banner
-          // background
-          // is
-          // not
-          // the
-          // default
-          // gradient paint
+              painter != null ? painter.getOptionPaneBannerForeground() : null);
           defaults.put("OptionPane.bannerBorder", null); // use default border
 
           // set both bannerBackgroundDk and bannerBackgroundLt to null if you don't want
@@ -1298,8 +1288,8 @@ public class MapTool {
           defaults.put(
               "OptionPane.bannerBackgroundLt",
               painter != null ? painter.getOptionPaneBannerLt() : null);
-          defaults.put("OptionPane.bannerBackgroundDirection", Boolean.TRUE); // default is
-          // true
+          // default is true
+          defaults.put("OptionPane.bannerBackgroundDirection", Boolean.TRUE);
 
           // optionally, you can set a Paint object for BannerPanel. If so, the three
           // UIDefaults
