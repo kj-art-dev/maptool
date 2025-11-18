@@ -337,7 +337,10 @@ public class GenericDialog extends JDialog {
     if (this._content instanceof AbeillePanel<?> abeillePanel && abeillePanel.getModel() != null) {
       // wrap up any AbeillePanel commits and unbinding
       if (this.getDialogResult().equals(AFFIRM)) {
-        abeillePanel.commit();
+        if (!abeillePanel.commit()) {
+          // Do not close the dialog since validation failed.
+          return;
+        }
       }
       abeillePanel.unbind();
     }
