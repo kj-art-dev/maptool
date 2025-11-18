@@ -48,8 +48,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
-  private static final long serialVersionUID = -1709712124453405062L;
-
   private static final Logger log = LogManager.getLogger(AddResourceDialog.class);
 
   private static final String LIBRARY_URL = "http://library.rptools.net/1.3";
@@ -66,10 +64,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
           .setDialogTitle(I18N.getText("action.addIconSelector"))
           .addButton(ButtonKind.CANCEL)
           .setCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-  private Model model;
   private boolean downloadLibraryListInitiated;
-
-  private boolean install = false;
 
   public AddResourceDialog() {
     super(new AddRessourcesDialogView().getRootComponent());
@@ -77,30 +72,13 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     panelInit();
     dialogFactory
         .setContent(this)
-        .addButton(
-            ButtonKind.INSTALL,
-            e -> {
-              install = true;
-              if (commit()) {
-                dialogFactory.getDialog().closeDialog();
-              }
-            })
+        .addButton(ButtonKind.INSTALL)
         .setDefaultButton(ButtonKind.INSTALL);
   }
 
-  public boolean getInstall() {
-    return install;
-  }
-
   public void showDialog() {
-    model = new Model();
-    bind(model);
+    bind(new Model());
     dialogFactory.display();
-  }
-
-  @Override
-  public Model getModel() {
-    return model;
   }
 
   public JTextField getBrowseTextField() {
@@ -132,6 +110,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
         .addChangeListener(
             e -> {
               // Hmmm, this is fragile (breaks if the order changes) rethink this later
+              var model = getModel();
               switch (tabPane.getSelectedIndex()) {
                 case 0 -> model.tab = Tab.LOCAL;
                 case 1 -> model.tab = Tab.WEB;
@@ -196,6 +175,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     // Add the resource
     final List<LibraryRow> rowList = new ArrayList<>();
 
+    var model = getModel();
     switch (model.getTab()) {
       case LOCAL -> {
         if (StringUtils.isEmpty(model.getLocalDirectory())) {
