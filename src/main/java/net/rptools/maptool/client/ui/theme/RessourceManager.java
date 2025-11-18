@@ -18,7 +18,6 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.TreeSet;
 import javax.swing.*;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
@@ -598,25 +597,5 @@ public class RessourceManager {
     RESULT ressourceObject = creator.create(ressourcePath);
     cache.put(cachekey, ressourceObject);
     return ressourceObject;
-  }
-
-  public static void main(String[] args) {
-    checkMissingIcons(classicIcons, rodIcons);
-  }
-
-  private static void checkMissingIcons(
-      HashMap<Icons, String> classicIcons, HashMap<Icons, String> rodIcons) {
-    var missing = new TreeSet<Icons>();
-    for (var key : classicIcons.keySet()) {
-      if (rodIcons.containsKey(key)) {
-        continue;
-      }
-      missing.add(key);
-    }
-
-    System.out.println("Missing icons:");
-    for (var key : missing) {
-      System.out.println(key + " classic: " + classicIcons.get(key));
-    }
   }
 }
