@@ -25,6 +25,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.*;
 import javax.swing.*;
+import net.rptools.lib.FileUtil;
 import net.rptools.lib.ModelVersionManager;
 import net.rptools.lib.OsDetection;
 import net.rptools.maptool.language.I18N;
@@ -297,7 +298,7 @@ public class AppUpdate {
         chosenLocation = null;
       }
     }
-    final File saveLocation = chooser.getSelectedFile();
+    final File saveLocation = chosenLocation;
 
     log.info("URL: {}", assetDownloadURL);
     log.info("assetDownloadSize: {}", assetDownloadSize);
@@ -318,7 +319,14 @@ public class AppUpdate {
             pm.setMaximum((int) assetDownloadSize);
 
             FileUtils.copyInputStreamToFile(pmis, saveLocation);
+          } catch (InterruptedIOException e) {
+            // Progress monitor was canceled. This is not an error, unlike other IOExceptions, so
+            // ignore it.
+            // Don't leave partial files around.
+            FileUtil.delete(saveLocation);
           } catch (IOException ioe) {
+            // Don't leave potential broken files around..
+            FileUtil.delete(saveLocation);
             MapTool.showError("msg.error.failedSavingNewVersion", ioe);
           }
         };
