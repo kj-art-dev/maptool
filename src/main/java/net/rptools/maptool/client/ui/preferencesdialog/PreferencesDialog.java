@@ -504,6 +504,9 @@ public class PreferencesDialog extends AbeillePanel {
   // ** Checkbox for loading the most recently used campaign on startup */
   private final JCheckBox loadMRUcheckbox = getCheckBox("loadMRU");
 
+  // ** Checkbox for loading the most recently used campaign on startup */
+  private final JCheckBox checkUpdatesCheckbox = getCheckBox("checkUpdatesAtStartup");
+
   /** status bar scrolling checkbox */
   private final JCheckBox statusScrollEnable = getCheckBox("statusScrollEnable");
 
@@ -1048,6 +1051,8 @@ public class PreferencesDialog extends AbeillePanel {
 
     loadMRUcheckbox.addActionListener(
         e -> AppPreferences.loadMruCampaignAtStart.set(loadMRUcheckbox.isSelected()));
+    checkUpdatesCheckbox.addActionListener(
+        e -> AppPreferences.skipAutoUpdate.set(!checkUpdatesCheckbox.isSelected()));
     allowExternalMacroAccessCheckBox.addActionListener(
         e ->
             AppPreferences.allowExternalMacroAccess.set(
@@ -1668,6 +1673,7 @@ public class PreferencesDialog extends AbeillePanel {
     defaultUsername.setText(AppPreferences.defaultUserName.get());
     autoSaveSpinner.setValue(AppPreferences.autoSaveIncrement.get());
     loadMRUcheckbox.setSelected(AppPreferences.loadMruCampaignAtStart.get());
+    checkUpdatesCheckbox.setSelected(!AppPreferences.skipAutoUpdate.get());
     newMapsHaveFOWCheckBox.setSelected(AppPreferences.newMapsHaveFow.get());
     tokensPopupWarningWhenDeletedCheckBox.setSelected(AppPreferences.tokensWarnWhenDeleted.get());
     tokensStartSnapToGridCheckBox.setSelected(AppPreferences.tokensStartSnapToGrid.get());
