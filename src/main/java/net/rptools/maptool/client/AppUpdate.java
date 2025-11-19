@@ -19,10 +19,8 @@ import java.io.*;
 import java.net.*;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.*;
@@ -115,66 +113,50 @@ public class AppUpdate {
 
   /**
    * Look for a newer version of MapTool. If a newer release is found and the AppPreferences tell us
-   * the update should not be ignored, give a prompt to update.
+   * the update should not be ignored, return the information for the release.
    *
-   * @return has an update been made
+   * @return The release information for the latest release, if it is newer. If there is no newer
+   *     release, {@code Optional.empty()}.
    */
-  public static boolean gitHubReleases() {
-    if (MapTool.isDevelopment() || AppPreferences.skipAutoUpdate.get()) {
-      return false;
+  public static CompletionStage<Optional<ReleaseInfo>> autoUpdateCheck() {
+    if (MapTool.isDevelopment()) {
+      log.info("Development build. Skipping update check");
+      return CompletableFuture.completedStage(Optional.empty());
+    }
+    if (AppPreferences.skipAutoUpdate.get()) {
+      log.info("Automatic updates have been disabled via preferences. Skipping update check");
+      return CompletableFuture.completedStage(Optional.empty());
     }
 
     String runningVersion = getImplementationVersion();
     if (StringUtils.isBlank(runningVersion)) {
       log.info("Blank implementation version detected, not checking for updates.");
-      return false;
+      return CompletableFuture.completedStage(Optional.empty());
     }
 
-    var future =
-        getLatestRelease()
-            .thenApply(
-                latestReleaseOptional -> {
-                  if (latestReleaseOptional.isEmpty()) {
-                    log.info("Did not find a latest release asset");
-                    return Optional.<ReleaseInfo>empty();
-                  }
+    return getLatestRelease()
+        .thenApply(
+            latestReleaseOptional -> {
+              if (latestReleaseOptional.isEmpty()) {
+                log.info("Did not find a latest release asset");
+                return Optional.empty();
+              }
 
-                  var latestRelease = latestReleaseOptional.get();
-                  if (AppPreferences.skipAutoUpdateRelease.get().equals(latestRelease.id())) {
-                    log.info("Release {} skipped by user request", latestRelease.version());
-                    return Optional.<ReleaseInfo>empty();
-                  }
-                  if (!ModelVersionManager.isBefore(runningVersion, latestRelease.version())) {
-                    log.info(
-                        "Skipping release {} as it is not newer than the current version {}",
-                        latestRelease.version(),
-                        runningVersion);
-                    return Optional.<ReleaseInfo>empty();
-                  }
+              var latestRelease = latestReleaseOptional.get();
+              if (AppPreferences.skipAutoUpdateRelease.get().equals(latestRelease.id())) {
+                log.info("Release {} skipped by user request", latestRelease.version());
+                return Optional.empty();
+              }
+              if (!ModelVersionManager.isBefore(runningVersion, latestRelease.version())) {
+                log.info(
+                    "Skipping release {} as it is not newer than the current version {}",
+                    latestRelease.version(),
+                    runningVersion);
+                return Optional.empty();
+              }
 
-                  return latestReleaseOptional;
-                })
-            .toCompletableFuture();
-
-    try {
-      var optional = future.get();
-      if (optional.isPresent()) {
-        // Ask the user if we should download it.
-        var latestRelease = optional.get();
-        if (confirmUpdate(optional.get(), true)) {
-          downloadFile(latestRelease.assetUrl(), latestRelease.assetSize());
-        }
-        return true;
-      } else {
-        return false;
-      }
-    } catch (CancellationException | InterruptedException e) {
-      log.info("Cancelled update check", e);
-      return false;
-    } catch (ExecutionException e) {
-      log.warn("Failed to find latest release", e);
-      return false;
-    }
+              return latestReleaseOptional;
+            });
   }
 
   /**

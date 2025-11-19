@@ -44,6 +44,9 @@ import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import javafx.application.Platform;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -63,6 +66,7 @@ import net.rptools.lib.image.ThumbnailManager;
 import net.rptools.lib.net.RPTURLStreamHandlerFactory;
 import net.rptools.lib.net.SyrinscapeURLStreamHandler;
 import net.rptools.lib.sound.SoundManager;
+import net.rptools.maptool.client.AppUpdate.ReleaseInfo;
 import net.rptools.maptool.client.MapToolConnection.HandshakeCompletionObserver;
 import net.rptools.maptool.client.events.ChatMessageAdded;
 import net.rptools.maptool.client.events.ServerDisconnected;
@@ -1527,6 +1531,19 @@ public class MapTool {
     }
   }
 
+  private static Optional<ReleaseInfo> waitForUpdateInfo(
+      CompletionStage<Optional<ReleaseInfo>> updateFuture) {
+    try {
+      return updateFuture.toCompletableFuture().get();
+    } catch (CancellationException | InterruptedException e) {
+      log.info("Cancelled update check", e);
+      return Optional.empty();
+    } catch (ExecutionException e) {
+      log.warn("Failed to find latest release", e);
+      return Optional.empty();
+    }
+  }
+
   public static void main(String[] args) {
     log.info("********************************************************************************");
     log.info("**                                                                            **");
@@ -1534,6 +1551,9 @@ public class MapTool {
     log.info("**                                                                            **");
     log.info("********************************************************************************");
     log.info("Logging to: " + getLoggerFileName());
+
+    // Start the update check early. Will be handled after the splash screen goes away.
+    var updateFuture = AppUpdate.autoUpdateCheck();
 
     String versionImplementation = version;
     String versionOverride = version;
@@ -1785,10 +1805,24 @@ public class MapTool {
 
           EventQueue.invokeLater(
               () -> {
+                // Wait for the release information before transitioning away from the splash.
+                final Optional<ReleaseInfo> release = waitForUpdateInfo(updateFuture);
+
                 clientFrame.setVisible(true);
                 splash.setVisible(false);
                 splash.dispose();
-                EventQueue.invokeLater(MapTool::postInitialize);
+
+                EventQueue.invokeLater(
+                    () -> {
+                      release.ifPresent(
+                          r -> {
+                            if (AppUpdate.confirmUpdate(r, true)) {
+                              AppUpdate.downloadFile(r.assetUrl(), r.assetSize());
+                            }
+                          });
+
+                      MapTool.postInitialize();
+                    });
               });
         });
   }
