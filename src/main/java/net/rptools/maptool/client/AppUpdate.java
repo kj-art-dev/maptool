@@ -306,10 +306,10 @@ public class AppUpdate {
     Runnable updatethread =
         () -> {
           try (InputStream stream = assetDownloadURL.openStream()) {
-            // TODO I18N
             ProgressMonitorInputStream pmis =
-                new ProgressMonitorInputStream(MapTool.getFrame(), "Downloading...\n", stream);
-            UIManager.put("ProgressMonitor.progressText", "New Update");
+                new ProgressMonitorInputStream(
+                    MapTool.getFrame(), I18N.getText("Update.downloading"), stream);
+            UIManager.put("ProgressMonitor.progressText", I18N.getText("Update.downloadingTitle"));
 
             ProgressMonitor pm = pmis.getProgressMonitor();
             pm.setMillisToDecideToPopup(500);
