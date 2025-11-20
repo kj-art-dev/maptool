@@ -198,7 +198,7 @@
                   <component id="bdf01" class="javax.swing.JList">
                     <constraints/>
                     <properties>
-                      <name value="@rptoolsList"/>
+                      <name value="rptoolsList"/>
                     </properties>
                   </component>
                 </children>
