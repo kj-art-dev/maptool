@@ -222,52 +222,64 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       MapTool.showError(I18N.getText("EditLookupTablePanel.error.invalidSize", name));
       return false;
     }
+    var isPickOnce = view.getPickOnce().isSelected();
+
+    // Before modifying the table, parse and validate all the entries to avoid partial modification
+    // in case of error.
+    var entries = new ArrayList<LookupTable.LookupEntry>();
+    for (int i = 0; i < tableModel.getRowCount(); i++) {
+      var row = tableModel.getRowAt(i);
+      if (row.range.isEmpty()) {
+        continue;
+      }
+
+      int min;
+      int max;
+      // Allow negative numbers
+      int split = row.range.indexOf('-', row.range.charAt(0) == '-' ? 1 : 0);
+      try {
+        if (split < 0) {
+          min = Integer.parseInt(row.range);
+          max = min;
+        } else {
+          min = Integer.parseInt(row.range.substring(0, split).trim());
+          max = Integer.parseInt(row.range.substring(split + 1).trim());
+        }
+      } catch (NumberFormatException nfe) {
+        MapTool.showError(I18N.getText("EditLookupTablePanel.error.badRange", name, row.range, i));
+        return false;
+      }
+
+      MD5Key image = null;
+      if (row.imageId != null && !row.imageId.isEmpty()) {
+        image = new MD5Key(row.imageId);
+        MapToolUtil.uploadAsset(AssetManager.getAsset(image));
+      }
+
+      var entry = new LookupEntry(min, max, row.value, image);
+      if (isPickOnce) {
+        entry.setPicked(row.picked);
+      }
+      entries.add(entry);
+    }
 
     // save existing name for later removal from LookupTableMap
     String origname = lookupTable.getName();
     lookupTable.setName(name);
-    lookupTable.setPickOnce(view.getPickOnce().isSelected());
-    lookupTable.setRoll(lookupTable.getPickOnce() ? null : view.getDefaultTableRoll().getText());
+    lookupTable.setPickOnce(isPickOnce);
+    lookupTable.setRoll(isPickOnce ? null : view.getDefaultTableRoll().getText());
     lookupTable.setTableImage(tableImageAssetPanel.getImageId());
     lookupTable.setVisible(view.getIsVisible().isSelected());
     lookupTable.setAllowLookup(view.getAllowLookup().isSelected());
+
     lookupTable.clearEntries();
-    for (int i = 0; i < tableModel.getRowCount(); i++) {
-      var row = tableModel.getRowAt(i);
-
-      String range = row.range;
-      if (range.isEmpty()) {
-        continue;
-      }
-      String value = row.value;
-      String imageId = row.imageId;
-      boolean picked = row.picked;
-
-      int min;
-      int max;
-      int split = range.indexOf('-', range.charAt(0) == '-' ? 1 : 0); // Allow negative numbers
-      try {
-        if (split < 0) {
-          min = Integer.parseInt(range);
-          max = min;
-        } else {
-          min = Integer.parseInt(range.substring(0, split).trim());
-          max = Integer.parseInt(range.substring(split + 1).trim());
-        }
-      } catch (NumberFormatException nfe) {
-        MapTool.showError(I18N.getText("EditLookupTablePanel.error.badRange", name, range, i));
-        return false;
-      }
-      MD5Key image = null;
-      if (imageId != null && !imageId.isEmpty()) {
-        image = new MD5Key(imageId);
-        MapToolUtil.uploadAsset(AssetManager.getAsset(image));
-      }
-      var entry = lookupTable.addEntry(min, max, value, image);
-      if (lookupTable.getPickOnce()) {
-        entry.setPicked(picked);
-      }
+    for (var entry : entries) {
+      var copy =
+          lookupTable.addEntry(
+              entry.getMin(), entry.getMax(), entry.getValue(), entry.getImageId());
+      copy.setPicked(entry.getPicked());
     }
+
     if (!name.equals(origname)) {
       // New name is not the same as the existing name
       MapTool.getCampaign().getLookupTableMap().remove(origname);
