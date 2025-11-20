@@ -106,7 +106,7 @@ public class LookupTable {
   public @Nullable LookupEntry getEntryByRollResult(int rollResult) {
     // For now this is a linear scan. In the future hopefully we can use some kind of accelerated
     // search.
-    for (var entry : entryList) {
+    for (var entry : entryList.reversed()) {
       if (entry.min <= rollResult && rollResult <= entry.max) {
         return entry;
       }
