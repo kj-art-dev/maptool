@@ -12,7 +12,7 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.lib.tool;
+package net.rptools.maptool.tools;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.dnd.DnDConstants;
