@@ -26,6 +26,7 @@ import javax.swing.*;
 import net.rptools.lib.FileUtil;
 import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.AppActions.CheckForUpdatesAction;
 import net.rptools.maptool.client.AppActions.OpenUrlAction;
 import net.rptools.maptool.client.ui.MapToolFrame.MTFrame;
 import net.rptools.maptool.client.ui.htmlframe.HTMLOverlayManager;
@@ -402,6 +403,10 @@ public class AppMenuBar extends JMenuBar {
                 "action.helpurl.06",
                 "https://wiki.rptools.info/index.php/Frameworks",
                 Icons.MENU_FRAMEWORKS)));
+
+    menu.addSeparator();
+
+    menu.add(new JMenuItem(new CheckForUpdatesAction()));
 
     menu.addSeparator();
 

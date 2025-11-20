@@ -30,6 +30,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -41,7 +43,9 @@ import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
+import net.rptools.lib.ModelVersionManager;
 import net.rptools.lib.OsDetection;
+import net.rptools.maptool.client.AppUpdate.ReleaseInfo;
 import net.rptools.maptool.client.swing.GenericDialog;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.FacingTool;
@@ -86,6 +90,7 @@ import net.rptools.maptool.util.*;
 import net.rptools.maptool.util.PersistenceUtil.PersistedCampaign;
 import net.rptools.maptool.util.PersistenceUtil.PersistedMap;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -3241,6 +3246,79 @@ public class AppActions {
     @Override
     protected void executeAction() {
       MapTool.showDocument(url);
+    }
+  }
+
+  public static class CheckForUpdatesAction extends TranslatedClientAction {
+    public CheckForUpdatesAction() {
+      super("action.helpurl.checkForUpdates");
+    }
+
+    @Override
+    protected void executeAction() {
+      Object[] options = {I18N.getText("Button.cancel")};
+      var optionPane =
+          new JOptionPane(
+              I18N.getText("Update.checking.message"),
+              JOptionPane.PLAIN_MESSAGE,
+              JOptionPane.DEFAULT_OPTION,
+              null,
+              options,
+              options[0]);
+      var dialog =
+          optionPane.createDialog(MapTool.getFrame(), I18N.getText("Update.checking.title"));
+      dialog.pack();
+
+      var worker =
+          AppUpdate.getLatestRelease()
+              .thenApplyAsync(
+                  r -> {
+                    dialog.setVisible(false);
+                    dialog.dispose();
+                    return r;
+                  },
+                  SwingUtilities::invokeLater)
+              .toCompletableFuture();
+
+      // Blocks
+      dialog.setVisible(true);
+      // In case it is still running.
+      worker.cancel(true);
+
+      if (!optionPane.getValue().equals(JOptionPane.UNINITIALIZED_VALUE)) {
+        // The user canceled rather than the worker closing the dialog.
+        return;
+      }
+
+      Optional<ReleaseInfo> release;
+      try {
+        release = worker.get();
+      } catch (CancellationException | InterruptedException e) {
+        log.info("Cancelled update check", e);
+        release = Optional.empty();
+      } catch (ExecutionException e) {
+        log.warn("Failed to find latest release", e);
+        release = Optional.empty();
+      }
+
+      release
+          .filter(
+              r -> {
+                String runningVersion = AppUpdate.getImplementationVersion();
+                // If we can't find a current version, give the user a chance to install
+                // anyways. Only skip if the latest version is not newer than the current.
+                return StringUtils.isBlank(runningVersion)
+                    || ModelVersionManager.isBefore(runningVersion, r.version());
+              })
+          .ifPresentOrElse(
+              r -> {
+                if (AppUpdate.confirmUpdate(r, false)) {
+                  AppUpdate.downloadFile(r.assetUrl(), r.assetSize());
+                }
+              },
+              () ->
+                  JOptionPane.showMessageDialog(
+                      MapTool.getFrame(), I18N.getText("Update.noNewerRelease")));
     }
   }
 
