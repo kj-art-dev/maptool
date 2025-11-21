@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client;
 
-import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
 import io.sentry.EventProcessor;
@@ -1266,62 +1265,60 @@ public class MapTool {
     return clientFrame;
   }
 
-  private static void configureJide() {
-    LookAndFeelFactory.UIDefaultsCustomizer uiDefaultsCustomizer =
-        defaults -> {
-          ThemePainter painter = (ThemePainter) UIDefaultsLookup.get("Theme.painter");
-          defaults.put("OptionPaneUI", "com.jidesoft.plaf.basic.BasicJideOptionPaneUI");
+  private static void configureLaf() {
+    final var defaults = UIManager.getDefaults();
 
-          // show banner or not. default is true
-          defaults.put("OptionPane.showBanner", Boolean.FALSE);
-          defaults.put("OptionPane.bannerIcon", RessourceManager.getSmallIcon(Icons.MAPTOOL));
-          defaults.put("OptionPane.bannerFontSize", 13);
-          defaults.put("OptionPane.bannerFontStyle", Font.BOLD);
-          defaults.put("OptionPane.bannerMaxCharsPerLine", 60);
-          // you should adjust this if banner background is not the default gradient paint
-          defaults.put(
-              "OptionPane.bannerForeground",
-              painter != null ? painter.getOptionPaneBannerForeground() : null);
-          defaults.put("OptionPane.bannerBorder", null); // use default border
+    // region JIDE LAF
+    ThemePainter painter = (ThemePainter) UIDefaultsLookup.get("Theme.painter");
+    defaults.put("OptionPaneUI", "com.jidesoft.plaf.basic.BasicJideOptionPaneUI");
 
-          // set both bannerBackgroundDk and bannerBackgroundLt to null if you don't want
-          // gradient
-          defaults.put(
-              "OptionPane.bannerBackgroundDk",
-              painter != null ? painter.getOptionPaneBannerDk() : null);
-          defaults.put(
-              "OptionPane.bannerBackgroundLt",
-              painter != null ? painter.getOptionPaneBannerLt() : null);
-          // default is true
-          defaults.put("OptionPane.bannerBackgroundDirection", Boolean.TRUE);
+    // show banner or not. default is true
+    defaults.put("OptionPane.showBanner", Boolean.FALSE);
+    defaults.put("OptionPane.bannerIcon", RessourceManager.getSmallIcon(Icons.MAPTOOL));
+    defaults.put("OptionPane.bannerFontSize", 13);
+    defaults.put("OptionPane.bannerFontStyle", Font.BOLD);
+    defaults.put("OptionPane.bannerMaxCharsPerLine", 60);
+    // you should adjust this if banner background is not the default gradient paint
+    defaults.put(
+        "OptionPane.bannerForeground",
+        painter != null ? painter.getOptionPaneBannerForeground() : null);
+    defaults.put("OptionPane.bannerBorder", null); // use default border
 
-          // optionally, you can set a Paint object for BannerPanel. If so, the three
-          // UIDefaults
-          // related to banner background above will be ignored.
-          defaults.put("OptionPane.bannerBackgroundPaint", null);
+    // set both bannerBackgroundDk and bannerBackgroundLt to null if you don't want
+    // gradient
+    defaults.put(
+        "OptionPane.bannerBackgroundDk", painter != null ? painter.getOptionPaneBannerDk() : null);
+    defaults.put(
+        "OptionPane.bannerBackgroundLt", painter != null ? painter.getOptionPaneBannerLt() : null);
+    // default is true
+    defaults.put("OptionPane.bannerBackgroundDirection", Boolean.TRUE);
 
-          defaults.put("OptionPane.buttonAreaBorder", BorderFactory.createEmptyBorder(6, 6, 6, 6));
-          defaults.put("OptionPane.buttonOrientation", SwingConstants.RIGHT);
+    // optionally, you can set a Paint object for BannerPanel. If so, the three
+    // UIDefaults
+    // related to banner background above will be ignored.
+    defaults.put("OptionPane.bannerBackgroundPaint", null);
 
-          defaults.put(
-              "DockableFrame.inactiveTitleBackground",
-              UIManager.getColor("InternalFrame.inactiveTitleBackground"));
-          defaults.put(
-              "DockableFrame.inactiveTitleForeground",
-              UIManager.getColor("InternalFrame.inactiveTitleForeground"));
-          defaults.put(
-              "DockableFrame.activeTitleBackground",
-              UIManager.getColor("InternalFrame.activeTitleBackground"));
-          defaults.put(
-              "DockableFrame.activeTitleForeground",
-              UIManager.getColor("InternalFrame.activeTitleForeground"));
-          defaults.put("DockableFrame.background", UIManager.getColor("Panel.background"));
-          defaults.put(
-              "DockableFrame.border",
-              BorderFactory.createLineBorder(UIManager.getColor("Panel.background")));
-          defaults.put("DockableFrameTitlePane.showIcon", true);
-        };
-    uiDefaultsCustomizer.customize(UIManager.getDefaults());
+    defaults.put("OptionPane.buttonAreaBorder", BorderFactory.createEmptyBorder(6, 6, 6, 6));
+    defaults.put("OptionPane.buttonOrientation", SwingConstants.RIGHT);
+
+    defaults.put(
+        "DockableFrame.inactiveTitleBackground",
+        UIManager.getColor("InternalFrame.inactiveTitleBackground"));
+    defaults.put(
+        "DockableFrame.inactiveTitleForeground",
+        UIManager.getColor("InternalFrame.inactiveTitleForeground"));
+    defaults.put(
+        "DockableFrame.activeTitleBackground",
+        UIManager.getColor("InternalFrame.activeTitleBackground"));
+    defaults.put(
+        "DockableFrame.activeTitleForeground",
+        UIManager.getColor("InternalFrame.activeTitleForeground"));
+    defaults.put("DockableFrame.background", UIManager.getColor("Panel.background"));
+    defaults.put(
+        "DockableFrame.border",
+        BorderFactory.createLineBorder(UIManager.getColor("Panel.background")));
+    defaults.put("DockableFrameTitlePane.showIcon", true);
+    // endregion
   }
 
   private static void postInitialize() {
@@ -1731,7 +1728,7 @@ public class MapTool {
       com.jidesoft.utils.Lm.verifyLicense(
           "Trevor Croft", "rptools", "5MfIVe:WXJBDrToeLWPhMv3kI2s3VFo");
 
-      configureJide();
+      configureLaf();
     } catch (Exception e) {
       MapTool.showError("msg.error.lafSetup", e);
       System.exit(1);
