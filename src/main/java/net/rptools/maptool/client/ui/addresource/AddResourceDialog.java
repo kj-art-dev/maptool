@@ -69,7 +69,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
   private boolean downloadLibraryListInitiated;
 
   public AddResourceDialog() {
-    super(new AddRessourcesDialogView().getRootComponent());
+    super(new AddResourceDialogView().getRootComponent());
     setPreferredSize(new Dimension(550, 300));
     panelInit();
     dialogFactory

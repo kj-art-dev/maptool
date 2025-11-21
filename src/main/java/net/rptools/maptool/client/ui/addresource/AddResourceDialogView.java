@@ -14,10 +14,9 @@
  */
 package net.rptools.maptool.client.ui.addresource;
 
-import java.awt.*;
 import javax.swing.*;
 
-public class AddRessourcesDialogView {
+public class AddResourceDialogView {
   private JPanel mainPanel;
 
   public JComponent getRootComponent() {
