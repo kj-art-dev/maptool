@@ -28,6 +28,7 @@ import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.AppSetup;
 import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.RemoteFileDownloader;
@@ -128,7 +129,18 @@ public final class LibraryUtils {
         continue;
       }
 
-      libraries.add(new Library(name, url, size));
+      // The author is optional for backwards compatibility.
+      @Nullable String author;
+      if (data.length < 4) {
+        author = null;
+      } else {
+        author = data[3].trim();
+        if (author.isEmpty()) {
+          author = null;
+        }
+      }
+
+      libraries.add(new Library(name, url, size, author));
     }
 
     return libraries;

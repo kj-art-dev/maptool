@@ -15,6 +15,7 @@
 package net.rptools.maptool.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import net.rptools.maptool.util.library.LibraryUtils;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,45 @@ public class LibraryUtilsTest {
     var result = LibraryUtils.parseLibraryList("name|path|");
 
     assertEquals(0, result.size());
+  }
+
+  @Test
+  public void testParseLibraryListHandlesMissingAuthor() {
+    var result = LibraryUtils.parseLibraryList("name|path|100");
+
+    assertEquals(1, result.size());
+
+    var library = result.getFirst();
+    assertEquals("name", library.name());
+    assertEquals("https://library.rptools.net/1.3/path", library.location().toString());
+    assertEquals(100L, library.size());
+    assertNull(library.author());
+  }
+
+  @Test
+  public void testParseLibraryListHandlesEmptyAuthor() {
+    var result = LibraryUtils.parseLibraryList("name|path|100|");
+
+    assertEquals(1, result.size());
+
+    var library = result.getFirst();
+    assertEquals("name", library.name());
+    assertEquals("https://library.rptools.net/1.3/path", library.location().toString());
+    assertEquals(100L, library.size());
+    assertNull(library.author());
+  }
+
+  @Test
+  public void testParseLibraryListHandlesAuthor() {
+    var result = LibraryUtils.parseLibraryList("name|path|100|an author");
+
+    assertEquals(1, result.size());
+
+    var library = result.getFirst();
+    assertEquals("name", library.name());
+    assertEquals("https://library.rptools.net/1.3/path", library.location().toString());
+    assertEquals(100L, library.size());
+    assertEquals("an author", library.author());
   }
 
   @Test

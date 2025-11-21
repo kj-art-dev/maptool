@@ -20,6 +20,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -28,7 +30,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import net.rptools.lib.FileUtil;
@@ -104,6 +111,46 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     table.setDefaultRenderer(Long.class, new FileSizeCellRenderer());
     table.getTableHeader().setReorderingAllowed(false);
     setLibraryListVisible(false);
+
+    // The library name needs most of the real estate, while the author name and library size don't
+    // need nearly as much. At the same time, we want to let the user resize columns as they wish.
+    // So to start, we have our list of default proportions that we enforce. But once the user gets
+    // involved, we stop using them by clearing the weights.
+    var columnWeights = new ArrayList<>(List.of(0.6, 0.25, 0.15));
+    var columnModel = table.getColumnModel();
+    table.addComponentListener(
+        new ComponentAdapter() {
+          @Override
+          public void componentResized(ComponentEvent e) {
+            int total = table.getWidth();
+            for (int i = 0; i < columnWeights.size(); ++i) {
+              columnModel.getColumn(i).setPreferredWidth((int) (total * columnWeights.get(i)));
+            }
+          }
+        });
+    // Let the user resize columns to modify the default weights.
+    columnModel.addColumnModelListener(
+        new TableColumnModelListener() {
+          @Override
+          public void columnMarginChanged(ChangeEvent e) {
+            if (table.getTableHeader().getResizingColumn() != null) {
+              // User-initiated event. Time to stop enforcing our default proportions.
+              columnWeights.clear();
+            }
+          }
+
+          @Override
+          public void columnAdded(TableColumnModelEvent e) {}
+
+          @Override
+          public void columnRemoved(TableColumnModelEvent e) {}
+
+          @Override
+          public void columnMoved(TableColumnModelEvent e) {}
+
+          @Override
+          public void columnSelectionChanged(ListSelectionEvent e) {}
+        });
   }
 
   @SuppressWarnings("unused")
@@ -261,7 +308,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
               model.getUrl());
           return false;
         }
-        rowList.add(new Library(model.getUrlName(), url, -1));
+        rowList.add(new Library(model.getUrlName(), url, -1, null));
       }
 
       case RPTOOLS -> {
@@ -346,12 +393,14 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
 
   private static final class LibraryTableModel extends AbstractTableModel {
     private static final int NAME_COLUMN_INDEX = 0;
-    private static final int SIZE_COLUMN_INDEX = 1;
+    private static final int AUTHOR_COLUMN_INDEX = 1;
+    private static final int SIZE_COLUMN_INDEX = 2;
     private final List<Library> rowList;
 
     private final List<String> columnNames =
         List.of(
             I18N.getText("dialog.addresource.column.libraryName"),
+            I18N.getText("dialog.addresource.column.libraryAuthor"),
             I18N.getText("dialog.addresource.column.librarySize"));
 
     public LibraryTableModel(List<Library> rowList) {
@@ -375,6 +424,9 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
 
       return switch (columnIndex) {
         case NAME_COLUMN_INDEX -> row.name();
+        case AUTHOR_COLUMN_INDEX ->
+            Objects.requireNonNullElseGet(
+                row.author(), () -> I18N.getText("dialog.addresource.unknownAuthor"));
         case SIZE_COLUMN_INDEX -> row.size();
         default -> "";
       };
@@ -389,6 +441,7 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     public Class<?> getColumnClass(int columnIndex) {
       return switch (columnIndex) {
         case NAME_COLUMN_INDEX -> String.class;
+        case AUTHOR_COLUMN_INDEX -> String.class;
         case SIZE_COLUMN_INDEX -> Long.class;
         default -> String.class;
       };

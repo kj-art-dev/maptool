@@ -15,5 +15,6 @@
 package net.rptools.maptool.util.library;
 
 import java.net.URL;
+import javax.annotation.Nullable;
 
-public record Library(String name, URL location, long size) {}
+public record Library(String name, URL location, long size, @Nullable String author) {}
