@@ -3,7 +3,7 @@
   <grid id="2bcf8" binding="mainPanel" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="5" bottom="5" right="5"/>
     <constraints>
-      <xy x="10" y="10" width="386" height="229"/>
+      <xy x="10" y="10" width="326" height="211"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -196,10 +196,11 @@
                 </properties>
                 <border type="none"/>
                 <children>
-                  <component id="bdf01" class="javax.swing.JList">
+                  <component id="aaa0" class="javax.swing.JTable" default-binding="true">
                     <constraints/>
                     <properties>
-                      <name value="rptoolsList"/>
+                      <autoCreateRowSorter value="true"/>
+                      <name value="libraryTable"/>
                     </properties>
                   </component>
                 </children>

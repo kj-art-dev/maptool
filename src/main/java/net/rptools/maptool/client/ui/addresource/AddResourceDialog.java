@@ -14,8 +14,10 @@
  */
 package net.rptools.maptool.client.ui.addresource;
 
+import com.google.common.collect.ImmutableList;
 import com.jidesoft.swing.FolderChooser;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.io.File;
@@ -27,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import net.rptools.lib.FileUtil;
 import net.rptools.maptool.client.AppSetup;
 import net.rptools.maptool.client.AppStatePersisted;
@@ -84,8 +88,8 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     return (Container) getComponent("rptoolsListPane");
   }
 
-  private JList<LibraryRow> getLibraryList() {
-    return (JList<LibraryRow>) getComponent("rptoolsList");
+  private JTable getLibraryTable() {
+    return (JTable) getComponent("libraryTable");
   }
 
   private void setLibraryListVisible(boolean visible) {
@@ -94,9 +98,11 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
   }
 
   @SuppressWarnings("unused")
-  public void initLibraryList() {
-    JList<LibraryRow> list = getLibraryList();
-    list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+  public void initLibraryTable() {
+    JTable table = getLibraryTable();
+    table.setModel(new LibraryTableModel(List.of()));
+    table.setDefaultRenderer(Long.class, new FileSizeCellRenderer());
+    table.getTableHeader().setReorderingAllowed(false);
     setLibraryListVisible(false);
   }
 
@@ -162,18 +168,19 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     downloadLibraryListInitiated = true;
 
     var downloadingLabel = getDownloadingLabel();
-    var libraryList = getLibraryList();
+    var libraryTable = getLibraryTable();
 
     LibraryUtils.downloadLibraryList()
         .whenCompleteAsync(
             (librariesString, t) -> {
-              var listModel = new DefaultListModel<LibraryRow>();
-
+              List<Library> libraries;
               if (t != null) {
                 downloadingLabel.setText(I18N.getText("dialog.addresource.errorDownloading"));
                 downloadingLabel.setForeground(new Color(255, 56, 0));
                 downloadingLabel.setVisible(true);
                 setLibraryListVisible(false);
+
+                libraries = List.of();
               } else {
                 downloadingLabel.setVisible(false);
                 setLibraryListVisible(true);
@@ -182,14 +189,13 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
                 var assetRoots =
                     AppStatePersisted.getAssetRoots().stream().map(File::getName).toList();
 
-                LibraryUtils.parseLibraryList(librariesString).stream()
-                    .filter(l -> !assetRoots.contains(l.name()))
-                    .sorted(Comparator.comparing(Library::name))
-                    .map(LibraryRow::new)
-                    .forEach(listModel::addElement);
+                libraries =
+                    LibraryUtils.parseLibraryList(librariesString).stream()
+                        .filter(l -> !assetRoots.contains(l.name()))
+                        .sorted(Comparator.comparing(Library::name))
+                        .toList();
               }
-
-              libraryList.setModel(listModel);
+              libraryTable.setModel(new LibraryTableModel(libraries));
             },
             SwingUtilities::invokeLater);
   }
@@ -259,16 +265,18 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
       }
 
       case RPTOOLS -> {
-        List<LibraryRow> selectedRows = getLibraryList().getSelectedValuesList();
+        var table = getLibraryTable();
+        var selectedRows = table.getSelectedRows();
 
-        if (selectedRows == null || selectedRows.isEmpty()) {
+        if (selectedRows == null || selectedRows.length == 0) {
           MapTool.showMessage(
               "dialog.addresource.warn.mustselectone", "Error", JOptionPane.ERROR_MESSAGE);
           return false;
         }
 
-        for (LibraryRow row : selectedRows) {
-          rowList.add(row.library());
+        var tableModel = (LibraryTableModel) getLibraryTable().getModel();
+        for (var i : selectedRows) {
+          rowList.add(tableModel.getRowAt(i));
         }
       }
     }
@@ -335,15 +343,87 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
       this.urlName = urlName;
     }
   }
-}
 
-record LibraryRow(Library library) {
-  @Override
-  public String toString() {
-    return "<html><b>"
-        + library.name()
-        + "</b> <i>("
-        + FileUtils.byteCountToDisplaySize(library.size())
-        + ")</i>";
+  private static final class LibraryTableModel extends AbstractTableModel {
+    private static final int NAME_COLUMN_INDEX = 0;
+    private static final int SIZE_COLUMN_INDEX = 1;
+    private final List<Library> rowList;
+
+    private final List<String> columnNames =
+        List.of(
+            I18N.getText("dialog.addresource.column.libraryName"),
+            I18N.getText("dialog.addresource.column.librarySize"));
+
+    public LibraryTableModel(List<Library> rowList) {
+      this.rowList = ImmutableList.copyOf(rowList);
+    }
+
+    public Library getRowAt(int rowIndex) {
+      return rowList.get(rowIndex);
+    }
+
+    public int getColumnCount() {
+      return columnNames.size();
+    }
+
+    public int getRowCount() {
+      return rowList.size();
+    }
+
+    public Object getValueAt(int rowIndex, int columnIndex) {
+      var row = getRowAt(rowIndex);
+
+      return switch (columnIndex) {
+        case NAME_COLUMN_INDEX -> row.name();
+        case SIZE_COLUMN_INDEX -> row.size();
+        default -> "";
+      };
+    }
+
+    @Override
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+      // Data is not editable.
+    }
+
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+      return switch (columnIndex) {
+        case NAME_COLUMN_INDEX -> String.class;
+        case SIZE_COLUMN_INDEX -> Long.class;
+        default -> String.class;
+      };
+    }
+
+    @Override
+    public String getColumnName(int columnIndex) {
+      return columnNames.get(columnIndex);
+    }
+
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+      return false;
+    }
+  }
+
+  /** Displays file sizes in a human readable format, right-aligned. */
+  private static final class FileSizeCellRenderer extends DefaultTableCellRenderer {
+    @Override
+    public Component getTableCellRendererComponent(
+        JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+      super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+      String text;
+      if (value instanceof Long l) {
+        text = FileUtils.byteCountToDisplaySize(l);
+      } else if (value == null) {
+        text = "";
+      } else {
+        text = value.toString();
+      }
+      setText(text);
+      setHorizontalAlignment(SwingConstants.RIGHT);
+
+      return this;
+    }
   }
 }
