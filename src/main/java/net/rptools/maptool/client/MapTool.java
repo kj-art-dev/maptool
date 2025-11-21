@@ -1319,6 +1319,9 @@ public class MapTool {
         BorderFactory.createLineBorder(UIManager.getColor("Panel.background")));
     defaults.put("DockableFrameTitlePane.showIcon", true);
     // endregion
+
+    defaults.put("Table.showHorizontalLines", Boolean.TRUE);
+    defaults.put("Table.showVerticalLines", Boolean.TRUE);
   }
 
   private static void postInitialize() {

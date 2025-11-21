@@ -201,6 +201,8 @@
                     <properties>
                       <autoCreateRowSorter value="true"/>
                       <name value="libraryTable"/>
+                      <showHorizontalLines value="false"/>
+                      <showVerticalLines value="false"/>
                     </properties>
                   </component>
                 </children>
