@@ -15,7 +15,8 @@
 package net.rptools.maptool.client.ui.addresource;
 
 import com.jidesoft.swing.FolderChooser;
-import io.sentry.Sentry;
+import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -75,16 +76,36 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     return (JTextField) getComponent("@localDirectory");
   }
 
-  private JList getLibraryList() {
-    return (JList) getComponent("rptoolsList");
+  private JLabel getDownloadingLabel() {
+    return getLabel("downloadingLabel");
+  }
+
+  private Container getLibraryListPane() {
+    return (Container) getComponent("rptoolsListPane");
+  }
+
+  private JList<LibraryRow> getLibraryList() {
+    return (JList<LibraryRow>) getComponent("rptoolsList");
+  }
+
+  private void setLibraryListVisible(boolean visible) {
+    // Actually show or hide the scroll pane that contains it.
+    getLibraryListPane().setVisible(visible);
   }
 
   @SuppressWarnings("unused")
   public void initLibraryList() {
-    JList list = getLibraryList();
+    JList<LibraryRow> list = getLibraryList();
     list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    setLibraryListVisible(false);
+  }
 
-    list.setModel(new MessageListModel(I18N.getText("dialog.addresource.downloading")));
+  @SuppressWarnings("unused")
+  public void initDownloadingLabel() {
+    var label = getDownloadingLabel();
+    label.setForeground(Color.BLACK);
+    label.setText(I18N.getText("dialog.addresource.downloading"));
+    label.setVisible(true);
   }
 
   @SuppressWarnings("unused")
@@ -140,30 +161,35 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
     // This pattern is safe because it is only called on the EDT
     downloadLibraryListInitiated = true;
 
+    var downloadingLabel = getDownloadingLabel();
     var libraryList = getLibraryList();
 
     LibraryUtils.downloadLibraryList()
         .whenCompleteAsync(
             (librariesString, t) -> {
+              var listModel = new DefaultListModel<LibraryRow>();
+
               if (t != null) {
-                libraryList.setModel(
-                    new MessageListModel(I18N.getText("dialog.addresource.errorDownloading")));
+                downloadingLabel.setText(I18N.getText("dialog.addresource.errorDownloading"));
+                downloadingLabel.setForeground(new Color(255, 56, 0));
+                downloadingLabel.setVisible(true);
+                setLibraryListVisible(false);
               } else {
-                var libraries = LibraryUtils.parseLibraryList(librariesString);
+                downloadingLabel.setVisible(false);
+                setLibraryListVisible(true);
 
                 // No need to show the user libraries they already have.
                 var assetRoots =
                     AppStatePersisted.getAssetRoots().stream().map(File::getName).toList();
 
-                var listModel = new DefaultListModel<LibraryRow>();
-                libraries.stream()
+                LibraryUtils.parseLibraryList(librariesString).stream()
                     .filter(l -> !assetRoots.contains(l.name()))
                     .sorted(Comparator.comparing(Library::name))
                     .map(LibraryRow::new)
                     .forEach(listModel::addElement);
-
-                libraryList.setModel(listModel);
               }
+
+              libraryList.setModel(listModel);
             },
             SwingUtilities::invokeLater);
   }
@@ -233,26 +259,15 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
       }
 
       case RPTOOLS -> {
-        Object[] selectedRows = getLibraryList().getSelectedValuesList().toArray();
+        List<LibraryRow> selectedRows = getLibraryList().getSelectedValuesList();
 
-        if (selectedRows == null || selectedRows.length == 0) {
+        if (selectedRows == null || selectedRows.isEmpty()) {
           MapTool.showMessage(
               "dialog.addresource.warn.mustselectone", "Error", JOptionPane.ERROR_MESSAGE);
           return false;
         }
 
-        for (Object obj : selectedRows) {
-          // Somehow a String is being returned instead of a LibraryRow object
-          // in some cases.  See issue #343 on GitHub.
-          if (obj instanceof String) {
-            MapTool.showMessage(
-                "dialog.addresource.warn.badresourceid", "Error", JOptionPane.ERROR_MESSAGE, obj);
-            Sentry.captureMessage("Add Resource to Library Error\nResource: " + obj);
-            // Move on to next one...
-            continue;
-          }
-
-          LibraryRow row = (LibraryRow) obj;
+        for (LibraryRow row : selectedRows) {
           rowList.add(row.library());
         }
       }
@@ -330,21 +345,5 @@ record LibraryRow(Library library) {
         + "</b> <i>("
         + FileUtils.byteCountToDisplaySize(library.size())
         + ")</i>";
-  }
-}
-
-class MessageListModel extends AbstractListModel {
-  private final String message;
-
-  public MessageListModel(String message) {
-    this.message = message;
-  }
-
-  public Object getElementAt(int index) {
-    return message;
-  }
-
-  public int getSize() {
-    return 1;
   }
 }
