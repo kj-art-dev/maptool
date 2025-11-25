@@ -12,15 +12,9 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.maptool.client.ui.addresource;
+package net.rptools.maptool.util.library;
 
-import java.awt.*;
-import javax.swing.*;
+import java.net.URL;
+import javax.annotation.Nullable;
 
-public class AddRessourcesDialogView {
-  private JPanel mainPanel;
-
-  public JComponent getRootComponent() {
-    return mainPanel;
-  }
-}
+public record Library(String name, URL location, long size, @Nullable String author) {}
