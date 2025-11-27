@@ -21,6 +21,7 @@
             <constraints/>
             <properties>
               <preferredScrollableViewportSize width="450" height="150"/>
+              <rowSelectionAllowed value="false"/>
             </properties>
           </component>
         </children>
