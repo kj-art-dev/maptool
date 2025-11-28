@@ -358,6 +358,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
                 () -> {
                   JPanel helpText = getDescriptionContainer();
                   helpText.setVisible(!helpText.isVisible());
+                  button.setSelected(helpText.isVisible());
                 }));
     button.setEnabled(true);
   }
