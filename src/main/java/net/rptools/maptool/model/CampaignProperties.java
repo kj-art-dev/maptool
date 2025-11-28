@@ -50,7 +50,6 @@ import net.rptools.maptool.client.ui.token.XTokenOverlay;
 import net.rptools.maptool.client.ui.token.YieldTokenOverlay;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
-import net.rptools.maptool.model.sheet.stats.StatSheetLocation;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.proto.CampaignPropertiesDto;
@@ -212,9 +211,7 @@ public class CampaignProperties implements Serializable {
    */
   public StatSheetProperties getTokenTypeDefaultStatSheet(String propertyType) {
     return tokenTypeStatSheetMap.getOrDefault(
-        propertyType,
-        new StatSheetProperties(
-            StatSheetManager.LEGACY_STATSHEET_ID, StatSheetLocation.BOTTOM_LEFT));
+        propertyType, new StatSheetProperties(StatSheetManager.LEGACY_STATSHEET_ID, null));
   }
 
   /**

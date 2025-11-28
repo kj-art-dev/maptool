@@ -481,9 +481,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
     if (statSheetProperty == null) {
       id = ssManager.getDefaultStatSheetId();
       tokenTypeStatSheetMap.put(
-          propertyType,
-          new StatSheetProperties(
-              ssManager.getDefaultStatSheetId(), StatSheetLocation.BOTTOM_LEFT));
+          propertyType, new StatSheetProperties(ssManager.getDefaultStatSheetId(), null));
     } else {
       id = statSheetProperty.id();
     }

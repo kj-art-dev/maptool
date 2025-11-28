@@ -170,9 +170,6 @@ public class NewTokenDialog extends AbeillePanel<Token> {
     if (statSheet == null || (statSheet.name() == null && statSheet.namespace() == null)) {
       token.useDefaultStatSheet();
     } else {
-      if (location == null) {
-        location = StatSheetLocation.BOTTOM_LEFT;
-      }
       token.setStatSheet(new StatSheetProperties(ssManager.getId(statSheet), location));
     }
 
