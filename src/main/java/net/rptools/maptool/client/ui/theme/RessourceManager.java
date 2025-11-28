@@ -46,6 +46,7 @@ public class RessourceManager {
           put(Icons.ACTION_CLOSE, IMAGE_DIR + "collapse.png");
           put(Icons.ACTION_COPY, IMAGE_DIR + "page_copy.png");
           put(Icons.ACTION_DELETE, IMAGE_DIR + "delete.png");
+          put(Icons.ACTION_ACCEPT, IMAGE_DIR + "currentIndicator.png");
           put(Icons.ACTION_EDIT, IMAGE_DIR + "pencil.png");
           put(Icons.ACTION_NEW, IMAGE_DIR + "add.png");
           put(Icons.ACTION_NEW_SMALL, IMAGE_DIR + "add_sm.png");
@@ -296,6 +297,7 @@ public class RessourceManager {
         {
           put(Icons.ACTION_COPY, ROD_ICONS + "edit/Duplicate.svg");
           put(Icons.ACTION_DELETE, ROD_ICONS + "edit/Delete.svg");
+          put(Icons.ACTION_ACCEPT, ROD_ICONS + "edit/Accept.svg");
           put(Icons.ACTION_EDIT, ROD_ICONS + "edit/Edit.svg");
           put(Icons.ACTION_EXPORT, ROD_ICONS + "edit/Export.svg");
           put(Icons.ACTION_IMPORT, ROD_ICONS + "edit/Import.svg");
