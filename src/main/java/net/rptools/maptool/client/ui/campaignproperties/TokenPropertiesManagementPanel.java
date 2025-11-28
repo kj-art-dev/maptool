@@ -15,18 +15,19 @@
 package net.rptools.maptool.client.ui.campaignproperties;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.AbeillePanel;
+import net.rptools.maptool.client.swing.TableCellRendererDecorator;
 import net.rptools.maptool.client.swing.TextFieldEditorButtonTableCellEditor;
 import net.rptools.maptool.client.ui.campaignproperties.TokenPropertiesTableModel.LargeEditableText;
 import net.rptools.maptool.client.ui.sheet.stats.StatSheetComboBoxRenderer;
@@ -709,124 +710,31 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
             });
 
     JTable propertyTable = getTokenPropertiesTable();
+    TokenPropertiesTableModel model = (TokenPropertiesTableModel) propertyTable.getModel();
 
-    // try to set sizes to header text
-    Font hFont = propertyTable.getTableHeader().getComponent(0).getFont();
-    FontMetrics fm =
-        GraphicsEnvironment.getLocalGraphicsEnvironment()
-            .getDefaultScreenDevice()
-            .getDefaultConfiguration()
-            .createCompatibleVolatileImage(1, 1)
-            .getGraphics()
-            .getFontMetrics(hFont);
-    final List<Integer> headerSizes = new ArrayList<>();
-    for (int i = 0; i < propertyTable.getModel().getColumnCount(); i++) {
-      headerSizes.add(
-          SwingUtilities.computeStringWidth(
-              fm,
-              switch (i) {
-                case 0 -> I18N.getText("campaignPropertiesTable.column.name");
-                case 1 -> I18N.getText("campaignPropertiesTable.column.shortName");
-                case 2 -> I18N.getText("campaignPropertiesTable.column.displayName");
-                case 3 -> I18N.getText("campaignPropertiesTable.column.defaultValue");
-                case 4 -> I18N.getText("campaignPropertiesTable.column.onStatSheet");
-                case 5 -> I18N.getText("campaignPropertiesTable.column.gmStatSheet");
-                case 6 -> I18N.getText("campaignPropertiesTable.column.ownerStatSheet");
-                default -> "";
-              }));
-    }
-    // preferred widths
-    headerSizes.add(
-        6 + Math.max(Math.max(headerSizes.get(0), headerSizes.get(2)), headerSizes.get(3)));
-    headerSizes.add((12 + headerSizes.get(1)) / 2);
-    headerSizes.add(
-        6 + Math.max(Math.max(headerSizes.get(4), headerSizes.get(5)), headerSizes.get(6)));
-    /* prettify - take cell background colour and adjust the luminance for cell contrast.
-    change the hue and saturation for the grid line colour
-     */
-    Color bg, bgSmall, gridColour;
-    bg = propertyTable.getTableHeader().getComponent(0).getBackground(); // get background colour
-    float[] hsbComponents = new float[3];
-    Color.RGBtoHSB(bg.getRed(), bg.getGreen(), bg.getBlue(), hsbComponents); // convert to HSB
-
-    boolean lighten = hsbComponents[2] < 0.5f; // to determine direction of change
-    hsbComponents[2] =
-        lighten
-            ? hsbComponents[2] + 0.015f
-            : hsbComponents[2] - 0.025f; // small change in brilliance
-    bgSmall = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    hsbComponents[2] =
-        lighten
-            ? hsbComponents[2] + 0.04f
-            : hsbComponents[2] - 0.02f; // bigger change in brilliance
-    bg = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    hsbComponents[0] =
-        hsbComponents[0] < 0.5
-            ? hsbComponents[0] + 0.5f
-            : hsbComponents[0] - 0.5f; // change hue 180 degrees
-    hsbComponents[1] =
-        hsbComponents[1] < 0.25
-            ? hsbComponents[1] + 0.25f // increase saturation if it is low
-            : hsbComponents[1];
-    gridColour = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    DefaultTableCellRenderer cellRenderer =
-        new DefaultTableCellRenderer(); // cell renderer for contrasting cells
-    cellRenderer.setBackground(bgSmall);
-    cellRenderer.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
-
-    // cell renderer for contrasting headings
-    Color finalBg = bg;
-    Function<Integer, DefaultTableCellRenderer> headerRenderer =
-        column -> {
-          DefaultTableCellRenderer hr = new DefaultTableCellRenderer();
-          if ((column & 1) == 1) {
-            hr.setBackground(finalBg);
-          }
-          hr.setHorizontalAlignment(DefaultTableCellRenderer.CENTER);
-          hr.setVerticalAlignment(
-              column == 1 || column == 4 ? SwingConstants.TOP : SwingConstants.CENTER);
-          hr.setToolTipText(
-              ((TokenPropertiesTableModel) propertyTable.getModel()).getColumnTooltipText(column));
-          return hr;
-        };
-
-    propertyTable.setGridColor(gridColour);
-    propertyTable.setIntercellSpacing(new Dimension(2, 2));
     propertyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    propertyTable.setShowHorizontalLines(true);
     propertyTable.getTableHeader().setResizingAllowed(true);
-    propertyTable.setFillsViewportHeight(true);
+
+    // Custom header that uses the column model to decide tooltips.
+    var header =
+        new JTableHeader(propertyTable.getColumnModel()) {
+          @Override
+          public String getToolTipText(MouseEvent event) {
+            int columnIndex = columnAtPoint(event.getPoint());
+            return model.getColumnTooltipText(columnIndex);
+          }
+        };
+    propertyTable.setTableHeader(header);
+
+    // The custom renderer delegates to the default one.
+    var customHeaderRenderer = new TableCellRendererDecorator(header.getDefaultRenderer());
+    customHeaderRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+    customHeaderRenderer.setVerticalAlignment(SwingConstants.CENTER);
 
     for (int i = 0; i < propertyTable.getColumnCount(); i++) {
-      propertyTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer.apply(i));
-      switch (i) { // set column shading
-        case 1, 3 -> propertyTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
-      }
-      // set column sizes
-      propertyTable.getColumnModel().getColumn(i).setMinWidth(headerSizes.get(i) + 6);
-      switch (i) {
-        case 0, 2, 3 -> {
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(headerSizes.get(7));
-        }
-        case 1 -> {
-          propertyTable.getColumnModel().getColumn(i).setMinWidth(headerSizes.get(1) / 3 * 2);
-          propertyTable.getColumnModel().getColumn(i).setMaxWidth(headerSizes.get(8) / 2 * 3);
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(headerSizes.get(8));
-        }
-        case 4, 5, 6 -> {
-          propertyTable.getColumnModel().getColumn(i).setMinWidth(headerSizes.get(9) / 3 * 2);
-          propertyTable.getColumnModel().getColumn(i).setMaxWidth(headerSizes.get(9) / 2 * 3);
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(headerSizes.get(9));
-        }
-      }
+      var column = propertyTable.getColumnModel().getColumn(i);
+      column.setHeaderRenderer(customHeaderRenderer);
     }
-
-    Dimension headerDim = propertyTable.getTableHeader().getSize();
-    headerDim.height = (int) (hFont.getSize() * 3.71);
-    propertyTable.getTableHeader().setPreferredSize(headerDim);
   }
 
   private class TypeListModel extends AbstractListModel {
