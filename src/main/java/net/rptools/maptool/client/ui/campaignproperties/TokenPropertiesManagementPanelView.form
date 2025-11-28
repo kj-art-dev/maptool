@@ -239,7 +239,7 @@
         </constraints>
         <properties>
           <font/>
-          <text resource-bundle="net/rptools/maptool/language/i18n" key="TokenPropertiesPanel.label.type"/>
+          <text resource-bundle="net/rptools/maptool/language/i18n" key="TokenPropertiesPanel.label.types"/>
         </properties>
       </component>
       <grid id="57025" layout-manager="GridLayoutManager" row-count="2" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
