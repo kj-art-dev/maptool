@@ -21,6 +21,7 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import net.rptools.CaseInsensitiveHashMap;
@@ -696,16 +697,16 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
      * dig down to the appropriate container level
      * then set the backgrounds to transparent
      */
-    JPanel jPanel = (JPanel) super.getComponent("descriptionContainer");
-    List<Component> jPanels =
-        Arrays.stream(jPanel.getComponents()).filter(c -> c instanceof JPanel).toList();
-
-    Color transparent = new Color(0, 0, 0, 1);
-    for (Component panel : jPanels) {
-      JPanel jp = (JPanel) panel;
-      Component[] components = jp.getComponents();
-      Arrays.stream(components).toList().forEach(c -> c.setBackground(transparent));
-    }
+    JPanel jPanel = getDescriptionContainer();
+    Arrays.stream(jPanel.getComponents())
+        .flatMap(
+            c -> c instanceof JPanel panel ? Arrays.stream(panel.getComponents()) : Stream.empty())
+        .forEach(
+            c -> {
+              if (c instanceof JTextField) {
+                c.setBackground(c.getParent().getBackground());
+              }
+            });
 
     JTable propertyTable = getTokenPropertiesTable();
 
