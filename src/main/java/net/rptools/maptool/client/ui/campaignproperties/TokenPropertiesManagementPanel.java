@@ -31,6 +31,8 @@ import net.rptools.maptool.client.swing.TableCellRendererDecorator;
 import net.rptools.maptool.client.swing.TextFieldEditorButtonTableCellEditor;
 import net.rptools.maptool.client.ui.campaignproperties.TokenPropertiesTableModel.LargeEditableText;
 import net.rptools.maptool.client.ui.sheet.stats.StatSheetComboBoxRenderer;
+import net.rptools.maptool.client.ui.theme.Icons;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
@@ -169,42 +171,43 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
   }
 
   public void initTypeAddButton() {
-    getTypeAddButton()
-        .addActionListener(
-            e ->
-                EventQueue.invokeLater(
-                    () -> {
-                      // First find a unique name, there are so few entries we don't have to worry
-                      // about being fancy
-                      int seq = 1;
-                      String name =
-                          I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
-                      while (tokenTypeMap.containsKey(name)) {
-                        seq++;
-                        name =
-                            I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
-                      }
+    var button = getTypeAddButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_NEW));
+    button.addActionListener(
+        e ->
+            EventQueue.invokeLater(
+                () -> {
+                  // First find a unique name, there are so few entries we don't have to worry
+                  // about being fancy
+                  int seq = 1;
+                  String name =
+                      I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
+                  while (tokenTypeMap.containsKey(name)) {
+                    seq++;
+                    name = I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
+                  }
 
-                      var newName =
-                          (String)
-                              JOptionPane.showInputDialog(
-                                  this,
-                                  I18N.getText("campaignPropertiesDialog.newTokenTypeName"),
-                                  I18N.getText("campaignPropertiesDialog.newTokenTypeTitle"),
-                                  JOptionPane.PLAIN_MESSAGE,
-                                  null,
-                                  null,
-                                  name);
-                      if (newName != null) {
-                        tokenTypeMap.put(newName, new LinkedList<>());
-                        updateTypeList();
-                        getTokenTypeList().setSelectedValue(newName, true);
-                      }
-                    }));
+                  var newName =
+                      (String)
+                          JOptionPane.showInputDialog(
+                              this,
+                              I18N.getText("campaignPropertiesDialog.newTokenTypeName"),
+                              I18N.getText("campaignPropertiesDialog.newTokenTypeTitle"),
+                              JOptionPane.PLAIN_MESSAGE,
+                              null,
+                              null,
+                              name);
+                  if (newName != null) {
+                    tokenTypeMap.put(newName, new LinkedList<>());
+                    updateTypeList();
+                    getTokenTypeList().setSelectedValue(newName, true);
+                  }
+                }));
   }
 
   public void initTypeDeleteButton() {
     var button = getTypeDeleteButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_DELETE));
     button.addActionListener(
         e -> {
           var type = (String) getTokenTypeList().getSelectedValue();
@@ -240,6 +243,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
 
   public void initTypeDefaultButton() {
     var button = getTypeSetAsDefault();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_ACCEPT));
     button.addActionListener(
         l -> {
           var propertyType = (String) getTokenTypeList().getSelectedValue();
@@ -331,6 +335,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
 
   public void initTypeDuplicateButton() {
     var button = getTypeDuplicateButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_COPY));
     button.addActionListener(
         e ->
             EventQueue.invokeLater(
@@ -733,6 +738,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
 
     for (int i = 0; i < propertyTable.getColumnCount(); i++) {
       var column = propertyTable.getColumnModel().getColumn(i);
+
       column.setHeaderRenderer(customHeaderRenderer);
     }
   }
