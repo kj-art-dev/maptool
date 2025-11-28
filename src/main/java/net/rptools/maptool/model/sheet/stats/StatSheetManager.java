@@ -77,42 +77,6 @@ public class StatSheetManager {
   }
 
   /**
-   * Returns the default stat sheet.
-   *
-   * @return the default stat sheet.
-   */
-  public StatSheet getDefaultStatSheet() {
-    return LEGACY_STATSHEET;
-  }
-
-  /**
-   * Returns the id of the default stat sheet.
-   *
-   * @return the id of the default stat sheet.
-   */
-  public String getDefaultStatSheetId() {
-    return getId(LEGACY_STATSHEET);
-  }
-
-  /**
-   * Returns the "no" stat sheet.
-   *
-   * @return the "no" stat sheet.
-   */
-  public StatSheet getNoStatSheet() {
-    return NO_STATSHEET;
-  }
-
-  /**
-   * Returns the id of the "no" stat sheet.
-   *
-   * @return the id of the "no" stat sheet.
-   */
-  public String getNoStatSheetId() {
-    return getId(NO_STATSHEET);
-  }
-
-  /**
    * Returns the name and namespace of the stat sheet with the given id.
    *
    * @param id the id of the stat sheet.
@@ -199,17 +163,6 @@ public class StatSheetManager {
       return null;
     }
     return getStatSheet(name[0], name[1]);
-  }
-
-  /**
-   * Returns the id of the stat sheet with the given namespace and name.
-   *
-   * @param namespace the namespace of the stat sheet.
-   * @param name the name of the stat sheet.
-   * @return the id of the stat sheet with the given namespace and name.
-   */
-  public String getId(String namespace, String name) {
-    return namespace + "." + name;
   }
 
   /**
@@ -300,16 +253,6 @@ public class StatSheetManager {
       return null;
     }
     return getStatSheetContent(name[0], name[1]);
-  }
-
-  /**
-   * Returns the id of the stat sheet.
-   *
-   * @param ss the stat sheet.
-   * @return the id of the stat sheet.
-   */
-  public String getId(StatSheet ss) {
-    return getId(ss.namespace(), ss.name());
   }
 
   /**
