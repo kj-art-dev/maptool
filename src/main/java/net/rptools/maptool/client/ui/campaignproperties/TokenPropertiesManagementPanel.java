@@ -487,9 +487,8 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
     var statSheetProperty = tokenTypeStatSheetMap.get(propertyType);
     String id;
     if (statSheetProperty == null) {
-      id = ssManager.getDefaultStatSheetId();
-      tokenTypeStatSheetMap.put(
-          propertyType, new StatSheetProperties(ssManager.getDefaultStatSheetId(), null));
+      id = StatSheetManager.LEGACY_STATSHEET.id();
+      tokenTypeStatSheetMap.put(propertyType, new StatSheetProperties(id, null));
     } else {
       id = statSheetProperty.id();
     }
@@ -522,7 +521,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
           if (getStatSheetComboBox().hasFocus()) { // Only if user has made change
             var tokenType = (String) getTokenTypeList().getSelectedValue();
             if (ss != null && tokenType != null) {
-              var id = new StatSheetManager().getId(ss);
+              var id = ss.id();
               var location = tokenTypeStatSheetMap.get(tokenType).location();
               tokenTypeStatSheetMap.put(tokenType, new StatSheetProperties(id, location));
               getStatSheetLocationComboBox().setSelectedItem(location);

@@ -166,14 +166,10 @@ public class NewTokenDialog extends AbeillePanel<Token> {
 
     var statSheet = (StatSheet) getStatSheetComboBox().getSelectedItem();
     var location = (StatSheetLocation) getStatSheetLocationComboBox().getSelectedItem();
-    var ssManager = new StatSheetManager();
     if (statSheet == null || (statSheet.name() == null && statSheet.namespace() == null)) {
       token.useDefaultStatSheet();
     } else {
-      if (location == null) {
-        location = StatSheetLocation.BOTTOM_LEFT;
-      }
-      token.setStatSheet(new StatSheetProperties(ssManager.getId(statSheet), location));
+      token.setStatSheet(new StatSheetProperties(statSheet.id(), location));
     }
 
     return true;

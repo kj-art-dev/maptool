@@ -908,12 +908,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     if (ss == null || (ss.name() == null && ss.namespace() == null)) {
       token.useDefaultStatSheet();
     } else {
-      var ssManager = new StatSheetManager();
       var location = (StatSheetLocation) getStatSheetLocationCombo().getSelectedItem();
-      if (location == null) {
-        location = StatSheetLocation.BOTTOM_LEFT;
-      }
-      token.setStatSheet(new StatSheetProperties(ssManager.getId(ss), location));
+      token.setStatSheet(new StatSheetProperties(ss.id(), location));
     }
 
     /* Macros */
