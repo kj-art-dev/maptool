@@ -22,7 +22,7 @@ import net.rptools.maptool.client.ui.Scale;
 import net.rptools.noiselib.PerlinNoise;
 
 /**
- * This class is used to generate a image from a noise function that can be used to break up
+ * This class is used to generate an image from a noise function that can be used to break up
  * repeating patterns in other images.
  */
 public class DrawableNoise {
@@ -63,9 +63,6 @@ public class DrawableNoise {
   /** The alpha used to apply this noise to other images. */
   private float noiseAlpha;
 
-  /** Flags if the noise "image" needs recalculation or not. */
-  private boolean needsRecalc = true;
-
   /** The seed used to generate the noise. */
   private long noiseSeed;
 
@@ -74,7 +71,6 @@ public class DrawableNoise {
 
   /** Recalculate the noise image. */
   private void recalc() {
-    needsRecalc = false;
     int[] array = new int[WIDTH * HEIGHT];
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
@@ -114,7 +110,7 @@ public class DrawableNoise {
   }
 
   /**
-   * Returns the seed used to generate the noise..
+   * Returns the seed used to generate the noise.
    *
    * @return The seed used to generate the noise.
    */
