@@ -566,19 +566,23 @@ public class ServerCommandClientImpl implements ServerCommand {
     }
   }
 
-  public void setBoard(GUID zoneGUID, MD5Key mapAssetId, int x, int y) {
+  public void setBoard(
+      GUID zoneGUID, MD5Key mapAssetId, int x, int y, double scaleX, double scaleY) {
     // First, ensure that the possibly new map texture is available on the client
     // note: This may not be the optimal solution... can't tell from available documentation.
     // it may send a texture that is already sent
     // it might be better to do it in the background(?)
     // there seem to be other ways to upload textures (?) (e.g. in MapToolUtil)
     putAsset(AssetManager.getAsset(mapAssetId));
+
     // Second, tell the client to change the zone's board info
     var msg =
         SetBoardMsg.newBuilder()
             .setZoneGuid(zoneGUID.toString())
             .setAssetId(mapAssetId.toString())
-            .setPoint(IntPointDto.newBuilder().setX(x).setY(y));
+            .setPoint(IntPointDto.newBuilder().setX(x).setY(y))
+            .setScaleX(scaleX)
+            .setScaleY(scaleY);
     makeServerCall(Message.newBuilder().setSetBoardMsg(msg).build());
   }
 

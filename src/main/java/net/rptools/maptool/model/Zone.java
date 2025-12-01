@@ -763,13 +763,6 @@ public class Zone {
     new MapToolEventBus().getMainEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
   }
 
-  public void setBoard(int newX, int newY) {
-    boardPosition.x = newX;
-    boardPosition.y = newY;
-    setBoardChanged(true);
-    new MapToolEventBus().getMainEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
-  }
-
   public void setBoard(Point position, MD5Key asset) {
     this.setMapAsset(asset);
     this.setBoard(position);

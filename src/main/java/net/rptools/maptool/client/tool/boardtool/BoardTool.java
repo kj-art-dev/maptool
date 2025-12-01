@@ -260,7 +260,13 @@ public class BoardTool extends DefaultTool {
   protected void detachFrom(ZoneRenderer renderer) {
     MapTool.getFrame().removeControlPanel();
     MapTool.serverCommand()
-        .setBoard(zone.getId(), zone.getMapAssetId(), zone.getBoardX(), zone.getBoardY());
+        .setBoard(
+            zone.getId(),
+            zone.getMapAssetId(),
+            zone.getBoardX(),
+            zone.getBoardY(),
+            zone.getImageScaleX(),
+            zone.getImageScaleY());
     AppState.setShowGrid(oldShowGrid);
     super.detachFrom(renderer);
   }

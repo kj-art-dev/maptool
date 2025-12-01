@@ -673,10 +673,13 @@ public class ClientMessageHandler implements MessageHandler {
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
           var zone = client.getCampaign().getZone(zoneGUID);
-
-          Point boardXY = Mapper.map(msg.getPoint());
-          var assetId = new MD5Key(msg.getAssetId());
-          zone.setBoard(boardXY, assetId);
+          if (zone != null) {
+            Point boardXY = Mapper.map(msg.getPoint());
+            var assetId = new MD5Key(msg.getAssetId());
+            zone.setBoard(boardXY, assetId);
+            zone.setImageScaleX((float) msg.getScaleX());
+            zone.setImageScaleY((float) msg.getScaleY());
+          }
         });
   }
 
