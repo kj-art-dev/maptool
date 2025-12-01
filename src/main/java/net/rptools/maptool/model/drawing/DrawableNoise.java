@@ -151,14 +151,11 @@ public class DrawableNoise {
    * @param alpha The alpha used to apply the noise.
    */
   public void setNoiseValues(long seed, float alpha) {
-    if (seed != noiseSeed) {
-      needsRecalc = true;
-    }
-
-    noiseSeed = seed;
     noiseAlpha = alpha;
 
-    if (needsRecalc) {
+    if (seed != noiseSeed) {
+      noiseSeed = seed;
+      perlinNoise = new PerlinNoise(noiseSeed);
       recalc();
     }
   }
