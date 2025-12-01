@@ -1490,7 +1490,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
               zone.setBackgroundPaint(new DrawableTexturePaint(asset));
               zone.setBackgroundAsset(asset.getMD5Key());
             } else {
-              zone.setMapAsset(asset.getMD5Key());
+              zone.setMapAssetId(asset.getMD5Key());
               zone.setBackgroundPaint(new DrawableColorPaint(Color.black));
               zone.setBackgroundAsset(asset.getMD5Key());
             }

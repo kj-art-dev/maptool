@@ -676,9 +676,7 @@ public class ClientMessageHandler implements MessageHandler {
           if (zone != null) {
             Point boardXY = Mapper.map(msg.getPoint());
             var assetId = new MD5Key(msg.getAssetId());
-            zone.setBoard(boardXY, assetId);
-            zone.setImageScaleX((float) msg.getScaleX());
-            zone.setImageScaleY((float) msg.getScaleY());
+            zone.setBoard(assetId, boardXY, (float) msg.getScaleX(), (float) msg.getScaleY());
           }
         });
   }

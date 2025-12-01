@@ -199,9 +199,8 @@ public class BoardTool extends DefaultTool {
   private void copyControlPanelToBoard() {
     boardPosition.x = (int) boardPositionXSpinner.getModel().getValue();
     boardPosition.y = (int) boardPositionYSpinner.getModel().getValue();
-    zone.setImageScaleX((float) boardScale.getX());
-    zone.setImageScaleY((float) boardScale.getY());
-    zone.setBoard(boardPosition);
+    zone.setBoard(
+        zone.getMapAssetId(), boardPosition, (float) boardScale.getX(), (float) boardScale.getY());
   }
 
   @Override
@@ -303,7 +302,7 @@ public class BoardTool extends DefaultTool {
       boardPosition.y = boardStart.y + dragOffset.height;
       snapBoard();
       updateGUI();
-      zone.setBoard(boardPosition);
+      zone.setBoardPosition(boardPosition);
     } else {
       super.mouseDragged(e);
     }
@@ -342,7 +341,7 @@ public class BoardTool extends DefaultTool {
           break;
       }
       updateGUI();
-      zone.setBoard(boardPosition);
+      zone.setBoardPosition(boardPosition);
     }
   }
 
@@ -380,7 +379,7 @@ public class BoardTool extends DefaultTool {
       setSnap(1, 1);
     }
     updateGUI();
-    zone.setBoard(boardPosition);
+    zone.setBoardPosition(boardPosition);
   }
 
   private class spinnerListener implements ChangeListener {

@@ -401,7 +401,11 @@ public class Zone {
   private MD5Key mapAsset;
   private Point boardPosition = new Point(0, 0);
   private boolean drawBoard = true;
-  private boolean boardChanged = false;
+
+  /**
+   * @deprecated This is a rendering concern and so has been removed from the model.
+   */
+  @Deprecated private boolean boardChanged = false;
 
   // Lee: adding extra property to determine FoW exposure method
   // Jamz: Changed to transient to allow backwards compatibility of campaign
@@ -445,11 +449,6 @@ public class Zone {
 
   public MD5Key getBackgroundAsset() {
     return ((DrawableTexturePaint) getBackgroundPaint()).getAssetId();
-  }
-
-  public void setMapAsset(MD5Key id) {
-    mapAsset = id;
-    boardChanged = true;
   }
 
   public void setTokenVisionDistance(int units) {
@@ -535,10 +534,6 @@ public class Zone {
     } else {
       return playerAlias + " (" + name + ")";
     }
-  }
-
-  public MD5Key getMapAssetId() {
-    return mapAsset;
   }
 
   public DrawablePaint getBackgroundPaint() {
@@ -742,30 +737,28 @@ public class Zone {
     gridColor = color;
   }
 
-  /**
-   * Board pseudo-object. Not making full object since this will change when new layer model is
-   * created
-   *
-   * @return has the board changed?
-   */
-  public boolean isBoardChanged() {
-    return boardChanged;
+  // region Map image
+
+  private void boardChanged() {
+    new MapToolEventBus()
+        .getMainEventBus()
+        .post(new BoardChanged(this, mapAsset, boardPosition, imageScaleX, imageScaleY));
   }
 
-  public void setBoardChanged(boolean set) {
-    boardChanged = set;
+  public void setBoard(MD5Key asset, Point position, float scaleX, float scaleY) {
+    mapAsset = asset;
+    boardPosition.setLocation(position);
+    this.imageScaleX = scaleX;
+    this.imageScaleY = scaleY;
+    boardChanged();
   }
 
-  public void setBoard(Point position) {
-    boardPosition.x = position.x;
-    boardPosition.y = position.y;
-    setBoardChanged(true);
-    new MapToolEventBus().getMainEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
+  public MD5Key getMapAssetId() {
+    return mapAsset;
   }
 
-  public void setBoard(Point position, MD5Key asset) {
-    this.setMapAsset(asset);
-    this.setBoard(position);
+  public void setMapAssetId(MD5Key id) {
+    setBoard(id, boardPosition, imageScaleX, imageScaleY);
   }
 
   public int getBoardX() {
@@ -776,6 +769,22 @@ public class Zone {
     return boardPosition.y;
   }
 
+  public void setBoardPosition(Point position) {
+    setBoard(mapAsset, position, imageScaleX, imageScaleY);
+  }
+
+  public float getImageScaleX() {
+    return imageScaleX;
+  }
+
+  public void setImageScale(float scaleX, float scaleY) {
+    setBoard(mapAsset, boardPosition, scaleX, scaleY);
+  }
+
+  public float getImageScaleY() {
+    return imageScaleY;
+  }
+
   public boolean drawBoard() {
     return drawBoard;
   }
@@ -784,25 +793,7 @@ public class Zone {
     drawBoard = draw;
   }
 
-  //
-  // Misc Scale methods
-  //
-
-  public float getImageScaleX() {
-    return imageScaleX;
-  }
-
-  public void setImageScaleX(float imageScaleX) {
-    this.imageScaleX = imageScaleX;
-  }
-
-  public float getImageScaleY() {
-    return imageScaleY;
-  }
-
-  public void setImageScaleY(float imageScaleY) {
-    this.imageScaleY = imageScaleY;
-  }
+  // endregion
 
   //
   // Fog
@@ -2283,7 +2274,6 @@ public class Zone {
     zone.boardPosition.x = dto.getBoardPosition().getX();
     zone.boardPosition.y = dto.getBoardPosition().getY();
     zone.drawBoard = dto.getDrawBoard();
-    zone.boardChanged = dto.getBoardChanged();
     zone.name = dto.getName();
     zone.playerAlias = dto.hasPlayerAlias() ? dto.getPlayerAlias().getValue() : null;
     zone.isVisible = dto.getIsVisible();
@@ -2349,7 +2339,6 @@ public class Zone {
     }
     dto.setBoardPosition(Mapper.map(boardPosition));
     dto.setDrawBoard(drawBoard);
-    dto.setBoardChanged(boardChanged);
     dto.setIsVisible(isVisible);
     dto.setVisionType(ZoneDto.VisionTypeDto.valueOf(visionType.name()));
     dto.setLightingStyle(ZoneDto.LightingStyleDto.valueOf(lightingStyle.name()));

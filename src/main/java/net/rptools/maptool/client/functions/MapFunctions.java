@@ -292,7 +292,7 @@ public class MapFunctions extends AbstractFunction {
           }
         }
 
-        newMap.setMapAsset(mapAssetKey);
+        newMap.setMapAssetId(mapAssetKey);
       }
 
       MapTool.addZone(newMap, false);
