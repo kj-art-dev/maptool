@@ -578,7 +578,7 @@ public class ServerCommandClientImpl implements ServerCommand {
         SetBoardMsg.newBuilder()
             .setZoneGuid(zoneGUID.toString())
             .setAssetId(mapAssetId.toString())
-            .setPoint(IntPointDto.newBuilder().setY(x).setY(y));
+            .setPoint(IntPointDto.newBuilder().setX(x).setY(y));
     makeServerCall(Message.newBuilder().setSetBoardMsg(msg).build());
   }
 
