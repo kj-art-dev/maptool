@@ -400,7 +400,11 @@ public class Zone {
   private DrawablePaint backgroundPaint;
   private MD5Key mapAsset;
   private Point boardPosition = new Point(0, 0);
-  private boolean drawBoard = true;
+
+  /**
+   * @deprecated This is a rendering concern and so has been removed from the model.
+   */
+  @Deprecated private boolean drawBoard = true;
 
   /**
    * @deprecated This is a rendering concern and so has been removed from the model.
@@ -783,14 +787,6 @@ public class Zone {
 
   public float getImageScaleY() {
     return imageScaleY;
-  }
-
-  public boolean drawBoard() {
-    return drawBoard;
-  }
-
-  public void setDrawBoard(boolean draw) {
-    drawBoard = draw;
   }
 
   // endregion
@@ -2071,11 +2067,6 @@ public class Zone {
       exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
     }
     // 1.3b70 -> 1.3b71
-    // These two variables were added
-    if (drawBoard == false) {
-      // this should check the file version, not the value
-      drawBoard = true;
-    }
     if (boardPosition == null) {
       boardPosition = new Point(0, 0);
     }
@@ -2273,7 +2264,6 @@ public class Zone {
     zone.mapAsset = dto.hasMapAsset() ? new MD5Key(dto.getMapAsset().getValue()) : null;
     zone.boardPosition.x = dto.getBoardPosition().getX();
     zone.boardPosition.y = dto.getBoardPosition().getY();
-    zone.drawBoard = dto.getDrawBoard();
     zone.name = dto.getName();
     zone.playerAlias = dto.hasPlayerAlias() ? dto.getPlayerAlias().getValue() : null;
     zone.isVisible = dto.getIsVisible();
@@ -2338,7 +2328,6 @@ public class Zone {
       dto.setMapAsset(StringValue.of(mapAsset.toString()));
     }
     dto.setBoardPosition(Mapper.map(boardPosition));
-    dto.setDrawBoard(drawBoard);
     dto.setIsVisible(isVisible);
     dto.setVisionType(ZoneDto.VisionTypeDto.valueOf(visionType.name()));
     dto.setLightingStyle(ZoneDto.LightingStyleDto.valueOf(lightingStyle.name()));

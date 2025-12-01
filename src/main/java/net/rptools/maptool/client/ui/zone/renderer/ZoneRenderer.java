@@ -118,6 +118,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private BufferedImage backBuffer;
   private boolean drawBackground = true;
   private boolean boardChanged = true;
+  private boolean boardEnabled = true;
   private Scale lastZoneScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<>();
@@ -733,7 +734,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void restoreLayers() {
+    boardEnabled = true;
+    boardChanged = true;
+
     disabledLayers.clear();
+  }
+
+  public void disableBoard() {
+    boardEnabled = false;
+    boardChanged = true;
   }
 
   public void disableLayer(Layer layer) {
@@ -825,7 +834,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("calcs-1");
 
     // Rendering pipeline
-    if (zone.drawBoard()) {
+    if (boardEnabled) {
       timer.start("board");
       renderBoard(g2d, view);
       timer.stop("board");
