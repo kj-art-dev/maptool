@@ -1063,6 +1063,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
     if (drawBackground) {
       Graphics2D bbg = backBuffer.createGraphics();
+      bbg.setComposite(AlphaComposite.SrcOver);
       AppPreferences.renderQuality.get().setRenderingHints(bbg);
 
       // Background texture
@@ -1072,8 +1073,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Only apply the noise if the feature is on and the background a textured paint
       if (bgTextureNoiseFilterOn && paint instanceof TexturePaint) {
-        bbg.setPaint(noise.getPaint(scale));
-        bbg.fillRect(0, 0, size.width, size.height);
+        var noiseG = (Graphics2D) bbg.create();
+        try {
+          noiseG.setComposite(AlphaComposite.SrcOver.derive(noise.getNoiseAlpha()));
+          noiseG.setPaint(noise.getPaint(scale));
+          noiseG.fillRect(0, 0, size.width, size.height);
+        } finally {
+          noiseG.dispose();
+        }
       }
 
       // Map

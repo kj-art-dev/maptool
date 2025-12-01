@@ -76,12 +76,11 @@ public class DrawableNoise {
   private void recalc() {
     needsRecalc = false;
     int[] array = new int[WIDTH * HEIGHT];
-    int alpha = (int) (noiseAlpha * 255) << 24;
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
         double noiseVal = perlinNoise.noise(x / WIDTH_DIVISOR, y / HEIGHT_DIVISOR);
         int colVal = (int) (255 * noiseVal);
-        array[y * WIDTH + x] = colVal | (colVal << 8) | (colVal << 16) | alpha;
+        array[y * WIDTH + x] = colVal | (colVal << 8) | (colVal << 16) | (0xFF << 24);
       }
     }
     noiseImage.setRGB(0, 0, WIDTH, HEIGHT, array, 0, WIDTH);
@@ -115,34 +114,12 @@ public class DrawableNoise {
   }
 
   /**
-   * Sets the alpha level that is used to apply the noise.
-   *
-   * @param alpha the alpha level that is used to apply the noise.
-   */
-  public void setNoiseAlpha(float alpha) {
-    noiseAlpha = alpha;
-    needsRecalc = true;
-    recalc();
-  }
-
-  /**
    * Returns the seed used to generate the noise..
    *
    * @return The seed used to generate the noise.
    */
   public long getNoiseSeed() {
     return noiseSeed;
-  }
-
-  /**
-   * Sets the seed that is used to generate the noise.
-   *
-   * @param seed the seed that is used to generate the noise.
-   */
-  public void setNoiseSeed(long seed) {
-    noiseSeed = seed;
-    perlinNoise = new PerlinNoise(seed);
-    recalc();
   }
 
   /**
@@ -174,7 +151,7 @@ public class DrawableNoise {
    * @param alpha The alpha used to apply the noise.
    */
   public void setNoiseValues(long seed, float alpha) {
-    if (seed != noiseSeed || alpha != noiseAlpha) {
+    if (seed != noiseSeed) {
       needsRecalc = true;
     }
 
