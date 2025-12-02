@@ -204,12 +204,7 @@ public class PointerTool extends DefaultTool {
   }
 
   public void startTokenDrag(Token keyToken, Set<GUID> tokens) {
-    startTokenDrag(
-        keyToken,
-        tokens,
-        new ScreenPoint(dragStartX, dragStartY)
-            .convertToZone(renderer.getViewModel().getZoneScale()),
-        false);
+    startTokenDrag(keyToken, tokens, keyToken.getDragAnchor(renderer.getZone()), false);
   }
 
   private void startTokenDrag(
