@@ -79,7 +79,7 @@ public class ExportDialog extends JDialog {
    *
    * <p>The names of the enums should be the same as the button names.
    */
-  public enum ExportRadioButtons {
+  private enum ExportRadioButtons {
     // Format of enum declaration:
     // [Abeille Forms Designer button name] (default checked, default enabled)
     // Button Group 1 (not that it matters for this controller)
@@ -303,7 +303,7 @@ public class ExportDialog extends JDialog {
    * should not have using the screenshot (such as revealing things under other things by disabling
    * layers). Players can basically only turn off tokens, to get an 'empty' version of the map.
    */
-  public static void enforceButtonRules() {
+  private static void enforceButtonRules() {
     if (!MapTool.getPlayer().isGM()) {
       ExportRadioButtons.VIEW_PLAYER.setChecked(true);
       ExportRadioButtons.VIEW_PLAYER.setEnabled(true);
@@ -445,7 +445,7 @@ public class ExportDialog extends JDialog {
     }
   }
 
-  public void browseButtonAction() {
+  private void browseButtonAction() {
     JFileChooser chooser = new JFileChooser();
     if (exportLocation instanceof LocalLocation) {
       chooser.setSelectedFile(((LocalLocation) exportLocation).getFile());
@@ -682,7 +682,7 @@ public class ExportDialog extends JDialog {
     renderer.setBounds(extents);
   }
 
-  public Rectangle fogExtents() {
+  private Rectangle fogExtents() {
     return zone.getExposedArea().getBounds();
   }
 
@@ -694,7 +694,7 @@ public class ExportDialog extends JDialog {
    * @param view the player view
    * @return a new Rectangle with the bounding box of all the elements in the Zone
    */
-  public Rectangle zoneExtents(PlayerView view) {
+  private Rectangle zoneExtents(PlayerView view) {
     // Can't initialize extents to any set x/y values, because
     // we don't know if the actual map contains that x/y.
     // So we need a flag to say extents is 'unset', and the best I
