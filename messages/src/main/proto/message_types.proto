@@ -206,7 +206,9 @@ message SendTokensToBackMsg {
 message SetBoardMsg {
   string zone_guid = 1;
   IntPointDto point = 2;
-  string asset_id = 3;
+  double scaleX = 3;
+  double scaleY = 4;
+  string asset_id = 5;
 }
 
 message SetCampaignMsg {

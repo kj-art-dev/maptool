@@ -650,8 +650,6 @@ message ZoneDto {
   DrawablePaintDto background_paint = 26;
   google.protobuf.StringValue map_asset = 27;
   IntPointDto boardPosition = 28;
-  bool draw_board = 29;
-  bool boardChanged = 30;
   string name = 31;
   google.protobuf.StringValue player_alias = 32;
   bool is_visible = 33;

@@ -161,7 +161,7 @@ public interface ServerCommand {
 
   void updateGmMacros(List<MacroButtonProperties> properties);
 
-  void setBoard(GUID zoneGUID, MD5Key mapAsset, int X, int Y);
+  void setBoard(GUID zoneGUID, MD5Key mapAsset, int x, int y, double scalex, double scaleY);
 
   void setLiveTypingLabel(String name, boolean show);
 

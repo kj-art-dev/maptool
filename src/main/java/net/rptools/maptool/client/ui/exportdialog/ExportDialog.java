@@ -102,7 +102,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   // Pseudo-layers
   private static Zone.VisionType savedVision;
   private static boolean savedFog;
-  private static boolean savedBoard;
   // for ZoneRenderer preservation
   private static Rectangle origBounds;
   private static Scale origScale;
@@ -734,7 +733,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     // pseudo-layers
     savedVision = zone.getVisionType();
     savedFog = zone.hasFog();
-    savedBoard = zone.drawBoard();
 
     //
     // set according to dialog options
@@ -743,8 +741,10 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     if (!ExportLayers.LAYER_VISIBILITY.isChecked()) {
       zone.setVisionType(Zone.VisionType.OFF);
     }
-    zone.setDrawBoard(ExportLayers.LAYER_BOARD.isChecked());
 
+    if (!ExportLayers.LAYER_BOARD.isChecked()) {
+      renderer.disableBoard();
+    }
     for (ExportLayers exportLayer : ExportLayers.values()) {
       if (exportLayer.associatedZoneLayer != null && !exportLayer.isChecked()) {
         renderer.disableLayer(exportLayer.associatedZoneLayer);
@@ -756,7 +756,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   private static void restoreZoneLayers() {
     zone.setHasFog(savedFog);
     zone.setVisionType(savedVision);
-    zone.setDrawBoard(savedBoard);
     renderer.restoreLayers();
   }
 

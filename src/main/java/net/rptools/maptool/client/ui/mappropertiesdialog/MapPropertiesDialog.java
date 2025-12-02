@@ -328,7 +328,7 @@ public class MapPropertiesDialog extends JDialog {
 
     zone.setFogPaint(fogPaint);
     zone.setBackgroundPaint(backgroundPaint);
-    zone.setMapAsset(mapAsset != null ? mapAsset.getMD5Key() : null);
+    zone.setMapAssetId(mapAsset != null ? mapAsset.getMD5Key() : null);
 
     var campaign = MapTool.getClient().getCampaign();
     if (getIsLandingMapCheckBox().isSelected()) {

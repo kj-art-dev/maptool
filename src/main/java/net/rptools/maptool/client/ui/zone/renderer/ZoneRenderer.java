@@ -117,6 +117,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private BufferedImage miniImage;
   private BufferedImage backBuffer;
   private boolean drawBackground = true;
+  private boolean boardChanged = true;
+  private boolean boardEnabled = true;
   private Scale lastZoneScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<>();
@@ -732,7 +734,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void restoreLayers() {
+    boardEnabled = true;
+    boardChanged = true;
+
     disabledLayers.clear();
+  }
+
+  public void disableBoard() {
+    boardEnabled = false;
+    boardChanged = true;
   }
 
   public void disableLayer(Layer layer) {
@@ -824,7 +834,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("calcs-1");
 
     // Rendering pipeline
-    if (zone.drawBoard()) {
+    if (boardEnabled) {
       timer.start("board");
       renderBoard(g2d, view);
       timer.stop("board");
@@ -1057,9 +1067,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (!Objects.equals(lastZoneScale, scale)) {
       drawBackground = true;
     }
-    if (zone.isBoardChanged()) {
+    if (boardChanged) {
       drawBackground = true;
-      zone.setBoardChanged(false);
+      boardChanged = false;
     }
     if (drawBackground) {
       Graphics2D bbg = backBuffer.createGraphics();
@@ -2590,6 +2600,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (event.zone() != this.zone) {
       return;
     }
+
+    this.boardChanged = true;
     repaintDebouncer.dispatch();
   }
 
