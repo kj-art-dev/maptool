@@ -34,7 +34,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
-import javax.imageio.event.IIOWriteProgressListener;
 import javax.swing.*;
 import net.rptools.lib.net.FTPLocation;
 import net.rptools.lib.net.LocalLocation;
@@ -61,7 +60,7 @@ import org.apache.logging.log4j.Logger;
  * <p>This uses a modal dialog based on an Abeille form. It creates a PNG file at the resolution of
  * the 'board' image/tile. The file can be saved to disk or sent to an FTP location.
  */
-public class ExportDialog extends JDialog implements IIOWriteProgressListener {
+public class ExportDialog extends JDialog {
 
   public enum Status {
     OK,
@@ -79,9 +78,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
 
   /** the modal panel the user uses to select the screenshot options */
   private static AbeillePanel interactPanel;
-
-  /** The modal panel showing screenshot progress */
-  private static JLabel progressLabel;
 
   /** The place the image will be sent to (file/FTP) */
   private Location exportLocation;
@@ -111,9 +107,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
 
   /** Only doing this because I don't expect more than one instance of this modal dialog */
   private static int instanceCount = 0;
-
-  /** 0-100: percentage of pixels written to destination */
-  private int renderPercent;
 
   /**
    * This enum is for ALL the radio buttons in the dialog, regardless of their grouping.
@@ -397,7 +390,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     //
     // Initialize the panel and button actions
     //
-    createWaitPanel();
     interactPanel = new AbeillePanel(new ExportDialogView().getRootComponent());
     setLayout(new GridLayout());
     add(interactPanel);
@@ -929,44 +921,4 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   private void switchToWaitPanel() {}
 
   private void switchToInteractPanel() {}
-
-  private void createWaitPanel() {
-    progressLabel = new JLabel();
-    imageProgress(null, 0);
-  }
-
-  //
-  // IIOWriteProgressListener Interface
-  //
-
-  /** Setup the progress meter. */
-  public void imageStarted(ImageWriter source, int imageIndex) {
-    renderPercent = 0;
-    progressLabel.setText(I18N.getText("exportDialog.msg.renderingWait" + renderPercent + "%"));
-    repaint();
-  }
-
-  /** Update the progress meter. */
-  public void imageProgress(ImageWriter source, float percentageDone) {
-    int oldPercent = renderPercent;
-    renderPercent = (int) (percentageDone * 100);
-    if (renderPercent > oldPercent) {
-      progressLabel.setText(I18N.getText("exportDialog.msg.renderingWait" + renderPercent + "%"));
-      repaint();
-    }
-  }
-
-  /** Close this dialog box upon completion of background thread renderer. */
-  public void imageComplete(ImageWriter source) {
-    postScreenshot();
-    dispose();
-  }
-
-  public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {}
-
-  public void thumbnailProgress(ImageWriter source, float percentageDone) {}
-
-  public void thumbnailComplete(ImageWriter source) {}
-
-  public void writeAborted(ImageWriter source) {}
 }
