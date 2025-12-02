@@ -625,7 +625,7 @@ public class ExportDialog extends JDialog {
    * This is a preserves the layer settings on the Zone object. It should be followed by
    * restoreZone()
    */
-  private void setupZoneLayers() throws OutOfMemoryError {
+  private void setupZoneLayers() {
     final Zone zone = renderer.getZone();
 
     //
