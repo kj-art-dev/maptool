@@ -74,39 +74,27 @@ public class ExportDialog extends JDialog {
   //
   private static final Logger log = LogManager.getLogger(ExportDialog.class);
 
-  private static final ExportDialog instance = new ExportDialog();
-
   /** the modal panel the user uses to select the screenshot options */
   private static AbeillePanel interactPanel;
 
   /** The place the image will be sent to (file/FTP) */
   private Location exportLocation;
 
-  // These are convenience variables, which should be set
-  // each time the dialog is shown. It is safe to
-  // cache them like this since the dialog is modal.
-  // If this dialog is ever not modal, these need to be
-  // factored out.
-  private static Zone zone;
-  private static ZoneRenderer renderer;
+  private final Zone zone;
+  private final ZoneRenderer renderer;
 
   // These are used to preserve zone settings because
   // we'll change the Zone/ZoneRenderer temporarily to take the screenshot.
-  // These are static because we don't expect more than
-  // a single ExportDialog to ever be instanced.
 
   // Pseudo-layers
-  private static Zone.VisionType savedVision;
-  private static boolean savedFog;
+  private Zone.VisionType savedVision;
+  private boolean savedFog;
   // for ZoneRenderer preservation
-  private static Rectangle origBounds;
-  private static Scale origScale;
+  private Rectangle origBounds;
+  private Scale origScale;
 
   /** set by preScreenshot, cleared by postScreenshot */
   private boolean waitingForPostScreenshot = false;
-
-  /** Only doing this because I don't expect more than one instance of this modal dialog */
-  private static int instanceCount = 0;
 
   /**
    * This enum is for ALL the radio buttons in the dialog, regardless of their grouping.
@@ -373,12 +361,11 @@ public class ExportDialog extends JDialog {
     }
   }
 
-  public static ExportDialog getInstance() {
-    return instance;
-  }
-
-  private ExportDialog() {
+  public ExportDialog(ZoneRenderer renderer) {
     super(MapTool.getFrame(), I18N.getText("action.exportScreenShot.title"), true);
+
+    this.renderer = renderer;
+    this.zone = renderer.getZone();
 
     // The window uses about 1MB. Disposing frees this, but repeated uses
     // will cause more memory fragmentation.
@@ -421,10 +408,6 @@ public class ExportDialog extends JDialog {
   @Override
   public void setVisible(boolean b) {
     if (b) {
-      // Always call this first, since other methods may rely on zone or renderer being set.
-      setZone(MapTool.getFrame().getCurrentZoneRenderer().getZone());
-      setZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
-
       // Set to interactive mode
       switchToInteractPanel();
 
@@ -443,25 +426,6 @@ public class ExportDialog extends JDialog {
   private void cancel() {
     status = ExportDialog.Status.CANCEL;
     setVisible(false);
-  }
-
-  //
-  // These get/set the convenience variables zone and renderer
-  //
-  public static void setZone(Zone zone) {
-    ExportDialog.zone = zone;
-  }
-
-  public static ZoneRenderer getZoneRenderer() {
-    return renderer;
-  }
-
-  public static void setZoneRenderer(ZoneRenderer renderer) {
-    ExportDialog.renderer = renderer;
-  }
-
-  public static Zone getZone() {
-    return zone;
   }
 
   private void exportButtonAction() {
@@ -661,7 +625,7 @@ public class ExportDialog extends JDialog {
    * This is a preserves the layer settings on the Zone object. It should be followed by
    * restoreZone()
    */
-  private static void setupZoneLayers() throws OutOfMemoryError {
+  private void setupZoneLayers() throws OutOfMemoryError {
     final Zone zone = renderer.getZone();
 
     //
@@ -690,7 +654,7 @@ public class ExportDialog extends JDialog {
   }
 
   /** This restores the layer settings on the Zone object. It should follow setupZoneLayers(). */
-  private static void restoreZoneLayers() {
+  private void restoreZoneLayers() {
     zone.setHasFog(savedFog);
     zone.setVisionType(savedVision);
     renderer.restoreLayers();

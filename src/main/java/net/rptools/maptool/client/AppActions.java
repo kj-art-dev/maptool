@@ -184,38 +184,51 @@ public class AppActions {
         }
       };
 
-  public static final ClientAction EXPORT_SCREENSHOT =
-      new ZoneClientAction("action.exportScreenShotAs") {
-        @Override
-        protected void executeAction(@Nonnull ZoneRenderer renderer) {
-          try {
-            ExportDialog d = MapTool.getCampaign().getExportDialog();
-            d.setVisible(true);
-            MapTool.getCampaign().setExportDialog(d);
-          } catch (Exception ex) {
-            MapTool.showError("Cannot create the ExportDialog object", ex);
-          }
-        }
-      };
+  // region Screenshot export
 
-  public static final Action EXPORT_SCREENSHOT_LAST_LOCATION =
-      new ZoneClientAction(
-          "action.exportScreenShot", withMenuShortcut(KeyStroke.getKeyStroke("shift S"))) {
-        @Override
-        protected void executeAction(@Nonnull ZoneRenderer renderer) {
-          ExportDialog d = MapTool.getCampaign().getExportDialog();
-          if (d == null || d.getExportLocation() == null || d.getExportSettings() == null) {
-            // Can't do a save.. so try "save as"
-            EXPORT_SCREENSHOT.executeAction();
-          } else {
-            try {
-              d.screenCapture();
-            } catch (Exception ex) {
-              MapTool.showError("msg.error.failedExportingImage", ex);
-            }
-          }
+  private static final class ExportScreenshotAction extends ZoneClientAction {
+    private final boolean forceSaveAs;
+
+    public ExportScreenshotAction(boolean forceSaveAs) {
+      super(forceSaveAs ? "action.exportScreenShotAs" : "action.exportScreenShot");
+      this.forceSaveAs = forceSaveAs;
+    }
+
+    @Override
+    protected void executeAction(@Nonnull ZoneRenderer renderer) {
+      var campaign = MapTool.getCampaign();
+      var exportLocation = campaign.getExportLocation();
+      var exportSettings = campaign.getExportSettings();
+
+      var doSaveAs = forceSaveAs || exportLocation == null || exportSettings == null;
+
+      var dialog = new ExportDialog(renderer);
+      dialog.setExportSettings(exportSettings);
+      dialog.setExportLocation(exportLocation);
+
+      if (doSaveAs) {
+        try {
+          dialog.setVisible(true);
+
+          // Save the new settings for future use comparison.
+          campaign.setExportLocation(dialog.getExportLocation());
+          campaign.setExportSettings(dialog.getExportSettings());
+        } catch (Exception ex) {
+          MapTool.showError("Cannot create the ExportDialog object", ex);
         }
-      };
+      } else {
+        try {
+          dialog.screenCapture();
+        } catch (Exception ex) {
+          MapTool.showError("msg.error.failedExportingImage", ex);
+        }
+      }
+    }
+  }
+
+  public static final ClientAction EXPORT_SCREENSHOT = new ExportScreenshotAction(true);
+
+  public static final Action EXPORT_SCREENSHOT_LAST_LOCATION = new ExportScreenshotAction(false);
 
   public static final Action EXPORT_CAMPAIGN_REPO =
       new TranslatedClientAction("admin.exportCampaignRepo") {
