@@ -491,12 +491,12 @@ public class ExportDialog extends JDialog {
         }
 
         doScreenshot(playerView);
+
+        MapTool.getFrame()
+            .setStatusMessage(I18N.getString("dialog.screenshot.msg.screenshotSaved"));
       } catch (Exception e) {
         MapTool.getFrame()
             .setStatusMessage(I18N.getString("dialog.screenshot.error.failedImageGeneration"));
-      } finally {
-        MapTool.getFrame()
-            .setStatusMessage(I18N.getString("dialog.screenshot.msg.screenshotSaved"));
       }
     } catch (OutOfMemoryError e) {
       MapTool.showError("screenCapture() caught: Out Of Memory", e);
