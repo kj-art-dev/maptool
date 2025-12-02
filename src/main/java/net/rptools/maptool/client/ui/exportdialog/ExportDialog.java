@@ -112,22 +112,8 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   /** Only doing this because I don't expect more than one instance of this modal dialog */
   private static int instanceCount = 0;
 
-  //
-  // Vars for background rendering of the screenshot
-  //
-
   /** 0-100: percentage of pixels written to destination */
   private int renderPercent;
-
-  // 1. We shouldn't have to synchronize the names of variables manually
-  // 2. Specifying the name of a button in Abeille is the same as declaring a variable
-  // 3. This code is always the same for every form, aside from the var names
-  // 4. JAVA doesn't have a way to do abstract enumerated types, so we can't re-use the code except
-  // by copy/paste
-  // 5. Abeille seems to be abandonded at this point (July 2010). The owner replied as recently as
-  // July 2009, but
-  // seems not to have followed up.
-  //
 
   /**
    * This enum is for ALL the radio buttons in the dialog, regardless of their grouping.
@@ -622,47 +608,6 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
               postScreenshot();
               MapTool.getFrame()
                   .setStatusMessage(I18N.getString("dialog.screenshot.msg.screenshotSaved"));
-            }
-          } else if (interactPanel.getRadioButton("METHOD_BACKGROUND").isSelected()) {
-            // We must call preScreenshot before creating the ZoneImageGenerator, because
-            // ZoneImageGenerator uses the ZoneRenderer's bounds to set itself up
-
-            MapTool.showError("This doesn't work! Try one of the other methods.", null);
-            if (false) {
-              //
-              // Note: this implementation is the obvious way, which doesn't work, since
-              // ZoneRenderer is part of the Swing component chain, and the threads get deadlocked.
-              //
-              // The suggested implementation by
-              // "Reiger" at http://ubuntuforums.org/archive/index.php/t-1455270.html
-              // might work... except that it would have to be part of ZoneRenderer
-              //
-              // The only way to make this really work is to pull the renderZone function
-              // out of ZoneRenderer into a new class: call it ZoneRasterizer. Then make
-              // ZoneRenderer create an instance of it, and patch up the code to make it
-              // compatible. Then we can create an instance of ZoneRasterizer, and run it
-              // in a separate thread, since it won't lock in any of the functions that
-              // Swing uses.
-              //
-              class backscreenRender implements Runnable {
-
-                public void run() {
-                  try {
-                    PlayerView view = preScreenshot();
-                    final ZoneImageGenerator zoneImageGenerator =
-                        new ZoneImageGenerator(renderer, view);
-                    final ImageWriter pngWriter = ImageIO.getImageWritersByFormatName("png").next();
-                    exportLocation.putContent(pngWriter, zoneImageGenerator);
-                    // postScreenshot is called by the callback imageComplete()
-                  } catch (Exception e) {
-                    assert false
-                        : "Unhandled Exception in renderOffScreen: '" + e.getMessage() + "'";
-                  }
-                }
-              }
-              backscreenRender p = new backscreenRender();
-              new Thread(p).start();
-              repaint();
             }
           } else {
             throw new Exception("Unknown rendering method!");
