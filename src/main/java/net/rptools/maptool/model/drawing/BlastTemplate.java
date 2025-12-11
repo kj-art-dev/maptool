@@ -54,7 +54,6 @@ public class BlastTemplate extends ConeTemplate {
     super(other);
     this.offsetX = other.offsetX;
     this.offsetY = other.offsetY;
-    this.direction = other.direction;
   }
 
   /*---------------------------------------------------------------------------------------------
@@ -195,7 +194,7 @@ public class BlastTemplate extends ConeTemplate {
    */
   public void setDirectionControlCellOffset(Direction direction) {
     if (direction != null) {
-      this.direction = direction.name();
+      setDirection(direction);
       int radius = getRadius();
       switch (direction) {
         case Direction.NORTH_WEST -> setControlCellOffset(-radius, -radius);

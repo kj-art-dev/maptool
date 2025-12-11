@@ -38,7 +38,7 @@ public class ConeTemplate extends RadiusTemplate {
    * of the selected vertex. Saved as a string as a hack to get around the hessian library's problem
    * w/ serializing enumerations.
    */
-  protected String direction = Direction.SOUTH_EAST.name();
+  private String direction = Direction.SOUTH_EAST.name();
 
   public ConeTemplate() {}
 

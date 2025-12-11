@@ -63,84 +63,62 @@ public class TemplateFunctions extends DrawingFunctions {
   }
 
   /**
-   * TemplateType Enumeration, including:
-   *
-   * <ul>
-   *   <li><code>alias</code> property for matching template type by an alias
-   *   <li><code>template</code> method to return the appropriate template class
+   * TemplateType Enumeration, including <code>template</code> method to return the appropriate
+   * template class.
    */
   private enum TemplateType {
-    BlastTemplate("Blast") {
+    BLAST() {
       @Override
       public AbstractTemplate template() {
         return new BlastTemplate();
       }
     },
-    BurstTemplate("Burst") {
+    BURST() {
       @Override
       public AbstractTemplate template() {
         return new BurstTemplate();
       }
     },
-    ConeTemplate("Cone") {
+    CONE() {
       @Override
       public AbstractTemplate template() {
         return new ConeTemplate();
       }
     },
-    LineTemplate("Line") {
+    LINE() {
       @Override
       public AbstractTemplate template() {
         return new LineTemplate();
       }
     },
-    LineCellTemplate("LineCell") {
+    LINECELL() {
       @Override
       public AbstractTemplate template() {
         return new LineCellTemplate();
       }
     },
-    RadiusTemplate("Radius") {
+    RADIUS() {
       @Override
       public AbstractTemplate template() {
         return new RadiusTemplate();
       }
     },
-    RadiusCellTemplate("RadiusCell") {
+    RADIUSCELL() {
       @Override
       public AbstractTemplate template() {
         return new RadiusCellTemplate();
       }
     },
-    WallTemplate("Wall") {
+    WALL() {
       @Override
       public AbstractTemplate template() {
         return new WallTemplate();
       }
     };
 
-    TemplateType(String alias) {
-      this.alias = alias;
-    }
+    TemplateType() {}
 
-    public AbstractTemplate template() {
-      return null;
-    }
-
-    private final String alias;
-
-    public String getAlias() {
-      return alias;
-    }
-
-    public static TemplateType valueOfAlias(String alias) {
-      for (TemplateType tt : values()) {
-        if (tt.alias.equalsIgnoreCase(alias)) {
-          return tt;
-        }
-      }
-      return null;
-    }
+    public abstract AbstractTemplate template();
   }
 
   /** Evaluate the function(s) */
@@ -154,19 +132,15 @@ public class TemplateFunctions extends DrawingFunctions {
       // templateType, radius/wallPath [, units, [, options [, delim [, mapRef ]]]]
       FunctionUtil.checkNumberParam(FUNC_CREATE_TEMPLATE, parameters, 2, 6);
 
-      // template type, determine first by alias, then name (i.e. enum value)
+      // template type, determine by name (i.e. enum value)
       String templateType = parameters.getFirst().toString().toUpperCase().trim();
-      TemplateType tt = TemplateType.valueOfAlias(templateType);
-      if (tt == null) {
-        try {
-          tt = TemplateType.valueOf(templateType);
-        } catch (IllegalArgumentException iae) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.template.unknownTemplateType",
-                  FUNC_CREATE_TEMPLATE,
-                  templateType));
-        }
+      TemplateType tt;
+      try {
+        tt = TemplateType.valueOf(templateType);
+      } catch (IllegalArgumentException iae) {
+        throw new ParserException(
+            I18N.getText(
+                "macro.function.template.unknownTemplateType", FUNC_CREATE_TEMPLATE, templateType));
       }
       AbstractTemplate abstractTemplate = tt.template();
 
@@ -244,10 +218,19 @@ public class TemplateFunctions extends DrawingFunctions {
           parameters.size() < 2
               ? getSingleSelectedDrawnElement(FUNC_GET_TEMPLATE_RADIUS, zone)
               : findDrawnElement(FUNC_GET_TEMPLATE_RADIUS, zone, parameters.get(1).toString());
+
       if (!(de.getDrawable() instanceof AbstractTemplate)) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.template.unknownTemplate", functionName, de.getDrawable().getId()));
+      }
+
+      if (de.getDrawable() instanceof WallTemplate) {
+        throw new ParserException(
+            I18N.getText(
+                "macro.function.template.invalidRadius",
+                functionName,
+                de.getDrawable().getClass().getSimpleName()));
       }
 
       return BigDecimal.valueOf(

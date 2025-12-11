@@ -371,9 +371,13 @@ public class DrawingFunctions extends AbstractFunction {
     dinfo.addProperty(
         "isTemplate",
         el.getDrawable() instanceof AbstractTemplate ? BigDecimal.ONE : BigDecimal.ZERO);
+
     if (el.getDrawable() instanceof AbstractTemplate at) {
+      dinfo.addProperty("templateSize", at.getRadius());
       JsonObject template = new JsonObject();
-      template.addProperty("radius", at.getRadius());
+      if (!(el.getDrawable() instanceof WallTemplate)) {
+        template.addProperty("radius", at.getRadius());
+      }
       JsonObject vertex = new JsonObject();
       vertex.addProperty("x", at.getVertex().x);
       vertex.addProperty("y", at.getVertex().y);
@@ -390,19 +394,14 @@ public class DrawingFunctions extends AbstractFunction {
         }
         case ConeTemplate ct -> template.addProperty("direction", ct.getDirection().toString());
         case WallTemplate wt -> {
-          if (wt.getPath() != null) {
-            JsonArray pathInfo = new JsonArray();
-            for (CellPoint cp : wt.getPath()) {
-              ZonePoint zp = map.getGrid().convert(cp);
-              JsonObject pointInfo = new JsonObject();
-              pointInfo.addProperty("x", zp.x);
-              pointInfo.addProperty("y", zp.y);
-              pathInfo.add(pointInfo);
-            }
-            template.add("wallPath", pathInfo);
-          } else {
-            template.addProperty("wallPath", "null");
+          JsonArray pathInfo = new JsonArray();
+          for (CellPoint cp : wt.getPath()) {
+            JsonObject pointInfo = new JsonObject();
+            pointInfo.addProperty("x", cp.x);
+            pointInfo.addProperty("y", cp.y);
+            pathInfo.add(pointInfo);
           }
+          template.add("wallPath", pathInfo);
         }
         case LineTemplate lt -> {
           JsonObject pathVertex = new JsonObject();
@@ -482,8 +481,8 @@ public class DrawingFunctions extends AbstractFunction {
         while (!pathIter.isDone()) {
           pathIter.currentSegment(coords);
           JsonObject info = new JsonObject();
-          info.addProperty("x", (int) coords[0]);
-          info.addProperty("y", (int) coords[1]);
+          info.addProperty("x", coords[0]);
+          info.addProperty("y", coords[1]);
           if (!info.equals(lastinfo)) {
             pinfo.add(info);
           }
