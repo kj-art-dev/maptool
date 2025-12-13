@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.tool;
 
+import com.github.weisj.jsvg.util.ColorUtil;
 import com.google.common.eventbus.Subscribe;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
@@ -29,6 +30,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -616,7 +618,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
               wallStroke.getLineJoin());
       var decorationStroke =
           new BasicStroke(1.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
-      var walls = rig.getWallsWithin(bounds);
+      var walls = rig.getWallsIntersecting(bounds);
       for (var wall : walls) {
         var asSegment = wall.asLineSegment();
         var asVector = Vector2D.create(asSegment.p0, asSegment.p1);
@@ -790,8 +792,9 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       if (SwingUtilities.isLeftMouseButton(event)) {
         switch (potentialDragElement) {
           case null -> {
-            // TODO Selection box!
             // Do nothing.
+            tool.changeToolMode(new DrawSelectionBoxToolMode(tool, rig, potentialDragPoint));
+            handled = true;
           }
           case WallTopologyRig.MovableVertex movableVertex -> {
             tool.changeToolMode(
@@ -836,11 +839,17 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
               movableWall.delete();
               MapTool.serverCommand().replaceWalls(tool.getZone(), rig.commit());
-            } else {
-              if (!SwingUtil.isShiftDown(event)) {
-                // Not holding shift, so replace the selection instead of adding to it.
-                tool.clearSelectedWalls();
+            } else if (SwingUtil.isShiftDown(event)) {
+              // Toggle the selection status of the wall.
+              var isSelected = tool.isSelectedWall(movableWall);
+              if (isSelected) {
+                tool.removeWallsFromSelectionIf(movableWall::isForSameElement);
+              } else {
+                tool.addSelectedWall(movableWall);
               }
+            } else {
+              // Not holding shift, so replace the selection instead of adding to it.
+              tool.clearSelectedWalls();
               tool.addSelectedWall(movableWall);
             }
           }
@@ -1227,6 +1236,83 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
         return Color.green;
       }
       return super.getHandleFill(handle);
+    }
+  }
+
+  /**
+   * Tool mode for drawing a wall selection box.
+   *
+   * <p>This mode supports the following actions:
+   *
+   * <ol>
+   *   <li>Canceling leaves the selection as-is and transitions to {@link BasicToolMode}.
+   *   <li>Left-dragging the mouse will adjust the selection box accordingly.
+   *   <li>Releasing the left mouse button will commit the selection. Any walls contained within the
+   *       selection box will become the new selection. If the <kbd>Shift</kbd> key is held when
+   *       releasing the left mouse button, the newly selected walls will be added to the selection;
+   *       otherwise, they will replace the selection.
+   * </ol>
+   */
+  private static final class DrawSelectionBoxToolMode extends ToolModeBase {
+    private final Point2D.Double startPoint;
+    private final Point2D.Double endPoint;
+    private final RoundRectangle2D.Double box;
+
+    public DrawSelectionBoxToolMode(
+        WallTopologyTool tool, WallTopologyRig rig, Point2D startPoint) {
+      super(tool, rig);
+      this.startPoint = new Point2D.Double(startPoint.getX(), startPoint.getY());
+      this.endPoint = new Point2D.Double(startPoint.getX(), startPoint.getY());
+      this.box =
+          new RoundRectangle2D.Double(this.startPoint.getX(), this.startPoint.getY(), 0, 0, 10, 10);
+    }
+
+    @Override
+    public final boolean cancel() {
+      // Revert to the original.
+      rig.setWalls(tool.getZone().getWalls());
+      tool.changeToolMode(new BasicToolMode(tool, rig));
+      return true;
+    }
+
+    @Override
+    public boolean mouseDragged(Point2D point, Snap snapMode, MouseEvent event) {
+      if (SwingUtilities.isLeftMouseButton(event)) {
+        endPoint.setLocation(point.getX(), point.getY());
+        box.x = Math.min(startPoint.getX(), endPoint.getX());
+        box.y = Math.min(startPoint.getY(), endPoint.getY());
+        box.width = Math.max(startPoint.getX(), endPoint.getX()) - box.x;
+        box.height = Math.max(startPoint.getY(), endPoint.getY()) - box.y;
+      }
+
+      return false;
+    }
+
+    @Override
+    public void mouseReleased(Point2D point, Snap snapMode, MouseEvent event) {
+      if (SwingUtilities.isLeftMouseButton(event)) {
+        tool.changeToolMode(new BasicToolMode(tool, rig));
+
+        var wallsToSelect = rig.getWallsWithin(box.getBounds2D());
+        if (!SwingUtil.isShiftDown(event)) {
+          // Not holding shift, so replace the selection instead of adding to it.
+          tool.clearSelectedWalls();
+        }
+        for (var wall : wallsToSelect) {
+          tool.addSelectedWall(wall);
+        }
+      }
+    }
+
+    @Override
+    public void paint(Graphics2D g2) {
+      super.paint(g2);
+
+      g2.setPaint(ColorUtil.withAlpha(AppStyle.selectionBoxFill, 0.25f));
+      g2.fill(box);
+
+      g2.setColor(AppStyle.selectionBoxOutline);
+      g2.draw(box);
     }
   }
 }
