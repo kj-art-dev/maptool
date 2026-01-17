@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.Set;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import net.rptools.lib.AwtUtil;
+import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.PaintChooser;
@@ -39,6 +41,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Grid;
+import net.rptools.maptool.model.Grid.GridType;
 import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.GridlessGrid;
 import net.rptools.maptool.model.HexGridHorizontal;
@@ -48,7 +51,6 @@ import net.rptools.maptool.model.SquareGrid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.util.ImageManager;
-import net.rptools.maptool.util.StringUtil;
 
 public class MapPropertiesDialog extends JDialog {
   private static final int AUTO_REPEAT_THRESHOLD = 200;
@@ -111,17 +113,13 @@ public class MapPropertiesDialog extends JDialog {
     getMapButton().setEnabled(false);
   }
 
-  public void forceGridType(String gridType) {
-    if (GridFactory.isHexVertical(gridType)) {
-      getHexVerticalRadio().setSelected(true);
-    } else if (GridFactory.isHexHorizontal(gridType)) {
-      getHexHorizontalRadio().setSelected(true);
-    } else if (GridFactory.isIsometric(gridType)) {
-      getIsometricRadio().setSelected(true);
-    } else if (GridFactory.isSquare(gridType)) {
-      getSquareRadio().setSelected(true);
-    } else {
-      getNoGridRadio().setSelected(true);
+  public void forceGridType(GridType gridType) {
+    switch (gridType) {
+      case Square -> getSquareRadio().setSelected(true);
+      case Isometric -> getIsometricRadio().setSelected(true);
+      case HexVertical -> getHexVerticalRadio().setSelected(true);
+      case HexHorizontal -> getHexHorizontalRadio().setSelected(true);
+      case None -> getNoGridRadio().setSelected(true);
     }
     getHexVerticalRadio().setEnabled(false);
     getHexHorizontalRadio().setEnabled(false);
@@ -330,7 +328,7 @@ public class MapPropertiesDialog extends JDialog {
 
     zone.setFogPaint(fogPaint);
     zone.setBackgroundPaint(backgroundPaint);
-    zone.setMapAsset(mapAsset != null ? mapAsset.getMD5Key() : null);
+    zone.setMapAssetId(mapAsset != null ? mapAsset.getMD5Key() : null);
 
     var campaign = MapTool.getClient().getCampaign();
     if (getIsLandingMapCheckBox().isSelected()) {
@@ -342,29 +340,35 @@ public class MapPropertiesDialog extends JDialog {
   }
 
   private void initIsometricRadio() {
-    getIsometricRadio().setSelected(GridFactory.isIsometric(AppPreferences.defaultGridType.get()));
+    getIsometricRadio()
+        .setSelected(
+            GridType.fromString(AppPreferences.defaultGridType.get()) == GridType.Isometric);
     getIsometricIcon().setIcon(RessourceManager.getSmallIcon(Icons.GRID_ISOMETRIC));
   }
 
   private void initHexHoriRadio() {
     getHexHorizontalRadio()
-        .setSelected(GridFactory.isHexHorizontal(AppPreferences.defaultGridType.get()));
+        .setSelected(
+            GridType.fromString(AppPreferences.defaultGridType.get()) == GridType.HexHorizontal);
     getHexHorizontalIcon().setIcon(RessourceManager.getSmallIcon(Icons.GRID_HEX_HORIZONTAL));
   }
 
   private void initHexVertRadio() {
     getHexVerticalRadio()
-        .setSelected(GridFactory.isHexVertical(AppPreferences.defaultGridType.get()));
+        .setSelected(
+            GridType.fromString(AppPreferences.defaultGridType.get()) == GridType.HexVertical);
     getHexVerticalIcon().setIcon(RessourceManager.getSmallIcon(Icons.GRID_HEX_VERTICAL));
   }
 
   private void initSquareRadio() {
-    getSquareRadio().setSelected(GridFactory.isSquare(AppPreferences.defaultGridType.get()));
+    getSquareRadio()
+        .setSelected(GridType.fromString(AppPreferences.defaultGridType.get()) == GridType.Square);
     getSquareIcon().setIcon(RessourceManager.getSmallIcon(Icons.GRID_SQUARE));
   }
 
   private void initNoGridRadio() {
-    getNoGridRadio().setSelected(GridFactory.isNone(AppPreferences.defaultGridType.get()));
+    getNoGridRadio()
+        .setSelected(GridType.fromString(AppPreferences.defaultGridType.get()) == GridType.None);
     getNoGridIcon().setIcon(RessourceManager.getSmallIcon(Icons.GRID_NONE));
   }
 
@@ -572,19 +576,19 @@ public class MapPropertiesDialog extends JDialog {
   private Grid createZoneGrid() {
     Grid grid = null;
     if (getHexHorizontalRadio().isSelected()) {
-      grid = GridFactory.createGrid(GridFactory.HEX_HORI);
+      grid = GridFactory.createGrid(GridType.HexHorizontal);
     }
     if (getHexVerticalRadio().isSelected()) {
-      grid = GridFactory.createGrid(GridFactory.HEX_VERT);
+      grid = GridFactory.createGrid(GridType.HexVertical);
     }
     if (getSquareRadio().isSelected()) {
-      grid = GridFactory.createGrid(GridFactory.SQUARE);
+      grid = GridFactory.createGrid(GridType.Square);
     }
     if (getIsometricRadio().isSelected()) {
-      grid = GridFactory.createGrid(GridFactory.ISOMETRIC);
+      grid = GridFactory.createGrid(GridType.Isometric);
     }
     if (getNoGridRadio().isSelected()) {
-      grid = GridFactory.createGrid(GridFactory.NONE);
+      grid = GridFactory.createGrid(GridType.None);
     }
     grid.setSize(StringUtil.parseInteger(getPixelsPerCellTextField().getText(), grid.getSize()));
 
@@ -759,7 +763,7 @@ public class MapPropertiesDialog extends JDialog {
       if (mapAsset != null) {
         BufferedImage image = ImageManager.getImageAndWait(mapAsset.getMD5Key());
         Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
-        SwingUtil.constrainTo(imgSize, size.width - 10 * 4, size.height - 10 * 4);
+        AwtUtil.constrainTo(imgSize, size.width - 10 * 4, size.height - 10 * 4);
 
         int x = (size.width - imgSize.width) / 2;
         int y = (size.height - imgSize.height) / 2;

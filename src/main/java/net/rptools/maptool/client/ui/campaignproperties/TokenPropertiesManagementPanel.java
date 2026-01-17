@@ -15,19 +15,24 @@
 package net.rptools.maptool.client.ui.campaignproperties;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.AbeillePanel;
+import net.rptools.maptool.client.swing.TableCellRendererDecorator;
 import net.rptools.maptool.client.swing.TextFieldEditorButtonTableCellEditor;
 import net.rptools.maptool.client.ui.campaignproperties.TokenPropertiesTableModel.LargeEditableText;
 import net.rptools.maptool.client.ui.sheet.stats.StatSheetComboBoxRenderer;
+import net.rptools.maptool.client.ui.theme.Icons;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
@@ -166,42 +171,43 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
   }
 
   public void initTypeAddButton() {
-    getTypeAddButton()
-        .addActionListener(
-            e ->
-                EventQueue.invokeLater(
-                    () -> {
-                      // First find a unique name, there are so few entries we don't have to worry
-                      // about being fancy
-                      int seq = 1;
-                      String name =
-                          I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
-                      while (tokenTypeMap.containsKey(name)) {
-                        seq++;
-                        name =
-                            I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
-                      }
+    var button = getTypeAddButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_NEW));
+    button.addActionListener(
+        e ->
+            EventQueue.invokeLater(
+                () -> {
+                  // First find a unique name, there are so few entries we don't have to worry
+                  // about being fancy
+                  int seq = 1;
+                  String name =
+                      I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
+                  while (tokenTypeMap.containsKey(name)) {
+                    seq++;
+                    name = I18N.getText("campaignPropertiesDialog.newTokenTypeDefaultName", seq);
+                  }
 
-                      var newName =
-                          (String)
-                              JOptionPane.showInputDialog(
-                                  this,
-                                  I18N.getText("campaignPropertiesDialog.newTokenTypeName"),
-                                  I18N.getText("campaignPropertiesDialog.newTokenTypeTitle"),
-                                  JOptionPane.PLAIN_MESSAGE,
-                                  null,
-                                  null,
-                                  name);
-                      if (newName != null) {
-                        tokenTypeMap.put(newName, new LinkedList<>());
-                        updateTypeList();
-                        getTokenTypeList().setSelectedValue(newName, true);
-                      }
-                    }));
+                  var newName =
+                      (String)
+                          JOptionPane.showInputDialog(
+                              this,
+                              I18N.getText("campaignPropertiesDialog.newTokenTypeName"),
+                              I18N.getText("campaignPropertiesDialog.newTokenTypeTitle"),
+                              JOptionPane.PLAIN_MESSAGE,
+                              null,
+                              null,
+                              name);
+                  if (newName != null) {
+                    tokenTypeMap.put(newName, new LinkedList<>());
+                    updateTypeList();
+                    getTokenTypeList().setSelectedValue(newName, true);
+                  }
+                }));
   }
 
   public void initTypeDeleteButton() {
     var button = getTypeDeleteButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_DELETE));
     button.addActionListener(
         e -> {
           var type = (String) getTokenTypeList().getSelectedValue();
@@ -237,6 +243,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
 
   public void initTypeDefaultButton() {
     var button = getTypeSetAsDefault();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_ACCEPT));
     button.addActionListener(
         l -> {
           var propertyType = (String) getTokenTypeList().getSelectedValue();
@@ -328,6 +335,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
 
   public void initTypeDuplicateButton() {
     var button = getTypeDuplicateButton();
+    button.setIcon(RessourceManager.getSmallIcon(Icons.ACTION_COPY));
     button.addActionListener(
         e ->
             EventQueue.invokeLater(
@@ -357,6 +365,7 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
                 () -> {
                   JPanel helpText = getDescriptionContainer();
                   helpText.setVisible(!helpText.isVisible());
+                  button.setSelected(helpText.isVisible());
                 }));
     button.setEnabled(true);
   }
@@ -445,7 +454,6 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
                 getTypeDuplicateButton().setEnabled(false);
                 getTokenTypeName().setEditable(false);
                 getStatSheetComboBox().setEnabled(false);
-                getStatSheetLocationComboBox().setEnabled(false);
                 getTypeSetAsDefault().setEnabled(false);
               } else {
                 bind((String) getTokenTypeList().getSelectedValue());
@@ -459,7 +467,6 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
                   getTypeDeleteButton().setEnabled(true);
                 }
                 getStatSheetComboBox().setEnabled(true);
-                getStatSheetLocationComboBox().setEnabled(true);
                 populateStatSheetComboBoxes(propertyType);
                 if (!propertyType.equals(defaultPropertyType)) {
                   getTypeSetAsDefault().setEnabled(true);
@@ -476,24 +483,16 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
     var combo = getStatSheetComboBox();
     combo.removeAllItems();
     var ssManager = new StatSheetManager();
-    ssManager.getStatSheets(propertyType).stream()
-        .sorted(Comparator.comparing(StatSheet::description))
-        .forEach(ss -> combo.addItem(ss));
+    ssManager.getOrderedStatSheets(propertyType).forEach(ss -> combo.addItem(ss));
     var statSheetProperty = tokenTypeStatSheetMap.get(propertyType);
     String id;
     if (statSheetProperty == null) {
-      id = ssManager.getDefaultStatSheetId();
-      tokenTypeStatSheetMap.put(
-          propertyType,
-          new StatSheetProperties(
-              ssManager.getDefaultStatSheetId(), StatSheetLocation.BOTTOM_LEFT));
+      id = StatSheetManager.LEGACY_STATSHEET.id();
+      tokenTypeStatSheetMap.put(propertyType, new StatSheetProperties(id, null));
     } else {
       id = statSheetProperty.id();
     }
     combo.setSelectedItem(ssManager.getStatSheet(id));
-
-    var locationCombo = getStatSheetLocationComboBox();
-    locationCombo.setSelectedItem(tokenTypeStatSheetMap.get(propertyType).location());
   }
 
   public void initStatSheetDetails() {
@@ -515,17 +514,24 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
     var combo = getStatSheetComboBox();
     combo.setEnabled(false);
     combo.setRenderer(new StatSheetComboBoxRenderer());
+    final var ssManager = new StatSheetManager();
     combo.addActionListener(
         l -> {
+          var ss = (StatSheet) combo.getSelectedItem();
           if (getStatSheetComboBox().hasFocus()) { // Only if user has made change
-            var ss = (StatSheet) combo.getSelectedItem();
             var tokenType = (String) getTokenTypeList().getSelectedValue();
             if (ss != null && tokenType != null) {
-              var id = new StatSheetManager().getId(ss);
+              var id = ss.id();
               var location = tokenTypeStatSheetMap.get(tokenType).location();
               tokenTypeStatSheetMap.put(tokenType, new StatSheetProperties(id, location));
               getStatSheetLocationComboBox().setSelectedItem(location);
             }
+          }
+          if (ssManager.isLocationUserSettable(ss)) {
+            getStatSheetLocationComboBox().setEnabled(true);
+          } else {
+            getStatSheetLocationComboBox().setEnabled(false);
+            getStatSheetLocationComboBox().setSelectedItem(null);
           }
         });
   }
@@ -692,113 +698,48 @@ public class TokenPropertiesManagementPanel extends AbeillePanel<CampaignPropert
   }
 
   public void prettify() {
-
     /* fix text areas to look like labels
      * dig down to the appropriate container level
      * then set the backgrounds to transparent
      */
-    JPanel jPanel = (JPanel) super.getComponent("descriptionContainer");
-    List<Component> jPanels =
-        Arrays.stream(jPanel.getComponents()).filter(c -> c instanceof JPanel).toList();
-
-    Color transparent = new Color(0, 0, 0, 1);
-    for (Component panel : jPanels) {
-      JPanel jp = (JPanel) panel;
-      Component[] components = jp.getComponents();
-      Arrays.stream(components).toList().forEach(c -> c.setBackground(transparent));
-    }
+    JPanel jPanel = getDescriptionContainer();
+    Arrays.stream(jPanel.getComponents())
+        .flatMap(
+            c -> c instanceof JPanel panel ? Arrays.stream(panel.getComponents()) : Stream.empty())
+        .forEach(
+            c -> {
+              if (c instanceof JTextField) {
+                c.setBackground(c.getParent().getBackground());
+              }
+            });
 
     JTable propertyTable = getTokenPropertiesTable();
-    /* prettify - take cell background colour and adjust the luminance for cell contrast.
-    change the hue and saturation for the grid line colour
-     */
-    Color bg, bgSmall, gridColour;
-    bg = propertyTable.getTableHeader().getComponent(0).getBackground(); // get background colour
-    float[] hsbComponents = new float[3];
-    Color.RGBtoHSB(bg.getRed(), bg.getGreen(), bg.getBlue(), hsbComponents); // convert to HSB
+    TokenPropertiesTableModel model = (TokenPropertiesTableModel) propertyTable.getModel();
 
-    boolean lighten = hsbComponents[2] < 0.5f; // to determine direction of change
-    hsbComponents[2] =
-        lighten
-            ? hsbComponents[2] + 0.015f
-            : hsbComponents[2] - 0.025f; // small change in brilliance
-    bgSmall = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    hsbComponents[2] =
-        lighten
-            ? hsbComponents[2] + 0.04f
-            : hsbComponents[2] - 0.02f; // bigger change in brilliance
-    bg = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    hsbComponents[0] =
-        hsbComponents[0] < 0.5
-            ? hsbComponents[0] + 0.5f
-            : hsbComponents[0] - 0.5f; // change hue 180 degrees
-    hsbComponents[1] =
-        hsbComponents[1] < 0.25
-            ? hsbComponents[1] + 0.25f // increase saturation if it is low
-            : hsbComponents[1];
-    gridColour = new Color(Color.HSBtoRGB(hsbComponents[0], hsbComponents[1], hsbComponents[2]));
-
-    DefaultTableCellRenderer cellRenderer =
-        new DefaultTableCellRenderer(); // cell renderer for contrasting cells
-    cellRenderer.setBackground(bgSmall);
-    cellRenderer.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
-
-    DefaultTableCellRenderer headerRenderer =
-        new DefaultTableCellRenderer(); // cell renderer for contrasting headings
-    headerRenderer.setBackground(bg);
-    headerRenderer.setHorizontalAlignment(DefaultTableCellRenderer.CENTER);
-    headerRenderer.setVerticalAlignment(SwingConstants.TOP);
-
-    DefaultTableCellRenderer headerRenderer2 = new DefaultTableCellRenderer();
-    headerRenderer2.setVerticalAlignment(SwingConstants.TOP);
-    headerRenderer2.setHorizontalAlignment(SwingConstants.CENTER);
-
-    DefaultTableCellRenderer rowHeaderRenderer =
-        new DefaultTableCellRenderer(); // cell renderer for contrasting headings
-    headerRenderer.setBackground(bg);
-    headerRenderer.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
-
-    propertyTable.setGridColor(gridColour);
-    propertyTable.setIntercellSpacing(new Dimension(2, 2));
     propertyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    propertyTable.setShowHorizontalLines(true);
     propertyTable.getTableHeader().setResizingAllowed(true);
-    propertyTable.setFillsViewportHeight(true);
+
+    // Custom header that uses the column model to decide tooltips.
+    var header =
+        new JTableHeader(propertyTable.getColumnModel()) {
+          @Override
+          public String getToolTipText(MouseEvent event) {
+            int columnIndex = columnAtPoint(event.getPoint());
+            return model.getColumnTooltipText(columnIndex);
+          }
+        };
+    propertyTable.setTableHeader(header);
+
+    // The custom renderer delegates to the default one.
+    var customHeaderRenderer = new TableCellRendererDecorator(header.getDefaultRenderer());
+    customHeaderRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+    customHeaderRenderer.setVerticalAlignment(SwingConstants.CENTER);
 
     for (int i = 0; i < propertyTable.getColumnCount(); i++) {
+      var column = propertyTable.getColumnModel().getColumn(i);
 
-      switch (i) { // set column shading
-        case 0, 2, 4, 6 ->
-            propertyTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
-        case 1, 3 -> {
-          propertyTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
-          propertyTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer2);
-        }
-      }
-
-      switch (i) { // set column sizes
-        case 0, 2, 3 -> {
-          propertyTable.getColumnModel().getColumn(i).setMinWidth(60);
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(80);
-        }
-        case 1 -> {
-          propertyTable.getColumnModel().getColumn(i).setMinWidth(45);
-          propertyTable.getColumnModel().getColumn(i).setMaxWidth(100);
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(55);
-        }
-        case 4, 5, 6 -> {
-          propertyTable.getColumnModel().getColumn(i).setMinWidth(50);
-          propertyTable.getColumnModel().getColumn(i).setMaxWidth(80);
-          propertyTable.getColumnModel().getColumn(i).setPreferredWidth(50);
-        }
-      }
+      column.setHeaderRenderer(customHeaderRenderer);
     }
-    Font hFont = propertyTable.getTableHeader().getComponent(0).getFont();
-    Dimension headerDim = propertyTable.getTableHeader().getSize();
-    headerDim.height = (int) (hFont.getSize() * 3.41);
-    propertyTable.getTableHeader().setPreferredSize(headerDim);
   }
 
   private class TypeListModel extends AbstractListModel {

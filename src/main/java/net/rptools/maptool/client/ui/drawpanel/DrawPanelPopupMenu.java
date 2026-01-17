@@ -92,6 +92,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
     add(new SetPropertiesAction());
     add(new SetDrawingName());
     add(new GetDrawingId());
+    add(new DuplicateDrawingAction(selectedDrawSet));
     addGMItem(new JSeparator());
     add(createPathVblMenu());
     add(createShapeVblMenu());
@@ -169,6 +170,48 @@ public class DrawPanelPopupMenu extends JPopupMenu {
         MapTool.serverCommand().undoDraw(renderer.getZone().getId(), id);
       }
       selectedDrawings.clear();
+      renderer.repaint();
+      MapTool.getFrame().updateDrawTree();
+      MapTool.getFrame().refresh();
+    }
+  }
+
+  /** Duplicates selected drawings... */
+  public static class DuplicateDrawingAction extends AbstractAction {
+
+    public DuplicateDrawingAction() {
+      super(I18N.getString("DrawPanelPopupMenu.menu.duplicate"));
+    }
+
+    public DuplicateDrawingAction(Set<GUID> selectedDrawings) {
+      super(I18N.getString("DrawPanelPopupMenu.menu.duplicate"));
+      this.selectedDrawings = selectedDrawings;
+    }
+
+    private Set<GUID> selectedDrawings;
+
+    public void setSelectedDrawings(Set<GUID> selectedDrawings) {
+      this.selectedDrawings = selectedDrawings;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      var frame = MapTool.getFrame();
+      var renderer = frame.getCurrentZoneRenderer();
+
+      if (selectedDrawings.isEmpty()) {
+        return;
+      }
+
+      for (GUID id : selectedDrawings) {
+        DrawnElement de = renderer.getZone().getDrawnElement(id);
+        Drawable d = de.getDrawable();
+        AbstractDrawing ad = (AbstractDrawing) d.copy();
+        ad.setId(new GUID());
+        // Draw it
+        MapTool.serverCommand().draw(renderer.getZone().getId(), de.getPen(), ad);
+        // Allow it to be undone
+        renderer.getZone().addDrawable(de.getPen(), ad);
+      }
       renderer.repaint();
       MapTool.getFrame().updateDrawTree();
       MapTool.getFrame().refresh();
@@ -305,9 +348,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
   private Pen invertPen(Pen pen) {
     Pen newPen = new Pen(pen);
     newPen.setBackgroundPaint(pen.getPaint());
-    newPen.setBackgroundMode(pen.getForegroundMode());
     newPen.setPaint(pen.getBackgroundPaint());
-    newPen.setForegroundMode(pen.getBackgroundMode());
     return newPen;
   }
 
@@ -362,28 +403,31 @@ public class DrawPanelPopupMenu extends JPopupMenu {
 
     public void actionPerformed(ActionEvent e) {
       ColorPicker cp = MapTool.getFrame().getColorPicker();
-      Pen p = elementUnderMouse.getPen();
-      if (cp.getForegroundPaint() != null) {
-        p.setPaint(DrawablePaint.convertPaint(cp.getForegroundPaint()));
-        p.setForegroundMode(0);
-      } else {
-        p.setPaint(null);
-        p.setForegroundMode(1);
+
+      // Set the properties for each selected drawing
+      List<DrawnElement> drawableList = renderer.getZone().getAllDrawnElements();
+      for (DrawnElement de : drawableList) {
+        if (selectedDrawSet.contains(de.getDrawable().getId())) {
+          Pen p = de.getPen();
+          if (cp.getForegroundPaint() != null) {
+            p.setPaint(DrawablePaint.convertPaint(cp.getForegroundPaint()));
+          } else {
+            p.setPaint(null);
+          }
+          if (cp.getBackgroundPaint() != null) {
+            p.setBackgroundPaint(DrawablePaint.convertPaint(cp.getBackgroundPaint()));
+          } else {
+            p.setBackgroundPaint(null);
+          }
+          p.setThickness(cp.getStrokeWidth());
+          p.setOpacity(cp.getOpacity());
+          p.setThickness(cp.getStrokeWidth());
+          p.setEraser(cp.isEraseSelected());
+          p.setSquareCap(cp.isSquareCapSelected());
+          MapTool.getFrame().updateDrawTree();
+          MapTool.serverCommand().updateDrawing(renderer.getZone().getId(), p, de);
+        }
       }
-      if (cp.getBackgroundPaint() != null) {
-        p.setBackgroundPaint(DrawablePaint.convertPaint(cp.getBackgroundPaint()));
-        p.setBackgroundMode(0);
-      } else {
-        p.setBackgroundPaint(null);
-        p.setBackgroundMode(1);
-      }
-      p.setThickness(cp.getStrokeWidth());
-      p.setOpacity(cp.getOpacity());
-      p.setThickness(cp.getStrokeWidth());
-      p.setEraser(cp.isEraseSelected());
-      p.setSquareCap(cp.isSquareCapSelected());
-      MapTool.getFrame().updateDrawTree();
-      MapTool.serverCommand().updateDrawing(renderer.getZone().getId(), p, elementUnderMouse);
     }
   }
 

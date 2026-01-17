@@ -24,7 +24,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.*;
 import net.rptools.lib.FileUtil;
+import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.AppActions.CheckForUpdatesAction;
 import net.rptools.maptool.client.AppActions.OpenUrlAction;
 import net.rptools.maptool.client.ui.MapToolFrame.MTFrame;
 import net.rptools.maptool.client.ui.htmlframe.HTMLOverlayManager;
@@ -97,7 +99,7 @@ public class AppMenuBar extends JMenuBar {
     fileMenu.add(new JMenuItem(AppActions.SHOW_CONNECTION_INFO));
     fileMenu.addSeparator();
     fileMenu.add(createRecentCampaignMenu());
-    if (!AppUtil.MAC_OS_X) {
+    if (!OsDetection.MAC_OS_X) {
       fileMenu.addSeparator();
       fileMenu.add(new JMenuItem(AppActions.EXIT));
     }
@@ -215,7 +217,7 @@ public class AppMenuBar extends JMenuBar {
     menu.addSeparator();
 
     menu.add(new JMenuItem(AppActions.CAMPAIGN_PROPERTIES));
-    if (!AppUtil.MAC_OS_X) menu.add(new JMenuItem(AppActions.SHOW_PREFERENCES));
+    if (!OsDetection.MAC_OS_X) menu.add(new JMenuItem(AppActions.SHOW_PREFERENCES));
 
     return menu;
   }
@@ -227,9 +229,16 @@ public class AppMenuBar extends JMenuBar {
     menu.addSeparator();
 
     menu.add(createZoomMenu());
-    menu.add(new JMenuItem(AppActions.TOGGLE_SHOW_TOKEN_NAMES));
 
-    JCheckBoxMenuItem item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TEXT_LABELS, menu);
+    JCheckBoxMenuItem item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TOKEN_HALOS, menu);
+    item.setSelected(AppState.isShowTokenHalos());
+    menu.add(item);
+
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TOKEN_NAMES, menu);
+    item.setSelected(AppState.isShowTokenNames());
+    menu.add(item);
+
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_SHOW_TEXT_LABELS, menu);
     item.setSelected(AppState.getShowTextLabels());
     menu.add(item);
 
@@ -348,8 +357,7 @@ public class AppMenuBar extends JMenuBar {
   }
 
   /**
-   * Builds the help menu. This menu contains a block of special url items. These items are
-   * populated from {@link I18N#getMatchingKeys}.
+   * Builds the help menu. This menu contains a block of special url items.
    *
    * @return the help menu
    */
@@ -359,45 +367,52 @@ public class AppMenuBar extends JMenuBar {
     menu.add(new JMenuItem(AppActions.RESTORE_DEFAULT_IMAGES));
     menu.addSeparator();
 
-    // @formatter:off
-    /*
-     * This next line will retrieve all properties that match the regex, such as:
-     *		action.helpurl.01=http://rptools.net/?page=maptool
-     *		action.helpurl.02=http://forums.rptools.net/
-     * The items are not returned from the method in any kind of order so they are alphabetized here so that their
-     * display in the menu is predictable.
-     */
-    // @formatter:on
-    List<String> helpItems = I18N.getMatchingKeys("^action[.]helpurl[.]\\d+$");
-    if (!helpItems.isEmpty()) {
-      String[] helpArray = helpItems.toArray(new String[0]);
-      Arrays.sort(helpArray);
-      for (String key : helpArray) {
-        OpenUrlAction temp = new AppActions.OpenUrlAction(key);
-        switch (key) {
-          case "action.helpurl.01" ->
-              temp.putValue(
-                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_DOCUMENTATION));
-          case "action.helpurl.02" ->
-              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_TUTORIALS));
-          case "action.helpurl.03" ->
-              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FORUMS));
-          case "action.helpurl.04" ->
-              temp.putValue(
-                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_NETWORK_SETUP));
-          case "action.helpurl.05" ->
-              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SCRIPTING));
-          case "action.helpurl.06" ->
-              temp.putValue(
-                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FRAMEWORKS));
-        }
-        menu.add(new JMenuItem(temp));
-      }
-      menu.addSeparator();
-    }
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.discord", "https://rptools.net/discord", Icons.MENU_DISCORD)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.01",
+                "https://www.rptools.net/toolbox/maptool/",
+                Icons.MENU_DOCUMENTATION)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.02", "https://www.rptools.net/tutorials/", Icons.MENU_TUTORIALS)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.03", "https://forums.rptools.net/", Icons.MENU_FORUMS)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.04",
+                "http://forums.rptools.net/viewtopic.php?f=22&t=3370",
+                Icons.MENU_NETWORK_SETUP)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.05",
+                "https://wiki.rptools.info/index.php/Main_Page",
+                Icons.MENU_SCRIPTING)));
+    menu.add(
+        new JMenuItem(
+            new OpenUrlAction(
+                "action.helpurl.06",
+                "https://wiki.rptools.info/index.php/Frameworks",
+                Icons.MENU_FRAMEWORKS)));
+
+    menu.addSeparator();
+
+    menu.add(new JMenuItem(new CheckForUpdatesAction()));
+
+    menu.addSeparator();
+
     menu.add(new JMenuItem(AppActions.GATHER_DEBUG_INFO));
 
-    if (!AppUtil.MAC_OS_X) {
+    if (!OsDetection.MAC_OS_X) {
       menu.addSeparator();
       menu.add(new JMenuItem(AppActions.SHOW_ABOUT));
     }

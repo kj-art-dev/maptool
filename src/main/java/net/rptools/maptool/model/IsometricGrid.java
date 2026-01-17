@@ -27,6 +27,7 @@ import javax.swing.KeyStroke;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.PointerTool;
+import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.renderer.GridRenderer;
@@ -34,16 +35,88 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.client.walker.astar.AStarSquareEuclideanWalker;
+import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.server.proto.GridDto;
 import net.rptools.maptool.server.proto.IsometricGridDto;
 
 public class IsometricGrid extends Grid {
-  private static List<TokenFootprint> footprintList;
   private static final BufferedImage pathHighlight =
       RessourceManager.getImage(Images.GRID_BORDER_ISOMETRIC);
 
-  public boolean isIsometric() {
-    return true;
+  @Override
+  public GridType getType() {
+    return GridType.Isometric;
+  }
+
+  @Override
+  protected List<TokenFootprint> createFootprints() {
+    return List.of(
+        new TokenFootprint(
+            new GUID("7F000101CD65152A010000002A000101"),
+            "Fine",
+            I18N.getString("TokenFootprint.name.fine"),
+            false,
+            0.5),
+        new TokenFootprint(
+            new GUID("7F000101CD65152A020000002A000101"),
+            "Diminutive",
+            I18N.getString("TokenFootprint.name.diminutive"),
+            false,
+            0.5),
+        new TokenFootprint(
+            new GUID("7F000101CE65152A030000002A000100"),
+            "Tiny",
+            I18N.getString("TokenFootprint.name.tiny"),
+            false,
+            0.5),
+        new TokenFootprint(
+            new GUID("7F000101CE65152A040000002A000100"),
+            "Small",
+            I18N.getString("TokenFootprint.name.small"),
+            false,
+            0.75),
+        new TokenFootprint(
+            new GUID("7F000101CF65152A050000002A000101"),
+            "Medium",
+            I18N.getString("TokenFootprint.name.medium"),
+            true,
+            1.0),
+        new TokenFootprint(
+            new GUID("7F000101D065152A060000002A000100"),
+            "Large",
+            I18N.getString("TokenFootprint.name.large"),
+            squareFootprintPoints(2)),
+        new TokenFootprint(
+            new GUID("7F000101D065152A070000002A000100"),
+            "Huge",
+            I18N.getString("TokenFootprint.name.huge"),
+            squareFootprintPoints(3)),
+        new TokenFootprint(
+            new GUID("7F000101D165152A080000002A000101"),
+            "Gargantuan",
+            I18N.getString("TokenFootprint.name.gargantuan"),
+            squareFootprintPoints(4)),
+        new TokenFootprint(
+            new GUID("7F000101E165152A090000002A000101"),
+            "Colossal",
+            I18N.getString("TokenFootprint.name.colossal"),
+            squareFootprintPoints(6)));
+  }
+
+  private static Point[] squareFootprintPoints(int size) {
+    Point[] pa = new Point[size * size - 1];
+
+    int indx = 0;
+    for (int y = 0; y < size; y++) {
+      for (int x = 0; x < size; x++) {
+        if (y == 0 && x == 0) {
+          continue;
+        }
+        pa[indx] = new Point(x, y);
+        indx++;
+      }
+    }
+    return pa;
   }
 
   /**
@@ -315,21 +388,22 @@ public class IsometricGrid extends Grid {
 
   @Override
   public void draw(ZoneRenderer renderer, Graphics2D g, Rectangle bounds) {
-    double scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    double scale = zoneScale.getScale();
     double gridSize = getSize() * scale;
     double isoHeight = getSize() * scale;
     double isoWidth = getSize() * 2 * scale;
     Path2D path = new Path2D.Double();
 
-    int offX = (int) (renderer.getViewOffsetX() % isoWidth + getOffsetX() * scale);
-    int offY = (int) (renderer.getViewOffsetY() % gridSize + getOffsetY() * scale);
+    int offX = (int) (zoneScale.getOffsetX() % isoWidth + getOffsetX() * scale);
+    int offY = (int) (zoneScale.getOffsetY() % gridSize + getOffsetY() * scale);
 
     int startCol = (int) ((int) (bounds.x / isoWidth) * isoWidth);
     int startRow = (int) ((int) (bounds.y / gridSize) * gridSize);
 
     for (double row = startRow; row < bounds.y + bounds.height + gridSize; row += gridSize) {
       for (double col = startCol; col < bounds.x + bounds.width + isoWidth; col += isoWidth) {
-        path.append(drawHatch(renderer, (int) (col + offX), (int) (row + offY)), false);
+        path.append(drawHatch(zoneScale, (int) (col + offX), (int) (row + offY)), false);
       }
     }
 
@@ -339,14 +413,14 @@ public class IsometricGrid extends Grid {
       for (double col = startCol - (isoWidth / 2);
           col < bounds.x + bounds.width + isoWidth;
           col += isoWidth) {
-        path.append(drawHatch(renderer, (int) (col + offX), (int) (row + offY)), false);
+        path.append(drawHatch(zoneScale, (int) (col + offX), (int) (row + offY)), false);
       }
     }
     GridRenderer.drawGridShape(g, path);
   }
 
-  private Shape drawHatch(ZoneRenderer renderer, int x, int y) {
-    double isoWidth = getSize() * renderer.getScale();
+  private Shape drawHatch(Scale zoneScale, int x, int y) {
+    double isoWidth = getSize() * zoneScale.getScale();
     int hatchSize = isoWidth > 10 ? (int) isoWidth / 8 : 2;
     Path2D path = new Path2D.Double();
     path.append(

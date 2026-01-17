@@ -70,35 +70,17 @@ public final class CellPoint extends AbstractPoint {
    *     point.
    */
   public ScreenPoint convertToScreen(ZoneRenderer renderer) {
-    double scale = renderer.getScale();
+    var zoneScale = renderer.getViewModel().getZoneScale();
+    double scale = zoneScale.getScale();
     Zone zone = renderer.getZone();
 
     Grid grid = zone.getGrid();
     ZonePoint zp = grid.convert(this);
 
-    int sx = renderer.getViewOffsetX() + (int) (zp.x * scale);
-    int sy = renderer.getViewOffsetY() + (int) (zp.y * scale);
+    int sx = zoneScale.getOffsetX() + (int) (zp.x * scale);
+    int sy = zoneScale.getOffsetY() + (int) (zp.y * scale);
 
     return new ScreenPoint(sx, sy);
-  }
-
-  public ZonePoint convertToZonePoint(Grid grid) {
-    return grid.convert(this);
-  }
-
-  public ZonePoint offsetZonePoint(Grid grid, double offsetX, double offsetY) {
-    ZonePoint zp = convertToZonePoint(grid);
-    offsetX += 1;
-    offsetY += 1;
-
-    zp.x = (int) (zp.x + (grid.getCellWidth() / 2) * offsetX);
-    zp.y = (int) (zp.y + (grid.getCellWidth() / 2) * offsetY);
-
-    return zp;
-  }
-
-  public ZonePoint midZonePoint(Grid grid, CellPoint other) {
-    return this.offsetZonePoint(grid, other.x - this.x, other.y - this.y);
   }
 
   /**

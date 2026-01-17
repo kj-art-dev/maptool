@@ -67,10 +67,12 @@ class MacroLocationFactoryTest {
 
   @Test
   void testCreateLibTokenLocation() {
-    MacroLocation location = factory.createLibTokenLocation("libMacro", "lib:TokenName");
+    Token mockToken = Mockito.mock(Token.class);
+    Mockito.when(mockToken.getName()).thenReturn("lib:libToken");
+    MacroLocation location = factory.createLibTokenLocation("libMacro", mockToken);
     assertEquals("libMacro", location.getName());
     assertEquals(MacroLocation.MacroSource.library, location.getSource());
-    assertEquals("TokenName", location.getLocation());
+    assertEquals("libToken", location.getLocation());
     assertNull(location.getUri());
   }
 
@@ -87,7 +89,7 @@ class MacroLocationFactoryTest {
   void testCreateUriLocation() throws URISyntaxException {
     MacroLocation location =
         factory.createUriLocation("lib://test/macro/m2", new URI("lib://lib-test.net/macros/m1"));
-    assertEquals("/macro/m2", location.getName());
+    assertEquals("macro/m2", location.getName());
     assertEquals(MacroLocation.MacroSource.uri, location.getSource());
     assertEquals("test", location.getLocation());
     assertNotNull(location.getUri());
@@ -108,7 +110,7 @@ class MacroLocationFactoryTest {
   void testCreateRelativeUriLocationRelative() throws URISyntaxException {
     MacroLocation location =
         factory.createUriLocation("relative/path", new URI("lib://test-lib.net/macros/m1"));
-    assertEquals("/macros/relative/path", location.getName());
+    assertEquals("macros/relative/path", location.getName());
     assertEquals(MacroLocation.MacroSource.uri, location.getSource());
     assertEquals("test-lib.net", location.getLocation());
     assertNotNull(location.getUri());

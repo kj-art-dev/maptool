@@ -531,7 +531,7 @@ public class ShapeFunctions extends AbstractFunction {
       return false;
     }
 
-    Pen pen = new Pen(Pen.DEFAULT);
+    Pen pen = new Pen();
     if (parameters.size() > 2) {
       String delimiter = ";";
       if (parameters.size() > 3) {
@@ -545,18 +545,16 @@ public class ShapeFunctions extends AbstractFunction {
       if (penObject.keySet().contains("foreground")) {
         String fg = penObject.get("foreground").getAsString();
         if (fg.equalsIgnoreCase("transparent") || fg.equalsIgnoreCase("")) {
-          pen.setForegroundMode(Pen.MODE_TRANSPARENT);
+          pen.setPaint(null);
         } else {
-          pen.setForegroundMode(Pen.MODE_SOLID);
           pen.setPaint(FunctionUtil.getPaintFromString(fg));
         }
       }
       if (penObject.keySet().contains("background")) {
         String bg = penObject.get("background").getAsString();
         if (bg.equalsIgnoreCase("transparent") || bg.equalsIgnoreCase("")) {
-          pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
+          pen.setBackgroundPaint(null);
         } else {
-          pen.setBackgroundMode(Pen.MODE_SOLID);
           pen.setBackgroundPaint(FunctionUtil.getPaintFromString(bg));
         }
       }

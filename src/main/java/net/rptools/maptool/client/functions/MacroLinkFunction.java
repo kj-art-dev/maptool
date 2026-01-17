@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.exceptions.AbortFunctionException;
@@ -44,7 +45,6 @@ import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.maptool.util.MessageUtil;
-import net.rptools.maptool.util.StringUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -242,7 +242,7 @@ public class MacroLinkFunction extends AbstractFunction {
     if (macroName.toLowerCase().endsWith("@this")) {
       macroName =
           macroName.substring(0, macroName.length() - 4)
-              + MapTool.getParser().getMacroSource().getLocation();
+              + MapTool.getParser().getMacroSource().getCallableLocation();
     }
     return "macro://" + macroName + "/" + who + "/" + target + "?" + encode(args);
   }

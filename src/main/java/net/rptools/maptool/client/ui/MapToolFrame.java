@@ -14,13 +14,10 @@
  */
 package net.rptools.maptool.client.ui;
 
-import com.badlogic.gdx.backends.jogamp.JoglAwtApplicationConfiguration;
-import com.badlogic.gdx.backends.jogamp.JoglSwingCanvas;
 import com.google.common.eventbus.Subscribe;
 import com.jidesoft.docking.DefaultDockableHolder;
 import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
-import com.jogamp.opengl.awt.GLJPanel;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -45,6 +42,7 @@ import javax.swing.tree.TreeSelectionModel;
 import javax.xml.parsers.ParserConfigurationException;
 import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
+import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.AppActions.ClientAction;
 import net.rptools.maptool.client.events.ZoneActivated;
@@ -96,7 +94,6 @@ import net.rptools.maptool.client.ui.tokenpanel.TokenPanelTreeModel;
 import net.rptools.maptool.client.ui.zone.PointerOverlay;
 import net.rptools.maptool.client.ui.zone.PointerToolOverlay;
 import net.rptools.maptool.client.ui.zone.ZoneMiniMapPanel;
-import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -105,7 +102,6 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
-import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
@@ -129,7 +125,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private static final int WINDOW_WIDTH = 800;
   private static final int WINDOW_HEIGHT = 600;
 
-  private final Pen pen = new Pen(Pen.DEFAULT);
   private final Map<MTFrame, DockableFrame> frameMap = new HashMap<MTFrame, DockableFrame>();
 
   /** Are the drawing measurements being painted? */
@@ -158,8 +153,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
   /** Contains the zoneRenderer, as well as all overlays. */
   private final JPanel zoneRendererPanel;
-
-  private GLJPanel gdxPanel;
 
   private JPanel currentRenderPanel;
 
@@ -416,11 +409,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     zoneRendererPanel = new JPanel(new PositionalLayout(5));
     zoneRendererPanel.setBackground(Color.black);
     currentRenderPanel = zoneRendererPanel;
-    initGdx();
 
     zoneRendererPanel.add(getChatTypingPanel(), PositionalLayout.Position.NW);
     zoneRendererPanel.add(getChatActionLabel(), PositionalLayout.Position.SW);
-    zoneRendererPanel.add(gdxPanel, PositionalLayout.Position.CENTER);
 
     commandPanel = new CommandPanel();
 
@@ -456,7 +447,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
     glassPaneComposite.setVisible(true);
 
-    if (!AppUtil.MAC_OS_X) removeWindowsF10();
+    if (!OsDetection.MAC_OS_X) removeWindowsF10();
     else registerForMacOSXEvents();
 
     new MapToolEventBus().getMainEventBus().register(this);
@@ -470,37 +461,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     chatTyperTimers = new ChatNotificationTimers();
     chatTimer = getChatTimer();
     setChatTypingLabelColor(AppPreferences.chatNotificationColor.get());
-  }
-
-  private void initGdx() {
-    var config = new JoglAwtApplicationConfiguration();
-    // config.foregroundFPS = 300;
-    // config.backgroundFPS = 10;
-    // config.title = "maptool";
-    // config.width = 640;
-    // config.height = 480;
-    // config.samples = 1;
-    // var config = new LwjglApplicationConfiguration();
-    config.foregroundFPS = 10000;
-    config.vSyncEnabled = false;
-
-    var joglSwingCanvas = new JoglSwingCanvas(GdxRenderer.getInstance(), config);
-    // var joglSwingCanvas = new LwjglAWTCanvas(GdxRenderer.getInstance(), config);
-
-    gdxPanel = joglSwingCanvas.getGLCanvas();
-    gdxPanel.setVisible(false);
-    gdxPanel.setOpaque(false);
-    // gdxPanel.setLayout(new PositionalLayout(5));
-  }
-
-  public void switchRenderers() {
-    var isVisible = gdxPanel.isVisible();
-    gdxPanel.setVisible(!isVisible);
-    // currentRenderer.setVisible(isVisible);
-  }
-
-  public GLJPanel getGdxPanel() {
-    return gdxPanel;
   }
 
   public ChatNotificationTimers getChatNotificationTimers() {
@@ -1314,15 +1274,18 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
                 tree.clearSelection();
               }
               tree.addSelectionInterval(rowIndex, rowIndex);
-              if (row instanceof DrawnElement && e.getClickCount() == 2) {
-                DrawnElement de = (DrawnElement) row;
+              if (row instanceof DrawnElement de && e.getClickCount() == 2) {
                 var renderer = getCurrentZoneRenderer();
                 var zone = renderer.getZone();
-                getCurrentZoneRenderer()
-                    .centerOn(
-                        new ZonePoint(
-                            (int) de.getDrawable().getBounds(zone).getCenterX(),
-                            (int) de.getDrawable().getBounds(zone).getCenterY()));
+                var bounds = de.getDrawable().getBounds(zone);
+                var viewModel = renderer.getViewModel();
+                viewModel.setZoneScale(
+                    viewModel
+                        .getZoneScale()
+                        .centeredOn(
+                            (int) bounds.getCenterX(),
+                            (int) bounds.getCenterY(),
+                            renderer.getSize()));
               }
               /*
                * int[] treeRows = tree.getSelectionRows(); java.util.Arrays.sort(treeRows); drawablesPanel.clearSelectedIds(); for (int i = 0; i < treeRows.length; i++) { TreePath p =
@@ -1527,7 +1490,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
               zone.setBackgroundPaint(new DrawableTexturePaint(asset));
               zone.setBackgroundAsset(asset.getMD5Key());
             } else {
-              zone.setMapAsset(asset.getMD5Key());
+              zone.setMapAssetId(asset.getMD5Key());
               zone.setBackgroundPaint(new DrawableColorPaint(Color.black));
               zone.setBackgroundAsset(asset.getMD5Key());
             }
@@ -1609,12 +1572,31 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     assetPanel.addAssetRoot(new AssetDirectory(rootDir, AppConstants.IMAGE_FILE_FILTER));
   }
 
-  public Pen getPen() {
-    pen.setPaint(DrawablePaint.convertPaint(colorPicker.getForegroundPaint()));
-    pen.setBackgroundPaint(DrawablePaint.convertPaint(colorPicker.getBackgroundPaint()));
+  /**
+   * Creates a new {@link Pen} based on the color picker state.
+   *
+   * @param isEraser If {@code true}, the return pen will be an eraser.
+   * @return A new pen matching the color picker state.
+   */
+  public Pen getPen(boolean isEraser) {
+    var pen = new Pen();
+    pen.setEraser(isEraser);
+
+    if (colorPicker.isFillForegroundSelected()) {
+      pen.setPaint(DrawablePaint.convertPaint(colorPicker.getForegroundPaint()));
+    } else {
+      pen.setPaint(null);
+    }
+    if (colorPicker.isFillBackgroundSelected()) {
+      pen.setBackgroundPaint(DrawablePaint.convertPaint(colorPicker.getBackgroundPaint()));
+    } else {
+      pen.setBackgroundPaint(null);
+    }
+
     pen.setThickness(colorPicker.getStrokeWidth());
     pen.setOpacity(colorPicker.getOpacity());
-    pen.setThickness(colorPicker.getStrokeWidth());
+    pen.setSquareCap(colorPicker.isSquareCapSelected());
+
     return pen;
   }
 
@@ -1860,14 +1842,14 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
     // Under mac os x this does not properly hide the menu bar so adjust top and height
     // so menu bar does not overlay screen.
-    if (AppUtil.MAC_OS_X) {
+    if (OsDetection.MAC_OS_X) {
       fullScreenFrame.setBounds(bounds.x, bounds.y + 21, bounds.width, bounds.height - 21);
     } else {
       fullScreenFrame.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
     fullScreenFrame.setJMenuBar(menuBar);
     // Menu bar is visible anyways on MAC so leave menu items on it
-    if (!AppUtil.MAC_OS_X) menuBar.setVisible(false);
+    if (!OsDetection.MAC_OS_X) menuBar.setVisible(false);
 
     fullScreenFrame.setVisible(true);
     showFullScreenTools();

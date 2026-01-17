@@ -28,6 +28,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.filechooser.FileFilter;
 import net.rptools.lib.MD5Key;
+import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.swing.AbeillePanel;
@@ -37,7 +38,6 @@ import net.rptools.maptool.client.ui.token.*;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.drawing.AbstractTemplate.Quadrant;
-import net.rptools.maptool.util.StringUtil;
 
 /**
  * This controller will handle all of the components on the States panel of the {@link
@@ -512,41 +512,39 @@ public class TokenStatesController
 
       // Get most of the colors and all of the widths from the XTokenOverlay
       OverlayType type = OverlayType.Image;
-      if (s instanceof XTokenOverlay) {
+      if (s instanceof XTokenOverlay xTokenOverlay) {
         type = OverlayType.X;
-        formPanel.getSpinner(WIDTH).setValue(((XTokenOverlay) s).getWidth());
-        ((ColorWell) formPanel.getComponent(COLOR)).setColor(((XTokenOverlay) s).getColor());
+        formPanel.getSpinner(WIDTH).setValue(xTokenOverlay.getWidth());
+        ((ColorWell) formPanel.getComponent(COLOR)).setColor(xTokenOverlay.getColor());
       } // endif
 
       // Get the the flow grid for most components from FlowColorDotTokenOverlay
-      if (s instanceof FlowColorDotTokenOverlay) {
+      if (s instanceof FlowColorDotTokenOverlay flowColorDotTokenOverlay) {
         type = OverlayType.GridDot;
-        int size = ((FlowColorDotTokenOverlay) s).getGrid();
+        int size = flowColorDotTokenOverlay.getGrid();
         formPanel.getSpinner(FLOW_GRID).setValue(size + "x" + size);
       } // endif
 
       // Handle the
-      if (s instanceof CornerImageTokenOverlay) {
+      if (s instanceof CornerImageTokenOverlay cornerImageTokenOverlay) {
         type = OverlayType.CornerImage;
         formPanel
             .getComboBox(CORNER)
-            .setSelectedIndex(((CornerImageTokenOverlay) s).getCorner().ordinal());
-      } else if (s instanceof FlowImageTokenOverlay) {
+            .setSelectedIndex(cornerImageTokenOverlay.getCorner().ordinal());
+      } else if (s instanceof FlowImageTokenOverlay flowImageTokenOverlay) {
         type = OverlayType.GridImage;
-        int size = ((FlowImageTokenOverlay) s).getGrid(); // Still need grid size
+        int size = flowImageTokenOverlay.getGrid(); // Still need grid size
         formPanel.getSpinner(FLOW_GRID).setValue(size + "x" + size);
       } else if (s instanceof ImageTokenOverlay) {
         type = OverlayType.Image;
-      } else if (s instanceof ColorDotTokenOverlay) {
+      } else if (s instanceof ColorDotTokenOverlay colorDotTokenOverlay) {
         type = OverlayType.Dot;
-        formPanel
-            .getComboBox(CORNER)
-            .setSelectedIndex(((ColorDotTokenOverlay) s).getCorner().ordinal());
+        formPanel.getComboBox(CORNER).setSelectedIndex(colorDotTokenOverlay.getCorner().ordinal());
       } else if (s instanceof OTokenOverlay) {
         type = OverlayType.Circle;
-      } else if (s instanceof ShadedTokenOverlay) {
+      } else if (s instanceof ShadedTokenOverlay shadedTokenOverlay) {
         type = OverlayType.Shaded;
-        ((ColorWell) formPanel.getComponent(COLOR)).setColor(((ShadedTokenOverlay) s).getColor());
+        ((ColorWell) formPanel.getComponent(COLOR)).setColor(shadedTokenOverlay.getColor());
       } else if (s instanceof CrossTokenOverlay) {
         type = OverlayType.Cross;
       } else if (s instanceof DiamondTokenOverlay) {

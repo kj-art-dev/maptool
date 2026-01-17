@@ -25,7 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Collections;
 import javax.swing.*;
-import net.rptools.maptool.client.AppUtil;
+import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.functions.getInfoFunction;
@@ -54,7 +54,7 @@ public class MapToolEventQueue extends EventQueue {
     try {
       if (event instanceof MouseWheelEvent) {
         MouseWheelEvent mwe = (MouseWheelEvent) event;
-        if (AppUtil.MAC_OS_X && mwe.isShiftDown()) {
+        if (OsDetection.MAC_OS_X && mwe.isShiftDown()) {
           // issue 1317: ignore ALL horizontal movement on macOS, *even if* the physical Shift is
           // held down.
           return;
@@ -70,7 +70,7 @@ public class MapToolEventQueue extends EventQueue {
       jta.setWrapStyleWord(true);
       jta.setMargin(new Insets(5, 10, 10, 10));
       optionPane.setDetails(jta);
-      displayPopup();
+      displayPopup(optionPane);
       reportToSentryIO(soe);
     } catch (Throwable t) {
       log.error(t, t);
@@ -78,7 +78,7 @@ public class MapToolEventQueue extends EventQueue {
       optionPane.setTitle(I18N.getString("MapToolEventQueue.unexpectedError")); // $NON-NLS-1$
       optionPane.setDetails(toString(t));
       try {
-        displayPopup();
+        displayPopup(optionPane);
         reportToSentryIO(t);
       } catch (Throwable thrown) {
         // Displaying the error message using the JideOptionPane has just failed. Fallback to
@@ -109,11 +109,9 @@ public class MapToolEventQueue extends EventQueue {
     return optionPane;
   }
 
-  private static void displayPopup() {
+  private static void displayPopup(JideOptionPane optionPane) {
     optionPane.setDetailsVisible(true);
-    JDialog dialog =
-        optionPane.createDialog(
-            MapTool.getFrame(), I18N.getString("MapToolEventQueue.warning.title")); // $NON-NLS-1$
+    JDialog dialog = optionPane.createDialog(MapTool.getFrame(), optionPane.getTitle().toString());
     dialog.setResizable(true);
     dialog.pack();
     dialog.setVisible(true);

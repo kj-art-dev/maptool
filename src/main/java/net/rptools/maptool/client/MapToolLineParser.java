@@ -37,6 +37,7 @@ import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.library.LibraryManager;
+import net.rptools.maptool.util.ExpressionParserFactory;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
 import org.apache.commons.lang3.StringUtils;
@@ -1232,28 +1233,24 @@ public class MapToolLineParser {
     switch (mloc.getSource()) {
       case library, uri -> {
         try {
-          String namespace;
-          String macro;
-          switch (mloc.getSource()) {
-            case uri -> {
-              namespace = mloc.getUri().getHost();
-              macro = mloc.getUri().toString();
-            }
-            case library -> {
-              namespace = mloc.getLocation().replaceFirst("^(?i)lib:", "");
-              macro = mloc.getName();
-            }
-            case null, default -> {
-              throw new IllegalStateException("Unexpected value: " + mloc.getSource());
-            }
-          }
+          var namespace = mloc.getLocation();
           var lib = new LibraryManager().getLibrary(namespace);
           if (lib.isEmpty()) {
             throw new ParserException(
                 I18N.getText("lineParser.unknownLibToken", mloc.getLocation()));
           }
           var library = lib.get();
-          var macroInfo = library.getMTScriptMacroInfo(macro).get();
+
+          var macroInfoFuture =
+              switch (mloc.getSource()) {
+                case uri -> library.getMTScriptMacroInfoForUriPath(mloc.getName());
+                case library -> library.getMTScriptMacroInfo(mloc.getName());
+                case null, default -> {
+                  throw new IllegalStateException("Unexpected value: " + mloc.getSource());
+                }
+              };
+
+          var macroInfo = macroInfoFuture.get();
           if (macroInfo.isEmpty()) {
             // if the macro source is the same as the location then check private macros.
             if (!contextStackEmpty()) {
@@ -1579,7 +1576,8 @@ public class MapToolLineParser {
     return retval;
   }
 
-  public static final MapToolExpressionParser expressionParser = new MapToolExpressionParser();
+  public static final MapToolExpressionParser expressionParser =
+      new ExpressionParserFactory().createMT();
 
   private String rollString(Collection<String> options, String text) {
     return rollString(options, null, text);

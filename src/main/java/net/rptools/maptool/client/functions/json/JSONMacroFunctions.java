@@ -33,6 +33,7 @@ import net.rptools.dicelib.expression.Result;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.EvalMacroFunctions;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.ExpressionParserFactory;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -553,7 +554,7 @@ public class JSONMacroFunctions extends AbstractFunction {
 
   private JsonObject jsonObjRolls(JsonArray names, JsonArray stats, JsonArray rolls)
       throws ParserException {
-    ExpressionParser parser = new ExpressionParser();
+    ExpressionParser parser = new ExpressionParserFactory().create();
 
     if (stats.size() != rolls.size()) {
       throw new ParserException(I18N.getText("macro.function.json.matchingArrayOrRoll"));
@@ -608,7 +609,7 @@ public class JSONMacroFunctions extends AbstractFunction {
    */
   private JsonArray jsonRolls(String rollString, int outerDim, int innerDim)
       throws ParserException {
-    ExpressionParser parser = new ExpressionParser();
+    ExpressionParser parser = new ExpressionParserFactory().create();
 
     if (innerDim == 1) {
       return jsonRolls(rollString, outerDim, parser);
@@ -620,24 +621,6 @@ public class JSONMacroFunctions extends AbstractFunction {
     }
 
     return array;
-  }
-
-  /**
-   * Returns the parameter list as a list of {@link JsonArray}s.
-   *
-   * @param functionName The name of the MT Script function that was called.
-   * @param params The parameters to extract as {@link JsonArray}s.
-   * @return The list of {@link JsonArray}s.
-   * @throws ParserException if the parameters can not be converted to {@link JsonArray}s.
-   */
-  private List<JsonArray> paramsAsJsonArrays(String functionName, List<Object> params)
-      throws ParserException {
-    List<JsonArray> arrays = new ArrayList<>();
-    for (int i = 0; i < params.size(); i++) {
-      arrays.add(FunctionUtil.paramAsJsonArray(functionName, params, i));
-    }
-
-    return arrays;
   }
 
   /**
@@ -676,24 +659,6 @@ public class JSONMacroFunctions extends AbstractFunction {
     }
 
     return objects;
-  }
-
-  /**
-   * Returns the parameter list as a list of {@link JsonElement}s.
-   *
-   * @param functionName The name of the MT Script function that was called.
-   * @param params The parameters to extract as {@link JsonElement}s.
-   * @return The list of {@link JsonElement}s.
-   * @throws ParserException if the parameters can not be converted to {@link JsonElement}s.
-   */
-  private List<JsonElement> paramsAsJsonElements(String functionName, List<Object> params)
-      throws ParserException {
-    List<JsonElement> elements = new ArrayList<>();
-    for (int i = 0; i < params.size(); i++) {
-      elements.add(FunctionUtil.paramAsJson(functionName, params, i));
-    }
-
-    return elements;
   }
 
   /**

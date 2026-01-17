@@ -35,8 +35,10 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.*;
+import net.rptools.lib.AwtUtil;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.MD5Key;
+import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.events.TokenHoverEnter;
 import net.rptools.maptool.client.events.TokenHoverExit;
@@ -56,8 +58,8 @@ import net.rptools.maptool.model.Zone.VisionType;
 import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
 import net.rptools.maptool.util.GraphicsUtil;
+import net.rptools.maptool.util.HTMLUtil;
 import net.rptools.maptool.util.ImageManager;
-import net.rptools.maptool.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -202,8 +204,7 @@ public class PointerTool extends DefaultTool {
   }
 
   public void startTokenDrag(Token keyToken, Set<GUID> tokens) {
-    startTokenDrag(
-        keyToken, tokens, new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer), false);
+    startTokenDrag(keyToken, tokens, keyToken.getDragAnchor(renderer.getZone()), false);
   }
 
   private void startTokenDrag(
@@ -312,7 +313,8 @@ public class PointerTool extends DefaultTool {
             .startTokenDrag(
                 token,
                 Collections.singleton(token.getId()),
-                new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer),
+                new ScreenPoint(dragStartX, dragStartY)
+                    .convertToZone(renderer.getViewModel().getZoneScale()),
                 false);
       }
     }
@@ -340,7 +342,7 @@ public class PointerTool extends DefaultTool {
         BufferedImage image = ImageManager.getImage(token.getImageAssetId(), renderer);
 
         Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
-        SwingUtil.constrainTo(imgSize, gridSize);
+        AwtUtil.constrainTo(imgSize, gridSize);
 
         Rectangle bounds =
             new Rectangle(
@@ -478,6 +480,8 @@ public class PointerTool extends DefaultTool {
 
   @Override
   public void mouseReleased(MouseEvent e) {
+    final boolean isDraggingMap = isDraggingMap();
+
     super.mouseReleased(e);
 
     mouseButtonDown = false;
@@ -563,7 +567,7 @@ public class PointerTool extends DefaultTool {
     }
 
     // POPUP MENU
-    if (SwingUtilities.isRightMouseButton(e) && tokenDragOp == null && !isDraggingMap()) {
+    if (SwingUtilities.isRightMouseButton(e) && tokenDragOp == null && !isDraggingMap) {
       final var selectionModel = renderer.getSelectionModel();
       if (tokenUnderMouse != null && !selectionModel.isSelected(tokenUnderMouse.getId())) {
         if (!SwingUtil.isShiftDown(e)) {
@@ -585,7 +589,6 @@ public class PointerTool extends DefaultTool {
         return;
       }
     }
-    super.mouseReleased(e);
   }
 
   // //
@@ -599,7 +602,8 @@ public class PointerTool extends DefaultTool {
     }
 
     if (isShowingPointer) {
-      ZonePoint zp = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+      ZonePoint zp =
+          new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
       Pointer pointer =
           MapTool.getFrame().getPointerOverlay().getPointer(MapTool.getPlayer().getName());
       if (pointer != null) {
@@ -757,7 +761,8 @@ public class PointerTool extends DefaultTool {
         startTokenDrag(
             tokenUnderMouse,
             selectedTokenSet,
-            new ScreenPoint(dragStartX, dragStartY).convertToZone(renderer),
+            new ScreenPoint(dragStartX, dragStartY)
+                .convertToZone(renderer.getViewModel().getZoneScale()),
             false);
         if (AppPreferences.hideMousePointerWhileDragging.get()) {
           SwingUtil.hidePointer(renderer);
@@ -792,6 +797,9 @@ public class PointerTool extends DefaultTool {
    * <td>D
    * <td>Stop dragging token
    * <tr>
+   * <td>Enter
+   * <td>Stop dragging token
+   * <tr>
    * <td>T
    * <td>Cycle forward through tokens
    * <tr>
@@ -810,17 +818,22 @@ public class PointerTool extends DefaultTool {
    * <td>NumPad digits
    * <td>Move token (specifics based on the grid type are not implemented yet):<br>
    * <tr>
-   * <td>7 (up/left)
-   * <td>8 (up)
-   * <td>9 (up/right)
-   * <tr>
-   * <td>4 (left)
-   * <td>5 (stop)
-   * <td>6(right)
-   * <tr>
-   * <td>1 (down/left)
-   * <td>2 (down)
-   * <td>3 (down/right)
+   * <td>
+   * <td>
+   * <table>
+   *    <tr>
+   *    <td>7 (up/left)
+   *    <td>8 (up)
+   *    <td>9 (up/right)
+   *    <tr>
+   *    <td>4 (left)
+   *    <td>5 (stop)
+   *    <td>6 (right)
+   *    <tr>
+   *    <td>1 (down/left)
+   *    <td>2 (down)
+   *    <td>3 (down/right)
+   * </table>
    * <tr>
    * <td>Down
    * <td>Move token down
@@ -887,6 +900,19 @@ public class PointerTool extends DefaultTool {
 
     actionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            if (tokenDragOp == null) {
+              return;
+            }
+            // Stop
+            stopTokenDrag();
+          }
+        });
+    actionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
         new AbstractAction() {
           private static final long serialVersionUID = 1L;
 
@@ -1104,7 +1130,8 @@ public class PointerTool extends DefaultTool {
         // Pointer
         isShowingPointer = true;
 
-        ZonePoint zp = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+        ZonePoint zp =
+            new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
         Pointer pointer = new Pointer(renderer.getZone(), zp.x, zp.y, 0, type);
         if (MapTool.getPlayer().isGM() && type.equals(Pointer.Type.LOOK_HERE)) {
           MapTool.serverCommand()
@@ -1112,7 +1139,7 @@ public class PointerTool extends DefaultTool {
                   renderer.getZone().getId(),
                   zp.x,
                   zp.y,
-                  renderer.getScale(),
+                  renderer.getViewModel().getZoneScale().getScale(),
                   renderer.getWidth(),
                   renderer.getHeight());
         }
@@ -1361,7 +1388,7 @@ public class PointerTool extends DefaultTool {
           imgSize = new Dimension(image.getWidth(), image.getHeight());
 
           // Size
-          SwingUtil.constrainTo(imgSize, AppPreferences.portraitSize.get());
+          AwtUtil.constrainTo(imgSize, AppPreferences.portraitSize.get());
         }
 
         Dimension statSize = null;
@@ -1652,8 +1679,8 @@ public class PointerTool extends DefaultTool {
   }
 
   private String createHoverNote(Token marker) {
-    var notes = StringUtil.htmlize(marker.getNotes(), marker.getNotesType());
-    var gmNotes = StringUtil.htmlize(marker.getGMNotes(), marker.getGmNotesType());
+    var notes = HTMLUtil.htmlize(marker.getNotes(), marker.getNotesType());
+    var gmNotes = HTMLUtil.htmlize(marker.getGMNotes(), marker.getGmNotesType());
 
     boolean showGMNotes = MapTool.getPlayer().isGM() && !StringUtil.isEmpty(gmNotes);
     boolean showNotes = !StringUtil.isEmpty(notes);
@@ -1690,7 +1717,7 @@ public class PointerTool extends DefaultTool {
       Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
       if (imgSize.width > AppConstants.NOTE_PORTRAIT_SIZE
           || imgSize.height > AppConstants.NOTE_PORTRAIT_SIZE) {
-        SwingUtil.constrainTo(imgSize, AppConstants.NOTE_PORTRAIT_SIZE);
+        AwtUtil.constrainTo(imgSize, AppConstants.NOTE_PORTRAIT_SIZE);
       }
       builder.append("</td><td valign=top>");
       builder
@@ -1766,7 +1793,8 @@ public class PointerTool extends DefaultTool {
         renderer.setShape4(new Rectangle2D.Double(dragAnchor.x - 5, dragAnchor.y - 5, 10, 10));
       }
 
-      ZonePoint zonePoint = new ScreenPoint(mouseX, mouseY).convertToZone(renderer);
+      ZonePoint zonePoint =
+          new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
       zonePoint.x += dragAnchor.x - tokenDragStart.x;
       zonePoint.y += dragAnchor.y - tokenDragStart.y;
 
@@ -1949,13 +1977,15 @@ public class PointerTool extends DefaultTool {
             ExposedAreaMetaData meta = zone.getExposedAreaMetaData(token.getExposedAreaGUID());
             tokenFog.add(meta.getExposedAreaHistory());
 
-            // Jamz: Allow a token without site to move within the current PlayerView
+            // Jamz: Allow a token without sight to move within the current PlayerView
             if (!token.getHasSight()) {
-              tokenFog.add(renderer.getZoneView().getVisibleArea(new PlayerView(Role.PLAYER)));
+              var view = new PlayerView(Role.PLAYER);
+              var visibleArea = renderer.getZoneView().getVisibility(view).visibleArea();
+              tokenFog.add(visibleArea);
             }
           }
 
-          Rectangle tokenSize = token.getBounds(zone);
+          Rectangle tokenSize = token.getFootprintBounds(zone);
           Rectangle destination =
               new Rectangle(
                   tokenSize.x + deltaX, tokenSize.y + deltaY, tokenSize.width, tokenSize.height);
@@ -1990,7 +2020,7 @@ public class PointerTool extends DefaultTool {
           int x = token.getX() + deltaX;
           int y = token.getY() + deltaY;
 
-          Rectangle tokenSize = token.getBounds(zone);
+          Rectangle tokenSize = token.getFootprintBounds(zone);
           /*
            * Perhaps create a counter and count the number of times that the contains() check returns true? There are currently 9 rectangular areas checked by this code (note the "/3" in the two
            * 'interval' variables) so checking for 5 or more would mean more than 55%+ of the destination was visible...

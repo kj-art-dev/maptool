@@ -18,15 +18,14 @@ import com.google.common.base.Stopwatch;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.*;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
-import net.rptools.lib.FileUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
@@ -48,6 +47,48 @@ import org.apache.logging.log4j.Logger;
  * @author trevor
  */
 public abstract class Grid implements Cloneable {
+  public enum GridType {
+    Square,
+    Isometric,
+    HexVertical,
+    HexHorizontal,
+    None;
+
+    public boolean isHex() {
+      return this == HexVertical || this == HexHorizontal;
+    }
+
+    public boolean isIsometric() {
+      return this == Isometric;
+    }
+
+    public boolean isNone() {
+      return this == None;
+    }
+
+    public String toString() {
+      return switch (this) {
+        case Square -> "Square";
+        case Isometric -> "Isometric";
+        case HexVertical -> "Vertical Hex";
+        case HexHorizontal -> "Horizontal Hex";
+        case None -> "None";
+      };
+    }
+
+    public static GridType fromString(String string) {
+      return switch (string) {
+        case "Square" -> Square;
+        case "Isometric" -> Isometric;
+        case "Vertical Hex" -> HexVertical;
+        case "Horizontal Hex" -> HexHorizontal;
+        case "None" -> None;
+        default ->
+            throw new IllegalArgumentException(
+                String.format("\"%s\" is not a valid grid type", string));
+      };
+    }
+  }
 
   /**
    * The minimum grid size (minimum on any dimension). The default value is 9 because the algorithm
@@ -63,15 +104,6 @@ public abstract class Grid implements Cloneable {
 
   private static final Dimension NO_DIM = new Dimension();
   private static final DirectionCalculator calculator = new DirectionCalculator();
-  private static final Map<String, String> FOOTPRINT_XML_PATHS =
-      new HashMap<>(
-          Map.of(
-              GridFactory.HEX_HORI, "net/rptools/maptool/model/hexGridHorizFootprints.xml",
-              GridFactory.HEX_VERT, "net/rptools/maptool/model/hexGridVertFootprints.xml",
-              GridFactory.ISOMETRIC, "net/rptools/maptool/model/squareGridFootprints.xml",
-              GridFactory.ISOMETRIC_HEX, "net/rptools/maptool/model/hexGridHorizFootprints.xml",
-              GridFactory.NONE, "net/rptools/maptool/model/gridlessGridFootprints.xml",
-              GridFactory.SQUARE, "net/rptools/maptool/model/squareGridFootprints.xml"));
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
 
   protected transient Map<KeyStroke, Action> movementKeys = null;
@@ -91,7 +123,7 @@ public abstract class Grid implements Cloneable {
     setOffset(grid.offsetX, grid.offsetY);
   }
 
-  public static Shape createGridShape(String gridType, double size) {
+  public static Shape createGridShape(GridType gridType, double size) {
     final Shape gridShape;
     int sides = 0;
     double startAngle = 0;
@@ -102,29 +134,23 @@ public abstract class Grid implements Cloneable {
     final double root2 = Math.sqrt(2d);
     final double root3 = Math.sqrt(3d);
     switch (gridType) {
-      case GridFactory.HEX_HORI -> {
+      case HexHorizontal -> {
         sides = 6;
         startAngle = Math.TAU / 12;
         hScale = vScale = root3 / 3d;
       }
-      case GridFactory.HEX_VERT -> {
+      case HexVertical -> {
         sides = 6;
         hScale = vScale = root3 / 3d;
       }
-      case GridFactory.ISOMETRIC -> {
+      case Isometric -> {
         sides = 4;
         vScale = 0.5;
       }
-      case GridFactory.ISOMETRIC_HEX -> {
-        sides = 6;
-        startAngle = Math.TAU / 24;
-        hScale = vScale = root3 / 3d;
-        skew = Math.toRadians(30d);
-      }
-      case GridFactory.NONE -> {
+      case None -> {
         return new Ellipse2D.Double(-size / 2d, -size / 2d, size, size);
       }
-      case GridFactory.SQUARE -> {
+      case Square -> {
         sides = 4;
         hScale = vScale = root2 / 2d;
         startAngle = Math.TAU / 8d;
@@ -151,6 +177,8 @@ public abstract class Grid implements Cloneable {
     cellShape = createCellShape();
     return this;
   }
+
+  public abstract GridType getType();
 
   protected synchronized Map<Integer, Area> getGridShapeCache() {
     return gridShapeCache;
@@ -244,18 +272,7 @@ public abstract class Grid implements Cloneable {
     return null;
   }
 
-  protected List<TokenFootprint> loadFootprints(String path, OffsetTranslator... translators)
-      throws IOException {
-    Object obj = FileUtil.objFromResource(path);
-    @SuppressWarnings("unchecked")
-    List<TokenFootprint> footprintList = (List<TokenFootprint>) obj;
-    for (TokenFootprint footprint : footprintList) {
-      for (OffsetTranslator ot : translators) {
-        footprint.addOffsetTranslator(ot);
-      }
-    }
-    return footprintList;
-  }
+  protected abstract List<TokenFootprint> createFootprints();
 
   public TokenFootprint getDefaultFootprint() {
     for (TokenFootprint footprint : getFootprints()) {
@@ -281,32 +298,20 @@ public abstract class Grid implements Cloneable {
 
   public List<TokenFootprint> getFootprints() {
     if (footprintList == null) {
-      String type = GridFactory.getGridType(this);
-      try {
-        String path = FOOTPRINT_XML_PATHS.get(type);
-        OffsetTranslator offsetTranslator = getOffsetTranslator();
-        if (offsetTranslator == null) {
-          footprintList = loadFootprints(path);
-        } else {
-          footprintList = loadFootprints(path, getOffsetTranslator());
+      footprintList = createFootprints();
+
+      OffsetTranslator offsetTranslator = getOffsetTranslator();
+      if (offsetTranslator != null) {
+        for (var footprint : footprintList) {
+          footprint.addOffsetTranslator(offsetTranslator);
         }
-      } catch (IOException ioe) {
-        MapTool.showError("msg.error.footprints.load", ioe, type);
       }
     }
     return footprintList;
   }
 
-  public boolean isIsometric() {
-    return false;
-  }
-
   public boolean useMetric() {
     return false; // only square & iso use metrics
-  }
-
-  public boolean isHex() {
-    return false;
   }
 
   @Override
@@ -336,6 +341,15 @@ public abstract class Grid implements Cloneable {
    * @return a {@link ZonePoint} within the cell.
    */
   public abstract ZonePoint convert(CellPoint cp);
+
+  public ZonePoint midZonePoint(CellPoint a, CellPoint b) {
+    var centerA = getCellCenter(a);
+    var centerB = getCellCenter(b);
+    var midPoint =
+        new Point2D.Double(
+            (centerA.getX() + centerB.getX()) / 2, (centerA.getY() + centerB.getY()) / 2);
+    return new ZonePoint((int) midPoint.getX(), (int) midPoint.getY());
+  }
 
   public ZonePoint getNearestVertex(ZonePoint point) {
     double gridx = Math.round((point.x - getOffsetX()) / getCellWidth());
@@ -492,10 +506,10 @@ public abstract class Grid implements Cloneable {
    * <p>This is used to rotate cones and beams according to the on-grid angle. The result is the
    * number of clockwise degrees measured from the positive x-axis of the grid.
    *
-   * <p>This method exists because {@link net.rptools.maptool.model.Token#getFacing()} is a measure
-   * of the on-screen angle of the token's facing, i.e., how many degrees from the positive x-axis
-   * of the screen. For most grids this is the same as measuring the number of degress from the
-   * positive x-axis of the grid, which is what is should be.
+   * <p>This method exists because {@link Token#getFacing()} is a measure of the on-screen angle of
+   * the token's facing, i.e., how many degrees from the positive x-axis of the screen. For most
+   * grids this is the same as measuring the number of degress from the positive x-axis of the grid,
+   * which is what is should be.
    *
    * <p>Things are different for isometric grids. Since they are rotated, the on-screen facing does
    * not agree with the on-grid facing - there is a 45° offset. When building shapes, we need the
@@ -515,10 +529,9 @@ public abstract class Grid implements Cloneable {
    *
    * <p>This method expressly does not add in the footprint bit that cone lights are expected to
    * have. This part cannot be freely transformed, so it is done separately in {@link
-   * #getFootprintShapedAreaForCone(java.awt.Rectangle)}.
+   * #getFootprintShapedAreaForCone(Rectangle)}.
    *
-   * @param shape The shape. Can be any shape except {@link
-   *     net.rptools.maptool.model.ShapeType#GRID}.
+   * @param shape The shape. Can be any shape except {@link ShapeType#GRID}.
    * @param tokenFacingAngle The angle on-screen that the token is facing. Used for cones and beams
    *     to provide the main axis of the shape.
    * @param visionRange The range to which the token can see. Determines the size of the shape.
@@ -602,7 +615,7 @@ public abstract class Grid implements Cloneable {
   /**
    * Called by SightType and Light class to return a vision area based upon a specified distance
    *
-   * @param shape The shape of the light. Can be any {@link net.rptools.maptool.model.ShapeType}
+   * @param shape The shape of the light. Can be any {@link ShapeType}
    * @param token Used to position the shape and to provide footprint
    * @param range How far the shape should extends from the origin. If {@code 0}, the zone's vision
    *     range is used.
@@ -630,7 +643,7 @@ public abstract class Grid implements Cloneable {
       // Test for gridless maps
       var cellShape = getCellShape();
       if (cellShape == null) {
-        double tokenBoundsWidth = token.getBounds(zone).getWidth() / 2;
+        double tokenBoundsWidth = token.getFootprintBounds(zone).getWidth() / 2;
         visionRange += (footprintWidth > tokenBoundsWidth) ? tokenBoundsWidth : tokenBoundsWidth;
       } else {
         // For grids, this will be the same, but for Hex's we'll use the smaller side depending on
